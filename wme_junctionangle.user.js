@@ -6,11 +6,15 @@
 // @include             https://*.waze.com/map-editor/*
 // @include             https://*.waze.com/beta_editor/*
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
-// @version             1.1
+// @version             1.2
 // @grant               none
 // ==/UserScript==
 
-var junctionangle_version = "1.1";
+/**
+ * Copyright 2013 Michael Wikberg <michael@wikberg.fi>
+ * 
+ */
+var junctionangle_version = "1.2";
 var junctionangle_debug = false;
 var ja_wazeModel, ja_wazeMap;
 var ja_features = [];
@@ -155,15 +159,18 @@ function ja_calculate()
 
 	for(i = 0; i < ja_nodes.length; i++) {
 		node = ja_wazeModel.nodes.get(ja_nodes[i]);
-		if(node == null) {
+		if(node == null || !node.hasOwnProperty('attributes')) {
+			/*
 			//Oh oh.. should not happen?
 			console.log(ja_nodes)
 			console.log(ja_wazeModel)
 			console.log(ja_wazeModel.nodes)
+			*/
+			continue;
 		}
 		//check connected segments
 		segments = node.attributes.segIDs;
-		//console.log(segments);
+		console.log(node);
 		
 		//ignore of we have less than 2 segments
 		if(segments.length <= 1) {
