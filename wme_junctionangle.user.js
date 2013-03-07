@@ -178,7 +178,7 @@ function ja_calculate()
 			continue;
 		}
 		
-		console.log("Wanting to calculate angles for " + segments.length + " segments");
+		if(junctionangle_debug) console.log("Wanting to calculate angles for " + segments.length + " segments");
 		
 		angles = new Array();
 		selected_segments = 0;
@@ -199,11 +199,38 @@ function ja_calculate()
 
 		//console.log(node);
 		
+		switch (ja_wazeMap.zoom) {
+			case 9:
+				ja_label_distance = 4;
+				break;
+			case 8:
+				ja_label_distance = 8;
+				break;
+			case 7:
+				ja_label_distance = 15;
+				break;
+			case 6:
+				ja_label_distance = 25;
+				break;
+			case 5:
+				ja_label_distance = 40;
+				break;
+			case 4:
+				ja_label_distance = 80;
+				break;
+			case 3:
+				ja_label_distance = 140;
+				break;
+			case 2:
+				ja_label_distance = 300;
+				break;
+			case 1:
+				ja_label_distance = 400;
+				break;
+		}
+		//console.log("zoom: " + ja_wazeMap.zoom + " -> distance: " + ja_label_distance);
+		
 		//if we have two connected segments selected, do some magic to get the turn angle only =)
-		
-		ja_label_distance = 100 / ja_wazeMap.zoom;
-		console.log(ja_wazeMap.zoom);
-		
 		if(selected_segments == 2) {
 			ja_selected = [];
 			
@@ -225,10 +252,9 @@ function ja_calculate()
 			//console.log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + "(" + a2 + ") and position for label should be at " + ha);
 
 			//put the angle point
-			//FIXME: check zoom level
 			ja_features.push(new ja_OpenLayers.Feature.Vector(
 				new ja_OpenLayers.Geometry.Point(
-					node.geometry.x + (30 * Math.cos((ha*Math.PI)/180)), node.geometry.y + (30 * Math.sin((ha*Math.PI)/180))
+					node.geometry.x + (ja_label_distance * Math.cos((ha*Math.PI)/180)), node.geometry.y + (ja_label_distance * Math.sin((ha*Math.PI)/180))
 					)
 					, { angle: Math.round(a2), ja_type: "junction" }
 			));
@@ -241,10 +267,9 @@ function ja_calculate()
 				//console.log("Angle between " + angles[j][1] + " and " + angles[(j+1)%angles.length][1] + " is " + a + " and position for label should be at " + ha);
 
 				//push the angle point
-				//FIXME: check zoom level
 				ja_features.push(new ja_OpenLayers.Feature.Vector(
 					new ja_OpenLayers.Geometry.Point(
-						node.geometry.x + (30 * Math.cos((ha*Math.PI)/180)), node.geometry.y + (30 * Math.sin((ha*Math.PI)/180))
+						node.geometry.x + (ja_label_distance * Math.cos((ha*Math.PI)/180)), node.geometry.y + (ja_label_distance * Math.sin((ha*Math.PI)/180))
 						)
 						, { angle: Math.round(a), ja_type: "generic" }
 				));
