@@ -1,13 +1,15 @@
 WME-ja
 ======
 
-Waze Map Editor (WME) addon to help with junction design. If two connected segments are selected, it shows the junction angle.
+Waze Map Editor (WME) addon to help with junction design. If two connected segments are selected, it shows the junction angle. 
 
 [![Creative Commons License](http://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png)](http://creativecommons.org/licenses/by-nc-sa/3.0/deed.en_US)
 
 *WME Junction Angle Info extension* by *Michael Wikberg* is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-nc-sa/3.0/deed.en_US).
 
 Based on a work at https://github.com/milkboy/WME-ja
+
+Also available at http://userscripts.org/scripts/show/160864
 
 ###Changelog
 
