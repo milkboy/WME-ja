@@ -1,4 +1,4 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name                WME Junction Angle info
 // @namespace           http://userscripts.org/users/508112
 // @description         Show the angle between two selected (and connected) segments
@@ -6,7 +6,7 @@
 // @include             https://*.waze.com/map-editor/*
 // @include             https://*.waze.com/beta_editor/*
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
-// @version             1.2
+// @version             1.3
 // @grant               none
 // ==/UserScript==
 
@@ -14,7 +14,7 @@
  * Copyright 2013 Michael Wikberg <michael@wikberg.fi>
  * 
  */
-var junctionangle_version = "1.2";
+var junctionangle_version = "1.3";
 var junctionangle_debug = false;
 var ja_wazeModel, ja_wazeMap;
 var ja_features = [];
