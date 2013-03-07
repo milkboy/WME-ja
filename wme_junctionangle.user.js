@@ -15,7 +15,7 @@
  * 
  */
 var junctionangle_version = "1.2";
-var junctionangle_debug = true;
+var junctionangle_debug = false;
 var ja_wazeModel, ja_wazeMap;
 var ja_features = [];
 
@@ -81,7 +81,7 @@ function junctionangle_init()
 		label: "${angle}",
 		fontWeight: "bold",
 		pointRadius: 10,
-		fontSize: "11px"
+		fontSize: "10px"
 	}, {
 		rules: [
 			new ja_OpenLayers.Rule({
@@ -96,7 +96,7 @@ function junctionangle_init()
 				  }), 
 				symbolizer: {
 					pointRadius: 13,
-					fontSize: "13px",
+					fontSize: "12px",
 					fillColor: "#4cc600",
 					strokeColor: "#183800",
 				}
@@ -129,7 +129,7 @@ function ja_calculate()
 	//clear old info
 	ja_mapLayer.destroyFeatures();
 	//try to show all angles for all selected segments
-	console.log("Checking junctions for " + ja_selectionManager.selectedItems.length + " segments:");
+	if(junctionangle_debug) console.log("Checking junctions for " + ja_selectionManager.selectedItems.length + " segments:");
 	if(ja_selectionManager.selectedItems.length == 0) return 1;
 	var ja_nodes = [];
 
@@ -233,6 +233,7 @@ function ja_calculate()
 		//if we have two connected segments selected, do some magic to get the turn angle only =)
 		if(selected_segments == 2) {
 			ja_selected = [];
+			ja_extra_space_multiplier = 1;
 			
 			for(j = 0; j < angles.length; j++) {
 				if(angles[j][2]) {
@@ -243,21 +244,27 @@ function ja_calculate()
 			a = ((ja_selected[1][0] - ja_selected[0][0]) + 360) % 360;
 			ha = (360 + (ja_selected[0][0]+ja_selected[1][0])/2) % 360;
 
+			//console.log(a);
+			if(a < 60) {
+				if(junctionangle_debug) console.log("Sharp angle");
+				ja_extra_space_multiplier = 2;
+			}
+
 			if(a > 180) {
 				//a2 = a - 180;
 				ha = ha + 180;
 			}
 
-			a2 = Math.round(Math.abs(180 - a))+"°";
+			
 			//console.log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + "(" + a2 + ") and position for label should be at " + ha);
 
-			if(a2 == 0) a2 = "0";
 			//put the angle point
 			ja_features.push(new ja_OpenLayers.Feature.Vector(
 				new ja_OpenLayers.Geometry.Point(
-					node.geometry.x + (ja_label_distance * Math.cos((ha*Math.PI)/180)), node.geometry.y + (ja_label_distance * Math.sin((ha*Math.PI)/180))
+					node.geometry.x + (ja_extra_space_multiplier * ja_label_distance * Math.cos((ha*Math.PI)/180)), 
+					node.geometry.y + (ja_extra_space_multiplier * ja_label_distance * Math.sin((ha*Math.PI)/180))
 					)
-					, { angle: a2, ja_type: "junction" }
+					, { angle: Math.round(Math.abs(180 - a))+"°", ja_type: "junction" }
 			));
 		}
 		else {
