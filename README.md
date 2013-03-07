@@ -13,6 +13,14 @@ Also available at http://userscripts.org/scripts/show/160864
 
 ###Changelog
 
+####1.2
+
+#####Fixes: 
+- "0" angles show empty label enhancement #5
+- Markers should not be displayed on zoom levels where the segments are not visible invalid  #3
+- Marker distance should be dependent on zoom level enhancement #2
+- Script stops working if a segment is deleted bug #1
+
 ####1.1
 
 - Should work in Firefox (with Greasemonkey) also
