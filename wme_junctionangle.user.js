@@ -15,7 +15,7 @@
  * 
  */
 var junctionangle_version = "1.2";
-var junctionangle_debug = false;
+var junctionangle_debug = true;
 var ja_wazeModel, ja_wazeMap;
 var ja_features = [];
 
@@ -170,7 +170,7 @@ function ja_calculate()
 		}
 		//check connected segments
 		segments = node.attributes.segIDs;
-		console.log(node);
+		if(junctionangle_debug) console.log(node);
 		
 		//ignore of we have less than 2 segments
 		if(segments.length <= 1) {
@@ -248,15 +248,16 @@ function ja_calculate()
 				ha = ha + 180;
 			}
 
-			a2 = Math.abs(180 - a);
+			a2 = Math.round(Math.abs(180 - a))+"°";
 			//console.log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + "(" + a2 + ") and position for label should be at " + ha);
 
+			if(a2 == 0) a2 = "0";
 			//put the angle point
 			ja_features.push(new ja_OpenLayers.Feature.Vector(
 				new ja_OpenLayers.Geometry.Point(
 					node.geometry.x + (ja_label_distance * Math.cos((ha*Math.PI)/180)), node.geometry.y + (ja_label_distance * Math.sin((ha*Math.PI)/180))
 					)
-					, { angle: Math.round(a2), ja_type: "junction" }
+					, { angle: a2, ja_type: "junction" }
 			));
 		}
 		else {
@@ -265,20 +266,18 @@ function ja_calculate()
 				a = (360 + (angles[(j+1)%angles.length][0] - angles[j][0])) % 360;
 				ha = (360 + ((a/2) + angles[j][0])) % 360;
 				//console.log("Angle between " + angles[j][1] + " and " + angles[(j+1)%angles.length][1] + " is " + a + " and position for label should be at " + ha);
-
 				//push the angle point
 				ja_features.push(new ja_OpenLayers.Feature.Vector(
 					new ja_OpenLayers.Geometry.Point(
 						node.geometry.x + (ja_label_distance * Math.cos((ha*Math.PI)/180)), node.geometry.y + (ja_label_distance * Math.sin((ha*Math.PI)/180))
 						)
-						, { angle: Math.round(a), ja_type: "generic" }
+						, { angle: Math.round(a)+"°", ja_type: "generic" }
 				));
-				
-				
 			}
 		}
 	}
 
+	if(junctionangle_debug) console.log(ja_features);
 	//Update the displayed angles
 	ja_mapLayer.addFeatures(ja_features);
 }
