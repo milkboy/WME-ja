@@ -11,6 +11,8 @@ Based on a work at https://github.com/milkboy/WME-ja
 
 Also available at http://userscripts.org/scripts/show/160864
 
+![Screenshot](http://wikberg.fi/grfx/wme_ja.png)
+
 ###Changelog
 
 ####1.2
