@@ -15,7 +15,7 @@
  * 
  */
 var junctionangle_version = "1.3";
-var junctionangle_debug = false;
+var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
 var ja_wazeModel, ja_wazeMap;
 var ja_features = [];
 
@@ -46,6 +46,18 @@ function junctionangle_bootstrap() {
 	setTimeout(junctionangle_init, 500);
 }
 
+function ja_log(ja_log_msg, ja_log_level) {
+	if(ja_log_level <= junctionangle_debug) {
+		if(typeof ja_log_msg == "object") {
+			ja_log(arguments.callee.caller.toString(), ja_log_level);
+			console.log(ja_log_msg);
+		}
+		else {
+			console.log("WME Junction Angle: " + ja_log_msg);
+		}
+	}
+}
+
 function junctionangle_init()
 {
 	// access the bits of WME we need
@@ -67,10 +79,6 @@ function junctionangle_init()
 	//HTML changes after login. Better do init again.
 	ja_loginManager.events.register("afterloginchanged", null, junctionangle_init);
 	
-	//ja_mapLayer.removeAllFeatures();
-	//ja_mapLayer.destroyFeatures();
-	//ja_mapLayer.setName("JunctionAngles");
-
 	/**
 	 * Make some style settings
 	 */
@@ -110,31 +118,30 @@ function junctionangle_init()
 	});
 
 	ja_wazeMap.addLayer(ja_mapLayer);
-	console.log("WME junction angle calculator (" + junctionangle_version + ") loaded.");
+	ja_log("version " + junctionangle_version + " loaded.", 0);
 	
-	if(junctionangle_debug) {
-		console.log(ja_wazeMap);
-		console.log(ja_wazeModel);
-		console.log(ja_loginManager);
-		console.log(ja_selectionManager);
-		console.log(ja_mapLayer);
-		console.log(ja_OpenLayers);
-
-	}
+	ja_log(ja_wazeMap,3);
+	ja_log(ja_wazeModel,3);
+	ja_log(ja_loginManager,3);
+	ja_log(ja_selectionManager,3);
+	ja_log(ja_mapLayer,3);
+	ja_log(ja_OpenLayers,3);
 }
 
 
 function ja_calculate()
 {
+
 	//clear old info
 	ja_mapLayer.destroyFeatures();
+
 	//try to show all angles for all selected segments
-	if(junctionangle_debug) console.log("Checking junctions for " + ja_selectionManager.selectedItems.length + " segments:");
 	if(ja_selectionManager.selectedItems.length == 0) return 1;
+	ja_log("Checking junctions for " + ja_selectionManager.selectedItems.length + " segments", 1);
 	var ja_nodes = [];
 
 	for(i = 0; i < ja_selectionManager.selectedItems.length; i++) {
-		//console.log(ja_selectionManager.selectedItems[i]);
+		ja_log(ja_selectionManager.selectedItems[i],3);
 		switch(ja_selectionManager.selectedItems[i].type) {
 			case "node":
 				ja_nodes.push(ja_selectionManager.selectedItems[i].fid);
@@ -151,7 +158,7 @@ function ja_calculate()
 				}
 				break;
 			default:
-				console.log("Found unknown item type: " + ja_selectionManager.selectedItems[i].type);
+				ja_log("Found unknown item type: " + ja_selectionManager.selectedItems[i].type,1);
 		}
 	}
 
@@ -160,25 +167,23 @@ function ja_calculate()
 	for(i = 0; i < ja_nodes.length; i++) {
 		node = ja_wazeModel.nodes.get(ja_nodes[i]);
 		if(node == null || !node.hasOwnProperty('attributes')) {
-			/*
 			//Oh oh.. should not happen?
-			console.log(ja_nodes)
-			console.log(ja_wazeModel)
-			console.log(ja_wazeModel.nodes)
-			*/
+			ja_log(ja_nodes,2)
+			ja_log(ja_wazeModel,3)
+			ja_log(ja_wazeModel.nodes,3)
 			continue;
 		}
 		//check connected segments
 		segments = node.attributes.segIDs;
-		if(junctionangle_debug) console.log(node);
+		ja_log(node,2);
 		
 		//ignore of we have less than 2 segments
 		if(segments.length <= 1) {
-			console.log("Found only " + segments.length + " connected segments at " + ja_nodes[i] + ", not calculating anything...");
+			ja_log("Found only " + segments.length + " connected segments at " + ja_nodes[i] + ", not calculating anything...", 2);
 			continue;
 		}
 		
-		if(junctionangle_debug) console.log("Wanting to calculate angles for " + segments.length + " segments");
+		ja_log("Calculating angles for " + segments.length + " segments", 2);
 		
 		angles = new Array();
 		selected_segments = 0;
@@ -186,19 +191,17 @@ function ja_calculate()
 		for(j = 0; j < segments.length; j++) {
 			s = ja_wazeModel.segments.get(segments[j]);
 			a = ja_getAngle(ja_nodes[i], s);
-			//console.log("j: " + j + "; Segment " + segments[j] + " angle is " + a);
-			angles[j] = new Array(a, segments[j], s != null ? s.isSelected() : false) // ja_selectionManager.selectedItems.indexOf(s) > -1);
+			ja_log("j: " + j + "; Segment " + segments[j] + " angle is " + a, 3);
+			angles[j] = new Array(a, segments[j], s != null ? s.isSelected() : false);
 			if(s != null ? s.isSelected() : false) selected_segments++;
 		}
 
-		//console.log(angles);
+		ja_log(angles,2);
 		//sort angle data (ascending)
 		angles.sort(function(a,b){return a[0] - b[0]});
-		//console.log(angles);
-		//console.log(selected_segments);
+		ja_log(angles,3);
+		ja_log(selected_segments,3);
 
-		//console.log(node);
-		
 		switch (ja_wazeMap.zoom) {
 			case 9:
 				ja_label_distance = 4;
@@ -228,7 +231,7 @@ function ja_calculate()
 				ja_label_distance = 400;
 				break;
 		}
-		//console.log("zoom: " + ja_wazeMap.zoom + " -> distance: " + ja_label_distance);
+		ja_log("zoom: " + ja_wazeMap.zoom + " -> distance: " + ja_label_distance, 2);
 		
 		//if we have two connected segments selected, do some magic to get the turn angle only =)
 		if(selected_segments == 2) {
@@ -244,9 +247,9 @@ function ja_calculate()
 			a = ((ja_selected[1][0] - ja_selected[0][0]) + 360) % 360;
 			ha = (360 + (ja_selected[0][0]+ja_selected[1][0])/2) % 360;
 
-			//console.log(a);
+			ja_log(a,3);
 			if(a < 60) {
-				if(junctionangle_debug) console.log("Sharp angle");
+				ja_log("Sharp angle", 2);
 				ja_extra_space_multiplier = 2;
 			}
 
@@ -256,7 +259,7 @@ function ja_calculate()
 			}
 
 			
-			//console.log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + "(" + a2 + ") and position for label should be at " + ha);
+			ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + "(" + a2 + ") and position for label should be at " + ha, 3);
 
 			//put the angle point
 			ja_features.push(new ja_OpenLayers.Feature.Vector(
@@ -272,7 +275,8 @@ function ja_calculate()
 			for(j = 0; j < angles.length; j++) {
 				a = (360 + (angles[(j+1)%angles.length][0] - angles[j][0])) % 360;
 				ha = (360 + ((a/2) + angles[j][0])) % 360;
-				//console.log("Angle between " + angles[j][1] + " and " + angles[(j+1)%angles.length][1] + " is " + a + " and position for label should be at " + ha);
+				
+				ja_log("Angle between " + angles[j][1] + " and " + angles[(j+1)%angles.length][1] + " is " + a + " and position for label should be at " + ha, 3);
 				//push the angle point
 				ja_features.push(new ja_OpenLayers.Feature.Vector(
 					new ja_OpenLayers.Geometry.Point(
@@ -284,7 +288,7 @@ function ja_calculate()
 		}
 	}
 
-	if(junctionangle_debug) console.log(ja_features);
+	ja_log(ja_features, 2);
 	//Update the displayed angles
 	ja_mapLayer.addFeatures(ja_features);
 }
@@ -310,15 +314,16 @@ function ja_get_next_to_last_point(segment) {
 }
 
 //get the absolute angle for a segment end point
-function ja_getAngle(node, segment) {
-	if(node == null || segment == null) return;
-	if(segment.attributes.fromNodeID == node) {
-		ja_dx = ja_get_second_point(segment).x - ja_get_first_point(segment).x;
-		ja_dy = ja_get_second_point(segment).y - ja_get_first_point(segment).y;
+function ja_getAngle(ja_node, ja_segment) {
+	if(ja_node == null || ja_segment == null) return;
+	if(ja_segment.attributes.fromNodeID == ja_node) {
+		ja_dx = ja_get_second_point(ja_segment).x - ja_get_first_point(ja_segment).x;
+		ja_dy = ja_get_second_point(ja_segment).y - ja_get_first_point(ja_segment).y;
 	} else {
-		ja_dx = ja_get_next_to_last_point(segment).x - ja_get_last_point(segment).x;
-		ja_dy = ja_get_next_to_last_point(segment).y - ja_get_last_point(segment).y;
+		ja_dx = ja_get_next_to_last_point(ja_segment).x - ja_get_last_point(ja_segment).x;
+		ja_dy = ja_get_next_to_last_point(ja_segment).y - ja_get_last_point(ja_segment).y;
 	}
+	ja_log(ja_node + " / " + ja_segment + ": dx:" + ja_dx + ", dy:" + ja_dy);
 	ja_angle = Math.atan2(ja_dy,ja_dx);
 	return (360+(ja_angle*180/Math.PI))%360;
 }
