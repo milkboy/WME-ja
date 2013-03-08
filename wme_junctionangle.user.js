@@ -6,7 +6,7 @@
 // @include             https://*.waze.com/map-editor/*
 // @include             https://*.waze.com/beta_editor/*
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
-// @version             1.3
+// @version             1.4
 // @grant               none
 // ==/UserScript==
 
@@ -14,9 +14,9 @@
  * Copyright 2013 Michael Wikberg <michael@wikberg.fi>
  * 
  */
-var junctionangle_version = "1.3";
+var junctionangle_version = "1.4";
 var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
-var ja_wazeModel, ja_wazeMap;
+var ja_wazeModel, ja_wazeMap, $;
 var ja_features = [];
 
 function junctionangle_bootstrap() {
@@ -66,6 +66,8 @@ function junctionangle_init()
 	ja_loginManager = unsafeWindow.loginManager;
 	ja_selectionManager = unsafeWindow.selectionManager;
 	ja_OpenLayers = unsafeWindow.OpenLayers;
+	//get jQuery support
+	$ = unsafeWindow.$;
 
 	//selected nodes changed
 	ja_selectionManager.events.register("selectionchanged", null, ja_calculate);
@@ -112,25 +114,36 @@ function junctionangle_init()
 		]
 	});
 
-	// Create a vector layer and give it your style map.
-	ja_mapLayer = new ja_OpenLayers.Layer.Vector("JunctionAngles", {
-		styleMap: new ja_OpenLayers.StyleMap(ja_style)
-	});
-
-	ja_wazeMap.addLayer(ja_mapLayer);
-	ja_log("version " + junctionangle_version + " loaded.", 0);
+	//try to see if we already have a layer
+	if(ja_wazeMap.getLayersByName("JunctionAngles").length > 0) {
 	
-	ja_log(ja_wazeMap,3);
-	ja_log(ja_wazeModel,3);
-	ja_log(ja_loginManager,3);
-	ja_log(ja_selectionManager,3);
-	ja_log(ja_mapLayer,3);
-	ja_log(ja_OpenLayers,3);
-}
+	} else {
+		// Create a vector layer and give it your style map.
+		ja_mapLayer = new ja_OpenLayers.Layer.Vector("JunctionAngles", {
+			styleMap: new ja_OpenLayers.StyleMap(ja_style)
+		});
 
+		ja_wazeMap.addLayer(ja_mapLayer);
+		ja_log("version " + junctionangle_version + " loaded.", 0);
+		
+		ja_log(ja_wazeMap,3);
+		ja_log(ja_wazeModel,3);
+		ja_log(ja_loginManager,3);
+		ja_log(ja_selectionManager,3);
+		ja_log(ja_mapLayer,3);
+		ja_log(ja_OpenLayers,3);
+	}
+}
 
 function ja_calculate()
 {
+	//FIXME: this is the ugliest hack ever.. maybe.
+	ls = $('[id^="Waze.Control.LayerSwitcher_"]')[0];
+	ja_log(ls,3);
+	//for whatever reason, the layerswitch is not resizing properly, so we change the zoom slightly ;)
+	//this is reset every now ant then, so just reset it again
+	ls.children[1].style.zoom = "95%";
+	//now our layer should be visible also =)
 
 	//clear old info
 	ja_mapLayer.destroyFeatures();
