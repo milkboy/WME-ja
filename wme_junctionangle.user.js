@@ -272,7 +272,7 @@ function ja_calculate()
 			}
 
 			
-			ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + "(" + a2 + ") and position for label should be at " + ha, 3);
+			ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + " and position for label should be at " + ha, 3);
 
 			//put the angle point
 			ja_features.push(new ja_OpenLayers.Feature.Vector(
