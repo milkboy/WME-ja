@@ -17,6 +17,11 @@ Also available at http://userscripts.org/scripts/show/160864
 ![Screenshot](http://wikberg.fi/grfx/wme_ja.png)
 
 ###Changelog
+####1.5
+
+#####Fixes:
+- Undefined reference on 'a2' in debug mode #10 (thanks to [bensmithurst](https://github.com/bensmithurst))
+- Misc small fixes
 
 ####1.2
 
