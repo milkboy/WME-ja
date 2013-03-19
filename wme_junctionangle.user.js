@@ -72,10 +72,11 @@ function junctionangle_init()
 	//selected nodes changed
 	ja_selectionManager.events.register("selectionchanged", null, ja_calculate);
 	
+	//probably unnecessary
 	//map is moved or resized
-	ja_wazeMap.events.register("moveend", null, ja_calculate);
+	//ja_wazeMap.events.register("moveend", null, ja_calculate);
 
-	//mouse button released (FIXME: wanted to listen to "segment changed", but could not find a suitable event...)
+	//mouse button released (FIXME: wanted to listen to "segment or node moved", but could not find a suitable event...)
 	ja_wazeMap.events.register("mouseup", null, ja_calculate);
 
 	//HTML changes after login. Better do init again.
@@ -102,15 +103,15 @@ function junctionangle_init()
 				filter: new ja_OpenLayers.Filter.Comparison({
 					  type: ja_OpenLayers.Filter.Comparison.EQUAL_TO,
 					  property: "ja_type",
-					  value: "junction",
+					  value: "junction"
 				  }), 
 				symbolizer: {
 					pointRadius: 13,
 					fontSize: "12px",
 					fillColor: "#4cc600",
-					strokeColor: "#183800",
+					strokeColor: "#183800"
 				}
-			}),
+			})
 		]
 	});
 
@@ -328,7 +329,7 @@ function ja_get_next_to_last_point(segment) {
 
 //get the absolute angle for a segment end point
 function ja_getAngle(ja_node, ja_segment) {
-	if(ja_node == null || ja_segment == null) return;
+	if(ja_node == null || ja_segment == null) return null;
 	if(ja_segment.attributes.fromNodeID == ja_node) {
 		ja_dx = ja_get_second_point(ja_segment).x - ja_get_first_point(ja_segment).x;
 		ja_dy = ja_get_second_point(ja_segment).y - ja_get_first_point(ja_segment).y;
