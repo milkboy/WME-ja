@@ -6,7 +6,8 @@ If two connected segments are selected, it shows the turn angle, otherwise the t
 I try to test with both Chrome and Firefox (Greasemonkey), 
 but anything might break at any given time anyway :stuck_out_tongue_closed_eyes:
 
-Update 2013-06-04: And yes, something broke. Since Chrome v27 this script is not working, and the only way to currently use it is through Tampermonkey. Sorry.
+Update 2013-06-03: And yes, something broke. Since Chrome v27 this script is not working, and the only way to currently use it is through Tampermonkey. Sorry.
+Update 2013-06-04: Working on a packaged extension for Chrome/Chromium
 
 [![Creative Commons License](http://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png)](http://creativecommons.org/licenses/by-nc-sa/3.0/deed.en_US)
 *WME Junction Angle Info extension* by *Michael Wikberg*
