@@ -1,0 +1,25 @@
+{
+  "name": "WME-JunctionAngle",
+  "version": "1.5.1",
+  "manifest_version": 2,
+
+  "description": "This extension adds junction angle information the the Waze map editor.",
+  "icons": { "16": "ja16.png",
+             "48": "ja48.png",
+             "128": "ja128.png"
+           },
+
+  "homepage_url": "https://github.com/milkboy/WME-ja",
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://world.waze.com/editor/*",
+        "https://waze.com/editor/*",
+        "https://www.waze.com/editor/*"
+      ],
+      "js": ["wme_junctionangle.user.js"],
+      "all_frames": true
+    }
+  ]
+}
