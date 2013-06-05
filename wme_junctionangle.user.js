@@ -3,7 +3,6 @@
 // @namespace           http://userscripts.org/users/508112
 // @description         Show the angle between two selected (and connected) segments
 // @include             https://*.waze.com/editor/*
-// @include             https://*.waze.com/map-editor/*
 // @include             https://*.waze.com/beta_editor/*
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
 // @version             1.5.2
