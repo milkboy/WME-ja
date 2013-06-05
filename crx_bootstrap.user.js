@@ -9,7 +9,7 @@
 // @include             https://www.waze.com/beta_editor/*
 // @include             https://world.waze.com/beta_editor/*
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
-// @version             1.5.2
+// @version             1.5.3
 // @grant               GM_getResourceURL
 // @copyright           2013 Michael Wikberg <michael@wikberg.fi>
 // @run_at		document_start
