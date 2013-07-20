@@ -5,7 +5,7 @@
 // @include             https://*.waze.com/editor/*
 // @include             https://*.waze.com/beta_editor/*
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
-// @version             1.5.3
+// @version             1.5.4
 // @grant               none
 // @copyright		2013 Michael Wikberg <michael@wikberg.fi>
 // ==/UserScript==
@@ -14,7 +14,7 @@
  * Copyright 2013 Michael Wikberg <michael@wikberg.fi>
  * 
  */
-var junctionangle_version = "1.5.3";
+var junctionangle_version = "1.5.4";
 var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
 var ja_wazeModel, ja_wazeMap, $;
 var ja_features = [];
