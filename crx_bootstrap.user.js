@@ -8,6 +8,8 @@
 // @include             https://waze.com/beta_editor/*
 // @include             https://www.waze.com/beta_editor/*
 // @include             https://world.waze.com/beta_editor/*
+// @include             https://editor.waze.com/*
+// @include             https://editor-beta.waze.com/*
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
 // @version             1.5.5
 // @grant               GM_getResourceURL

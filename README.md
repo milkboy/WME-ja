@@ -22,6 +22,10 @@ Also available at http://userscripts.org/scripts/show/160864
 ![Screenshot](http://wikberg.fi/grfx/wme_ja.png)
 
 ###Changelog
+####1.5.4
+- Misc tweaks for browser addon capabilities
+- Added new editor URLs
+
 ####1.5
 
 #####Fixes:

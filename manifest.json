@@ -19,7 +19,9 @@
         "https://www.waze.com/editor/*",
         "https://world.waze.com/beta_editor/*",
         "https://waze.com/beta_editor/*",
-        "https://www.waze.com/beta_editor/*"
+        "https://www.waze.com/beta_editor/*",
+        "https://editor.waze.com/*",
+        "https://editor-beta.waze.com/*"
       ],
       "js": ["crx_bootstrap.user.js"]
     }
