@@ -5,7 +5,7 @@
 // @include             https://*.waze.com/editor/*
 // @include             https://*.waze.com/beta_editor/*
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
-// @version             1.5.3
+// @version             1.5.5
 // @grant               none
 // @copyright		2013 Michael Wikberg <michael@wikberg.fi>
 // ==/UserScript==
@@ -14,7 +14,7 @@
  * Copyright 2013 Michael Wikberg <michael@wikberg.fi>
  * 
  */
-var junctionangle_version = "1.5.3";
+var junctionangle_version = "1.5.5";
 var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
 var ja_wazeModel, ja_wazeMap, $;
 var ja_features = [];
@@ -49,7 +49,7 @@ function junctionangle_bootstrap() {
 function ja_log(ja_log_msg, ja_log_level) {
 	if(ja_log_level <= junctionangle_debug) {
 		if(typeof ja_log_msg == "object") {
-			ja_log(arguments.callee.caller.toString(), ja_log_level);
+			//ja_log(arguments.callee.caller.toString(), ja_log_level);
 			console.log(ja_log_msg);
 		}
 		else {
@@ -133,19 +133,15 @@ function junctionangle_init()
 		ja_log(ja_selectionManager,3);
 		ja_log(ja_mapLayer,3);
 		ja_log(ja_OpenLayers,3);
+
+		//try to resize the layer selection box... Apparently the only (easy) way is to actually override the CSS
+		var newSwitcherStyle = $('<style>.WazeControlLayerSwitcher:hover {background-color: #FFFFFF; max-height: 390px; width: 200px;}</style>');
+		$('html > head').append(newSwitcherStyle);
 	}
 }
 
 function ja_calculate()
 {
-	//FIXME: this is the ugliest hack ever.. maybe.
-	ls = $('[id^="Waze.Control.LayerSwitcher_"]')[0];
-	ja_log(ls,3);
-	//for whatever reason, the layerswitch is not resizing properly, so we change the zoom slightly ;)
-	//this is reset every now ant then, so just reset it again
-	ls.children[1].style.zoom = "95%";
-	//now our layer should be visible also =)
-
 	//clear old info
 	ja_mapLayer.destroyFeatures();
 
