@@ -22,6 +22,9 @@ Also available at http://userscripts.org/scripts/show/160864
 ![Screenshot](http://wikberg.fi/grfx/wme_ja.png)
 
 ###Changelog
+####1.5.5
+- Fixed layer selection div size (now the junction angles layer should always be visible in the list)
+
 ####1.5.4
 - Misc tweaks for browser addon capabilities
 - Added new editor URLs
