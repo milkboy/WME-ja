@@ -3,11 +3,9 @@ WME-ja
 
 Waze Map Editor (WME) addon to help with junction design.
 If two connected segments are selected, it shows the turn angle, otherwise the the angle between each segment.
-I try to test with both Chrome and Firefox (Greasemonkey), 
+I try to test with both Chrome (with Tampermonkey, as the userscript functionality changed) and Firefox (Greasemonkey), 
 but anything might break at any given time anyway :stuck_out_tongue_closed_eyes:
 
-- Update 2013-06-03: And yes, something broke. Since Chrome v27 this script is not working, and the only way to currently use it is through Tampermonkey. Sorry.
-- Update 2013-06-04: Working on a packaged extension for Chrome/Chromium
 - Update 2013-06-05: Chrome extension published in [chrome web store](https://chrome.google.com/webstore/detail/wme-junctionangle/cfcpfikgmfoghjfpfepmklballeagadf)
 - Update 2013-06-06: Firefox add-on available at [Mozilla addons](https://addons.mozilla.org/en-US/firefox/addon/wme-ja/)
 
@@ -22,6 +20,9 @@ Also available at http://userscripts.org/scripts/show/160864
 ![Screenshot](http://wikberg.fi/grfx/wme_ja.png)
 
 ###Changelog
+####1.5.6
+- Fixed URL detection to run script on localized editor also.
+
 ####1.5.5
 - Fixed layer selection div size (now the junction angles layer should always be visible in the list)
 
