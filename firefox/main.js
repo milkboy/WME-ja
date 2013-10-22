@@ -1,4 +1,4 @@
-var url = /https:\/\/(www|world)\.waze\.com\/(beta_)?editor\/.*/;
+var url = /https:\/\/www\.waze\.com\/(.{2,6}\/)?(beta_)?editor\/.*/;
 var pageMod = require("sdk/page-mod");
 var self = require("sdk/self");
 
