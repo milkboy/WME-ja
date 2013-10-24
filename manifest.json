@@ -1,6 +1,6 @@
 {
   "name": "WME-JunctionAngle",
-  "version": "1.5.7-SNAPSHOT",
+  "version": "1.5.7",
   "manifest_version": 2,
 
   "description": "This extension adds junction angle information the the Waze map editor.",
