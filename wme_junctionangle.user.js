@@ -15,7 +15,7 @@
  */
 var junctionangle_version = "1.5.7-SNAPSHOT";
 var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
-var ja_wazeModel, ja_wazeMap, $;
+var ja_wazeModel, ja_wazeMap, ja_selectionManager;
 var ja_features = [];
 
 function junctionangle_bootstrap() {
@@ -37,12 +37,13 @@ function junctionangle_bootstrap() {
 		unsafeWindow    = ( function ()
 		{
 			var dummyElem   = document.createElement('p');
-			dummyElem.setAttribute ('onclick', 'return window;');
-			return dummyElem.onclick ();
+			dummyElem.addEventListener("getwin", function(event){return window;});
+			var dummyEvent = new CustomEvent("getwin",{"detail":{}});
+			return dummyElem.dispatchEvent(dummyEvent);
 		} ) ();
 	}
 	/* begin running the code! */
-	setTimeout(junctionangle_init, 500);
+	setTimeout(function() { junctionangle_init();}, 500);
 }
 
 function ja_log(ja_log_msg, ja_log_level) {
@@ -60,13 +61,26 @@ function ja_log(ja_log_msg, ja_log_level) {
 function junctionangle_init()
 {
 	// access the bits of WME we need
-	ja_wazeMap = unsafeWindow.wazeMap;
-	ja_wazeModel = unsafeWindow.wazeModel;
-	ja_loginManager = unsafeWindow.loginManager;
-	ja_selectionManager = unsafeWindow.selectionManager;
-	ja_OpenLayers = unsafeWindow.OpenLayers;
-	//get jQuery support
-	$ = unsafeWindow.$;
+	//Running in greasmonkey|tampermonkey|chrome extension
+	if(this.Waze != null) {
+		//alert('we have waze!!!');
+		ja_wazeMap = wazeMap;
+		ja_wazeModel = wazeModel;
+		ja_loginManager = loginManager;
+		ja_selectionManager = selectionManager;
+		ja_OpenLayers = OpenLayers;
+	}
+	//Running as firefox extension
+	else {
+		//alert('unsafeWindow?');
+		ja_wazeMap = unsafeWindow.wazeMap;
+		ja_wazeModel = unsafeWindow.wazeModel;
+		ja_loginManager = unsafeWindow.loginManager;
+		ja_selectionManager = unsafeWindow.selectionManager;
+		ja_OpenLayers = unsafeWindow.OpenLayers;
+		//get jQuery support
+		$ = unsafeWindow.$;
+	}
 
 	//selected nodes changed
 	ja_selectionManager.events.register("selectionchanged", null, ja_calculate);
