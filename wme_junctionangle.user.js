@@ -2,12 +2,11 @@
 // @name                WME Junction Angle info
 // @namespace           http://userscripts.org/users/508112
 // @description         Show the angle between two selected (and connected) segments
-// @include             https://*.waze.com/editor/*
-// @include             https://*.waze.com/map-editor/*
-// @include             https://*.waze.com/beta_editor/*
+// @include             /^https:\/\/www\.waze\.com\/(.{2,6}\/)?(beta_)?editor\/.*$/
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
-// @version             1.4
+// @version             1.5.7
 // @grant               none
+// @copyright		2013 Michael Wikberg <michael@wikberg.fi>
 // ==/UserScript==
 
 /**
@@ -15,9 +14,9 @@
  * WME Junction Angle Info extension is licensed under a Creative Commons 
  * Attribution-NonCommercial-ShareAlike 3.0 Unported License.
  */
-var junctionangle_version = "1.4";
+var junctionangle_version = "1.5.7";
 var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
-var ja_wazeModel, ja_wazeMap, $;
+var ja_wazeModel, ja_wazeMap, ja_selectionManager;
 var ja_features = [];
 
 function junctionangle_bootstrap() {
@@ -39,18 +38,19 @@ function junctionangle_bootstrap() {
 		unsafeWindow    = ( function ()
 		{
 			var dummyElem   = document.createElement('p');
-			dummyElem.setAttribute ('onclick', 'return window;');
-			return dummyElem.onclick ();
+			dummyElem.addEventListener("getwin", function(event){return window;});
+			var dummyEvent = new CustomEvent("getwin",{"detail":{}});
+			return dummyElem.dispatchEvent(dummyEvent);
 		} ) ();
 	}
 	/* begin running the code! */
-	setTimeout(junctionangle_init, 500);
+	setTimeout(function() { junctionangle_init();}, 500);
 }
 
 function ja_log(ja_log_msg, ja_log_level) {
 	if(ja_log_level <= junctionangle_debug) {
 		if(typeof ja_log_msg == "object") {
-			ja_log(arguments.callee.caller.toString(), ja_log_level);
+			//ja_log(arguments.callee.caller.toString(), ja_log_level);
 			console.log(ja_log_msg);
 		}
 		else {
@@ -62,21 +62,35 @@ function ja_log(ja_log_msg, ja_log_level) {
 function junctionangle_init()
 {
 	// access the bits of WME we need
-	ja_wazeMap = unsafeWindow.wazeMap;
-	ja_wazeModel = unsafeWindow.wazeModel;
-	ja_loginManager = unsafeWindow.loginManager;
-	ja_selectionManager = unsafeWindow.selectionManager;
-	ja_OpenLayers = unsafeWindow.OpenLayers;
-	//get jQuery support
-	$ = unsafeWindow.$;
+	//Running in greasmonkey|tampermonkey|chrome extension
+	if(this.Waze != null) {
+		//alert('we have waze!!!');
+		ja_wazeMap = wazeMap;
+		ja_wazeModel = wazeModel;
+		ja_loginManager = loginManager;
+		ja_selectionManager = selectionManager;
+		ja_OpenLayers = OpenLayers;
+	}
+	//Running as firefox extension
+	else {
+		//alert('unsafeWindow?');
+		ja_wazeMap = unsafeWindow.wazeMap;
+		ja_wazeModel = unsafeWindow.wazeModel;
+		ja_loginManager = unsafeWindow.loginManager;
+		ja_selectionManager = unsafeWindow.selectionManager;
+		ja_OpenLayers = unsafeWindow.OpenLayers;
+		//get jQuery support
+		$ = unsafeWindow.$;
+	}
 
 	//selected nodes changed
 	ja_selectionManager.events.register("selectionchanged", null, ja_calculate);
 	
+	//probably unnecessary
 	//map is moved or resized
-	ja_wazeMap.events.register("moveend", null, ja_calculate);
+	//ja_wazeMap.events.register("moveend", null, ja_calculate);
 
-	//mouse button released (FIXME: wanted to listen to "segment changed", but could not find a suitable event...)
+	//mouse button released (FIXME: wanted to listen to "segment or node moved", but could not find a suitable event...)
 	ja_wazeMap.events.register("mouseup", null, ja_calculate);
 
 	//HTML changes after login. Better do init again.
@@ -103,15 +117,15 @@ function junctionangle_init()
 				filter: new ja_OpenLayers.Filter.Comparison({
 					  type: ja_OpenLayers.Filter.Comparison.EQUAL_TO,
 					  property: "ja_type",
-					  value: "junction",
+					  value: "junction"
 				  }), 
 				symbolizer: {
 					pointRadius: 13,
 					fontSize: "12px",
 					fillColor: "#4cc600",
-					strokeColor: "#183800",
+					strokeColor: "#183800"
 				}
-			}),
+			})
 		]
 	});
 
@@ -133,19 +147,14 @@ function junctionangle_init()
 		ja_log(ja_selectionManager,3);
 		ja_log(ja_mapLayer,3);
 		ja_log(ja_OpenLayers,3);
+		//try to resize the layer selection box... Apparently the only (easy) way is to actually override the CSS
+		var ja_newSwitcherStyle = $('<style>.WazeControlLayerSwitcher:hover {background-color: #FFFFFF; max-height: 390px; width: 200px;}</style>');
+		$('html > head').append(ja_newSwitcherStyle);
 	}
 }
 
 function ja_calculate()
 {
-	//FIXME: this is the ugliest hack ever.. maybe.
-	ls = $('[id^="Waze.Control.LayerSwitcher_"]')[0];
-	ja_log(ls,3);
-	//for whatever reason, the layerswitch is not resizing properly, so we change the zoom slightly ;)
-	//this is reset every now ant then, so just reset it again
-	ls.children[1].style.zoom = "95%";
-	//now our layer should be visible also =)
-
 	//clear old info
 	ja_mapLayer.destroyFeatures();
 
@@ -273,7 +282,7 @@ function ja_calculate()
 			}
 
 			
-			ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + "(" + a2 + ") and position for label should be at " + ha, 3);
+			ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + " and position for label should be at " + ha, 3);
 
 			//put the angle point
 			ja_features.push(new ja_OpenLayers.Feature.Vector(
@@ -329,7 +338,7 @@ function ja_get_next_to_last_point(segment) {
 
 //get the absolute angle for a segment end point
 function ja_getAngle(ja_node, ja_segment) {
-	if(ja_node == null || ja_segment == null) return;
+	if(ja_node == null || ja_segment == null) return null;
 	if(ja_segment.attributes.fromNodeID == ja_node) {
 		ja_dx = ja_get_second_point(ja_segment).x - ja_get_first_point(ja_segment).x;
 		ja_dy = ja_get_second_point(ja_segment).y - ja_get_first_point(ja_segment).y;

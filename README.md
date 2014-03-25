@@ -1,7 +1,13 @@
 WME-ja
 ======
 
-Waze Map Editor (WME) addon to help with junction design. If two connected segments are selected, it shows the junction angle. I try to test with both Chrome and Firefox (Greasemonkey), but anything might break at any given time anyway :stuck_out_tongue_closed_eyes:
+Waze Map Editor (WME) addon to help with junction design.
+If two connected segments are selected, it shows the turn angle, otherwise the the angle between each segment.
+I try to test with both Chrome (with Tampermonkey, as the userscript functionality changed) and Firefox (Greasemonkey), 
+but anything might break at any given time anyway :stuck_out_tongue_closed_eyes:
+
+- Update 2013-06-05: Chrome extension published in [chrome web store](https://chrome.google.com/webstore/detail/wme-junctionangle/cfcpfikgmfoghjfpfepmklballeagadf)
+- Update 2013-06-06: Firefox add-on available at [Mozilla addons](https://addons.mozilla.org/en-US/firefox/addon/wme-ja/)
 
 [![Creative Commons License](http://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png)](http://creativecommons.org/licenses/by-nc-sa/3.0/deed.en_US)
 *WME Junction Angle Info extension* by *Michael Wikberg*
@@ -14,6 +20,24 @@ Also available at http://userscripts.org/scripts/show/160864
 ![Screenshot](http://wikberg.fi/grfx/wme_ja.png)
 
 ###Changelog
+####1.5.7
+- Remove 2 (of 4) Firefox extension validation warnings
+
+####1.5.6
+- Fixed URL detection to run script on localized editor also.
+
+####1.5.5
+- Fixed layer selection div size (now the junction angles layer should always be visible in the list)
+
+####1.5.4
+- Misc tweaks for browser addon capabilities
+- Added new editor URLs
+
+####1.5
+
+#####Fixes:
+- Undefined reference on 'a2' in debug mode #10 (thanks to [bensmithurst](https://github.com/bensmithurst))
+- Misc small fixes
 
 ####1.2
 
