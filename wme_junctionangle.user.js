@@ -12,7 +12,8 @@
 
 /**
  * Copyright 2013 Michael Wikberg <michael@wikberg.fi>
- * 
+ * WME Junction Angle Info extension is licensed under a Creative Commons 
+ * Attribution-NonCommercial-ShareAlike 3.0 Unported License.
  */
 var junctionangle_version = "1.4";
 var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
