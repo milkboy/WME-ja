@@ -148,7 +148,8 @@ function junctionangle_init()
 		ja_log(ja_mapLayer,3);
 		ja_log(ja_OpenLayers,3);
 		//try to resize the layer selection box... Apparently the only (easy) way is to actually override the CSS
-		var ja_newSwitcherStyle = $('<style>.WazeControlLayerSwitcher:hover {background-color: #FFFFFF; max-height: 390px; width: 200px;}</style>');
+		//ja_log("FIXME: what is the original height of .WazeControlLayerSwitcher??",0);
+		var ja_newSwitcherStyle = $('<style>.WazeControlLayerSwitcher:hover {background-color: #FFFFFF; max-height: 1390px; width: 200px;}</style>');
 		$('html > head').append(ja_newSwitcherStyle);
 	}
 }
