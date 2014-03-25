@@ -20,9 +20,11 @@ Also available at http://userscripts.org/scripts/show/160864
 ![Screenshot](http://wikberg.fi/grfx/wme_ja.png)
 
 ###Changelog
+####1.5.8
+- Updates for new WME by several contributors (sorry if I missed someone); Paweł Pyrczak, AlanOfTheBerg, berestovskyy, tk85
 ####1.5.7
 - Remove 2 (of 4) Firefox extension validation warnings
-
+AlanOfTheBerg
 ####1.5.6
 - Fixed URL detection to run script on localized editor also.
 
