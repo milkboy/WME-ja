@@ -4,7 +4,7 @@
 // @description         Show the angle between two selected (and connected) segments
 // @include             /^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
-// @version             1.5.8
+// @version             1.5.9
 // @grant               none
 // @copyright		2013 Michael Wikberg <michael@wikberg.fi>
 // @license CC-BY-NC-SA
@@ -16,21 +16,19 @@
  * Attribution-NonCommercial-ShareAlike 3.0 Unported License.
  *
  * Contributions by:
- *     2014 Paweł Pyrczak <support@pyrczak.pl>
+ *     2014 Paweł Pyrczak "tkr85" <support@pyrczak.pl>
  *     2014 "AlanOfTheBerg" <alanoftheberg@gmail.com>
  *     2014 "berestovskyy" <?>
- *     2014 "tk85" <?>
  */
 
 function run_ja() {
 
-    var junctionangle_version = "1.5.8";
+    var junctionangle_version = "1.5.9";
     var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
     var $;
     var ja_features = [];
 
     function ja_bootstrap() {
-        //
         try {
             if ((typeof window.Waze.map != undefined) && (undefined != typeof window.Waze.map.events.register) && (undefined != typeof window.Waze.selectionManager.events.register ) && (undefined != typeof window.Waze.loginManager.events.register)) {
                 setTimeout(junctionangle_init, 500);
@@ -40,7 +38,6 @@ function run_ja() {
         } catch (err) {
             setTimeout(ja_bootstrap, 1000);
         }
-
     }
 
     function ja_log(ja_log_msg, ja_log_level) {
@@ -60,8 +57,6 @@ function run_ja() {
         //Listen for selected nodes change event
         window.Waze.selectionManager.events.register("selectionchanged", null, ja_calculate);
 
-        //mouse button released (FIXME: wanted to listen to "segment or node moved", but could not find a suitable event...)
-        // FIXED
         window.Waze.model.segments.events.on({
             "objectschanged": ja_calculate,
             "objectsremoved": ja_calculate
@@ -71,7 +66,7 @@ function run_ja() {
             "objectsremoved": ja_calculate
         });
 
-        //HTML changes after login. Better do init again.
+        //HTML changes after login, even though the page is not reloaded. Better do init again.
         window.Waze.loginManager.events.register("afterloginchanged", null, junctionangle_init);
 
         /**
@@ -107,16 +102,32 @@ function run_ja() {
             ]
         });
 
-        //try to see if we already have a layer
-        if (window.Waze.map.getLayersByName("JunctionAngles").length > 0) {
+        //Add support for translations. Default (and fallback) is "en".
+        //Note, don't make typos in "acceleratorName", as it has to match the layer name (with whitespace removed
+        // to actually work. Took me a while to figure that out...
+        I18n.translations.en.layers.name["junction_angles"] = "Junction Angles";
 
-        } else {
+        switch(window.I18n.locale) {
+            case 'sv':
+                I18n.translations.sv.layers.name["junction_angles"] = "Korsningsvinklar";
+                break;
+            case 'fi':
+                I18n.translations.fi.layers.name["junction_angles"] = "Risteyskulmat";
+                break;
+        }
+
+        layername = I18n.translate("layers.name.junction_angles","bar");
+
+        //try to see if we already have a layer
+        if (window.Waze.map.getLayersByName(layername).length == 0) {
+
             // Create a vector layer and give it your style map.
-            ja_mapLayer = new window.OpenLayers.Layer.Vector("JunctionAngles", {
+            ja_mapLayer = new window.OpenLayers.Layer.Vector(layername, {
                 displayInLayerSwitcher: true,
-                uniqueName: "JunctionAngles",
+                uniqueName: "junction_angles",
                 shortcutKey: "S+j",
-                accelerator: "toggleJunctionAngles",
+                accelerator: "toggle" + layername.replace(/\s+/g,''),
+                className: "junction-angles",
                 styleMap: new window.OpenLayers.StyleMap(ja_style)
             });
 
@@ -129,6 +140,9 @@ function run_ja() {
             ja_log(window.Waze.selectionManager, 3);
             ja_log(ja_mapLayer, 3);
             ja_log(window.OpenLayers, 3);
+        } else {
+            ja_log("OH OH.. We already had a layer?", 0);
+            ja_log(window.Waze.map.layers, 0);
         }
     }
 
@@ -334,6 +348,7 @@ function run_ja() {
     ja_bootstrap();
 }
 
+//Dynamically create, add and run the script in the real page context
 var DLscript = document.createElement("script");
 DLscript.textContent = '' +
     run_ja.toString() + ' \n' +
