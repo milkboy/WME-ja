@@ -141,8 +141,7 @@ function run_ja() {
             ja_log(ja_mapLayer, 3);
             ja_log(window.OpenLayers, 3);
         } else {
-            ja_log("OH OH.. We already had a layer?", 0);
-            ja_log(window.Waze.map.layers, 0);
+            ja_log("Oh, nice.. We already had a layer?", 3);
         }
     }
 
