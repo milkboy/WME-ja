@@ -23,7 +23,7 @@
 
 function run_ja() {
 
-    var junctionangle_version = "1.5.9";
+    var junctionangle_version = "1.5.10";
     var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
     var $;
     var ja_features = [];
