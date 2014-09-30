@@ -4,7 +4,7 @@
 // @description         Show the angle between two selected (and connected) segments
 // @include             /^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
-// @version             1.5.9
+// @version             1.5.9.1
 // @grant               none
 // @copyright		2013 Michael Wikberg <michael@wikberg.fi>
 // @license CC-BY-NC-SA
@@ -119,7 +119,7 @@ function run_ja() {
         layername = I18n.translate("layers.name.junction_angles","bar");
 
         //try to see if we already have a layer
-        if (window.Waze.map.getLayersByName(layername).length == 0) {
+        if (window.Waze.map.getLayersBy("uniqueName","junction_angles").length == 0) {
 
             // Create a vector layer and give it your style map.
             ja_mapLayer = new window.OpenLayers.Layer.Vector(layername, {
@@ -156,23 +156,23 @@ function run_ja() {
 
         for (i = 0; i < window.Waze.selectionManager.selectedItems.length; i++) {
             ja_log(window.Waze.selectionManager.selectedItems[i], 3);
-            switch (window.Waze.selectionManager.selectedItems[i].type) {
+            switch (window.Waze.selectionManager.selectedItems[i].model.type) {
                 case "node":
-                    ja_nodes.push(window.Waze.selectionManager.selectedItems[i].fid);
+                    ja_nodes.push(window.Waze.selectionManager.selectedItems[i].model.attributes.id);
                     break;
                 case "segment":
                     //segments selected?
-                    if (window.Waze.selectionManager.selectedItems[i].attributes.fromNodeID != null &&
-                        ja_nodes.indexOf(window.Waze.selectionManager.selectedItems[i].attributes.fromNodeID) == -1) {
-                        ja_nodes.push(window.Waze.selectionManager.selectedItems[i].attributes.fromNodeID);
+                    if (window.Waze.selectionManager.selectedItems[i].model.attributes.fromNodeID != null &&
+                        ja_nodes.indexOf(window.Waze.selectionManager.selectedItems[i].model.attributes.fromNodeID) == -1) {
+                        ja_nodes.push(window.Waze.selectionManager.selectedItems[i].model.attributes.fromNodeID);
                     }
-                    if (ja_nodes.indexOf(window.Waze.selectionManager.selectedItems[i].attributes.toNodeID != null &&
-                        ja_nodes.indexOf(window.Waze.selectionManager.selectedItems[i].attributes.toNodeID) == -1)) {
-                        ja_nodes.push(window.Waze.selectionManager.selectedItems[i].attributes.toNodeID);
+                    if (ja_nodes.indexOf(window.Waze.selectionManager.selectedItems[i].model.attributes.toNodeID != null &&
+                        ja_nodes.indexOf(window.Waze.selectionManager.selectedItems[i].model.attributes.toNodeID) == -1)) {
+                        ja_nodes.push(window.Waze.selectionManager.selectedItems[i].model.attributes.toNodeID);
                     }
                     break;
                 default:
-                    ja_log("Found unknown item type: " + window.Waze.selectionManager.selectedItems[i].type, 1);
+                    ja_log("Found unknown item type: " + window.Waze.selectionManager.selectedItems[i].model.type, 1);
             }
         }
 
@@ -182,6 +182,7 @@ function run_ja() {
             node = window.Waze.model.nodes.get(ja_nodes[i]);
             if (node == null || !node.hasOwnProperty('attributes')) {
                 //Oh oh.. should not happen?
+                ja_log("Oh oh.. should not happen?",1);
                 ja_log(ja_nodes, 2);
                 ja_log(window.Waze.model, 3);
                 ja_log(window.Waze.model.nodes, 3);
