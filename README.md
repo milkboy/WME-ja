@@ -20,6 +20,9 @@ Also available at http://userscripts.org/scripts/show/160864
 ![Screenshot](http://wikberg.fi/grfx/wme_ja.png)
 
 ###Changelog
+####1.5.10
+- Fixes by tkr85 (after latest WME update)
+
 ####1.5.9
 - Added support for translations and the new beta editor URL.
 
