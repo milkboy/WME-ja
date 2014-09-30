@@ -4,7 +4,7 @@
 // @description         Show the angle between two selected (and connected) segments
 // @include             /^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
-// @version             1.5.9.1
+// @version             1.5.10
 // @grant               none
 // @copyright			2013 Michael Wikberg <michael@wikberg.fi>
 // @license				CC-BY-NC-SA
