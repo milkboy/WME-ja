@@ -78,7 +78,7 @@ function run_ja() {
             strokeWidth: 2,
             label: "${angle}",
             fontWeight: "bold",
-            pointRadius: 10,
+            pointRadius: 10 + (rounding < 0 ? 4*-rounding : 0),
             fontSize: "10px"
         }, {
             rules: [
@@ -219,6 +219,7 @@ function run_ja() {
             ja_log(angles, 3);
             ja_log(selected_segments, 3);
 
+            var ja_label_distance;
             switch (window.Waze.map.zoom) {
                 case 9:
                     ja_label_distance = 4;
@@ -248,6 +249,9 @@ function run_ja() {
                     ja_label_distance = 400;
                     break;
             }
+
+            ja_label_distance = ja_label_distance * (1+(rounding < 0 ? 0.2*-rounding : 0));
+
             ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
 
             //if we have two connected segments selected, do some magic to get the turn angle only =)
