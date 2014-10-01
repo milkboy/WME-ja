@@ -27,6 +27,7 @@ function run_ja() {
     var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
     var $;
     var ja_features = [];
+    var rounding = -2; //number of digits to round: -2 -> xx.yy, 0-> xx, 2->x00
 
     function ja_bootstrap() {
         try {
@@ -43,7 +44,6 @@ function run_ja() {
     function ja_log(ja_log_msg, ja_log_level) {
         if (ja_log_level <= junctionangle_debug) {
             if (typeof ja_log_msg == "object") {
-                //ja_log(arguments.callee.caller.toString(), ja_log_level);
                 console.log(ja_log_msg);
             }
             else {
@@ -93,7 +93,7 @@ function run_ja() {
                         value: "junction"
                     }),
                     symbolizer: {
-                        pointRadius: 13,
+                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
                         fontSize: "12px",
                         fillColor: "#4cc600",
                         strokeColor: "#183800"
@@ -284,7 +284,7 @@ function run_ja() {
                         node.geometry.x + (ja_extra_space_multiplier * ja_label_distance * Math.cos((ha * Math.PI) / 180)),
                         node.geometry.y + (ja_extra_space_multiplier * ja_label_distance * Math.sin((ha * Math.PI) / 180))
                     )
-                    , { angle: Math.round(Math.abs(180 - a)) + "°", ja_type: "junction" }
+                    , { angle: ja_round(Math.abs(180 - a)) + "°", ja_type: "junction" }
                 ));
             }
             else {
@@ -299,7 +299,7 @@ function run_ja() {
                         new window.OpenLayers.Geometry.Point(
                             node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
                         )
-                        , { angle: Math.round(a) + "°", ja_type: "generic" }
+                        , { angle: ja_round(a) + "°", ja_type: "generic" }
                     ));
                 }
             }
@@ -343,6 +343,38 @@ function run_ja() {
         ja_log(ja_node + " / " + ja_segment + ": dx:" + ja_dx + ", dy:" + ja_dy);
         ja_angle = Math.atan2(ja_dy, ja_dx);
         return (360 + (ja_angle * 180 / Math.PI)) % 360;
+    }
+	
+    /**
+     * Decimal adjustment of a number. Borrowed (with some modifications) from
+     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round
+     * ja_round(55.55, -1); // 55.6
+     * ja_round(55.549, -1); // 55.5
+     * ja_round(55, 1); // 60
+     * ja_round(54.9, 1); // 50
+     *
+     * @param	{String}	type	The type of adjustment.
+     * @param	{Number}	value	The number.
+     * @param	{Integer}	exp		The exponent (the 10 logarithm of the adjustment base).
+     * @returns	{Number}			The adjusted value.
+     */
+    function ja_round(value) {
+        // If the exp is undefined or zero...
+        if (typeof rounding === 'undefined' || +rounding === 0) {
+            return Math.round(value);
+        }
+        value = +value;
+        rounding = +rounding;
+        // If the value is not a number or the exp is not an integer...
+        if (isNaN(value) || !(typeof rounding === 'number' && rounding % 1 === 0)) {
+            return NaN;
+        }
+        // Shift
+        value = value.toString().split('e');
+        value = Math.round(+(value[0] + 'e' + (value[1] ? (+value[1] - exp) : -rounding)));
+        // Shift back
+        value = value.toString().split('e');
+        return +(value[0] + 'e' + (value[1] ? (+value[1] + rounding) : rounding));
     }
 
     ja_bootstrap();
