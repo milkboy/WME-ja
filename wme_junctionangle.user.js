@@ -423,13 +423,16 @@ function run_ja() {
 
                 ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + " and position for label should be at " + ha, 3);
 
+                //Guess some routing instructions based on segment types, angles etc
+                ja_junction_type = ja_guess_routing_instruction(node, ja_selected[0][1], ja_selected[1][1], angles);
+                ja_log("Type is: " + ja_junction_type, 3);
                 //put the angle point
                 ja_features.push(new window.OpenLayers.Feature.Vector(
                     new window.OpenLayers.Geometry.Point(
                         node.geometry.x + (ja_extra_space_multiplier * ja_label_distance * Math.cos((ha * Math.PI) / 180)),
                         node.geometry.y + (ja_extra_space_multiplier * ja_label_distance * Math.sin((ha * Math.PI) / 180))
                     )
-                    , { angle: ja_round(Math.abs(180 - a)) + "°", ja_type: "junction" }
+                    , { angle: ja_round(Math.abs(180 - a)) + "°", ja_type: ja_junction_type }
                 ));
             }
             else {
