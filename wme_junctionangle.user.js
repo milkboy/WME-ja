@@ -439,7 +439,7 @@ function run_ja() {
         }
         // Shift
         value = value.toString().split('e');
-        value = Math.round(+(value[0] + 'e' + (value[1] ? (+value[1] - exp) : -rounding)));
+        value = Math.round(+(value[0] + 'e' + (value[1] ? (+value[1] - rounding) : -rounding)));
         // Shift back
         value = value.toString().split('e');
         return +(value[0] + 'e' + (value[1] ? (+value[1] + rounding) : rounding));
