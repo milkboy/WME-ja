@@ -29,6 +29,8 @@ function run_ja() {
     var ja_features = [];
     var rounding = -2; //number of digits to round: -2 -> xx.yy, 0-> xx, 2->x00
 
+    var last_restart = 0;
+
     function ja_bootstrap() {
         try {
             if ((typeof window.Waze.map != undefined) && (undefined != typeof window.Waze.map.events.register) && (undefined != typeof window.Waze.selectionManager.events.register ) && (undefined != typeof window.Waze.loginManager.events.register)) {
@@ -344,7 +346,10 @@ function run_ja() {
                     //Meh. Something went wrong, and we lost track of the segment. This needs a proper fix, but for now
                     // it should be sufficient to just restart the calculation
                     ja_log("Failed to read segment data from model. Restarting calculations.", 1);
-                    setTimeout(ja_calculate, 100);
+                    if(last_restart == 0) {
+                        last_restart = new Date().getTime();
+                        setTimeout(ja_calculate, 500);
+                    }
                     return 4;
                 }
                 a = ja_getAngle(ja_nodes[i], s);
@@ -456,6 +461,7 @@ function run_ja() {
         ja_log(ja_features, 2);
         //Update the displayed angles
         ja_mapLayer.addFeatures(ja_features);
+        last_restart = 0;
     }
 
     function ja_points_equal(point1, point2) {
