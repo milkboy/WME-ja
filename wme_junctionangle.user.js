@@ -66,6 +66,13 @@ function run_ja() {
             "objectsremoved": ja_calculate
         });
 
+        /*
+        //Testing
+        window.Waze.map.events.on({
+            "zoomend": ja_calculate
+        });
+        */
+
         //HTML changes after login, even though the page is not reloaded. Better do init again.
         window.Waze.loginManager.events.register("afterloginchanged", null, junctionangle_init);
 
@@ -98,7 +105,60 @@ function run_ja() {
                         fillColor: "#4cc600",
                         strokeColor: "#183800"
                     }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction_none"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#abb7ff", //pale blue
+                        strokeColor: "#183800"
+                    }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction_keep"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#abb7ff", //pale blue
+                        strokeColor: "#183800"
+                    }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction_exit"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#abb7ff", //pale blue
+                        strokeColor: "#183800"
+                    }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction_problem"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#a0a0a0", //gray
+                        strokeColor: "#183800"
+                    }
                 })
+
             ]
         });
 
