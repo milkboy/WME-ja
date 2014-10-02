@@ -339,7 +339,14 @@ function run_ja() {
             selected_segments = 0;
 
             for (j = 0; j < segments.length; j++) {
-                s = window.Waze.model.segments.get(segments[j]);
+                s = node.model.segments.objects[segments[j]];
+                if(typeof s === 'undefined') {
+                    //Meh. Something went wrong, and we lost track of the segment. This needs a proper fix, but for now
+                    // it should be sufficient to just restart the calculation
+                    ja_log("Failed to read segment data from model. Restarting calculations.", 1);
+                    setTimeout(ja_calculate, 100);
+                    return 4;
+                }
                 a = ja_getAngle(ja_nodes[i], s);
                 ja_log("j: " + j + "; Segment " + segments[j] + " angle is " + a, 2);
                 angles[j] = [a, segments[j], s != null ? s.isSelected() : false];
