@@ -316,7 +316,9 @@ function run_ja() {
             if (node == null || !node.hasOwnProperty('attributes')) {
                 //Oh oh.. should not happen?
                 ja_log("Oh oh.. should not happen?",1);
-                ja_log(ja_nodes, 2);
+                ja_log(node, 2);
+                ja_log(ja_nodes[i], 2);
+                //ja_log(ja_nodes, 2);
                 ja_log(window.Waze.model, 3);
                 ja_log(window.Waze.model.nodes, 3);
                 continue;
@@ -339,12 +341,12 @@ function run_ja() {
             for (j = 0; j < segments.length; j++) {
                 s = window.Waze.model.segments.get(segments[j]);
                 a = ja_getAngle(ja_nodes[i], s);
-                ja_log("j: " + j + "; Segment " + segments[j] + " angle is " + a, 3);
+                ja_log("j: " + j + "; Segment " + segments[j] + " angle is " + a, 2);
                 angles[j] = [a, segments[j], s != null ? s.isSelected() : false];
                 if (s != null ? s.isSelected() : false) selected_segments++;
             }
 
-            ja_log(angles, 2);
+            ja_log(angles, 1);
             //sort angle data (ascending)
             angles.sort(function (a, b) {
                 return a[0] - b[0]
@@ -408,7 +410,6 @@ function run_ja() {
                 }
 
                 if (a > 180) {
-                    //a2 = a - 180;
                     ha = ha + 180;
                 }
 
@@ -469,6 +470,8 @@ function run_ja() {
 
     //get the absolute angle for a segment end point
     function ja_getAngle(ja_node, ja_segment) {
+        ja_log("node: " + ja_node, 2);
+        ja_log("segment: " + ja_segment, 2);
         if (ja_node == null || ja_segment == null) return null;
         if (ja_segment.attributes.fromNodeID == ja_node) {
             ja_dx = ja_get_second_point(ja_segment).x - ja_get_first_point(ja_segment).x;
@@ -477,7 +480,7 @@ function run_ja() {
             ja_dx = ja_get_next_to_last_point(ja_segment).x - ja_get_last_point(ja_segment).x;
             ja_dy = ja_get_next_to_last_point(ja_segment).y - ja_get_last_point(ja_segment).y;
         }
-        ja_log(ja_node + " / " + ja_segment + ": dx:" + ja_dx + ", dy:" + ja_dy);
+        ja_log(ja_node + " / " + ja_segment + ": dx:" + ja_dx + ", dy:" + ja_dy, 2);
         ja_angle = Math.atan2(ja_dy, ja_dx);
         return (360 + (ja_angle * 180 / Math.PI)) % 360;
     }
