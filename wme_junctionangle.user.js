@@ -27,6 +27,9 @@ function run_ja() {
     var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
     var $;
     var ja_features = [];
+    var rounding = 0; //number of digits to round: -2 -> xx.yy, 0-> xx, 2->x00
+
+    var last_restart = 0;
 
     function ja_bootstrap() {
         try {
@@ -43,7 +46,6 @@ function run_ja() {
     function ja_log(ja_log_msg, ja_log_level) {
         if (ja_log_level <= junctionangle_debug) {
             if (typeof ja_log_msg == "object") {
-                //ja_log(arguments.callee.caller.toString(), ja_log_level);
                 console.log(ja_log_msg);
             }
             else {
@@ -66,6 +68,13 @@ function run_ja() {
             "objectsremoved": ja_calculate
         });
 
+        /*
+        //Testing
+        window.Waze.map.events.on({
+            "zoomend": ja_calculate
+        });
+        */
+
         //HTML changes after login, even though the page is not reloaded. Better do init again.
         window.Waze.loginManager.events.register("afterloginchanged", null, junctionangle_init);
 
@@ -78,7 +87,7 @@ function run_ja() {
             strokeWidth: 2,
             label: "${angle}",
             fontWeight: "bold",
-            pointRadius: 10,
+            pointRadius: 10 + (rounding < 0 ? 4*-rounding : 0),
             fontSize: "10px"
         }, {
             rules: [
@@ -93,12 +102,65 @@ function run_ja() {
                         value: "junction"
                     }),
                     symbolizer: {
-                        pointRadius: 13,
+                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
                         fontSize: "12px",
                         fillColor: "#4cc600",
                         strokeColor: "#183800"
                     }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction_none"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#abb7ff", //pale blue
+                        strokeColor: "#183800"
+                    }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction_keep"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#abb7ff", //pale blue
+                        strokeColor: "#183800"
+                    }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction_exit"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#abb7ff", //pale blue
+                        strokeColor: "#183800"
+                    }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction_problem"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#a0a0a0", //gray
+                        strokeColor: "#183800"
+                    }
                 })
+
             ]
         });
 
@@ -145,7 +207,78 @@ function run_ja() {
         }
     }
 
+    /**
+     *
+     * @param node Junction node
+     * @param s_in "In" segment id
+     * @param s_out "Out" segment id
+     * @param angles array of segment absolute angles [0] angle, [1] segment id, 2[?]
+     * @returns {string}
+     */
+    function ja_guess_routing_instruction(node, s_in, s_out, angles) {
+        ja_log(node, 3);
+        ja_log(s_in, 3);
+        ja_log(s_out, 3);
+        ja_log(angles, 3);
+
+        for(i=0; i< angles.length; i++) {
+            ja_log(angles[i], 3);
+            if (angles[i][1] == s_in) {
+                s_in = angles[i];
+                break;
+            }
+        }
+        for(i=0; i< angles.length; i++) {
+            ja_log(angles[i], 3);
+            if(angles[i][1] == s_out) {
+                s_out = angles[i];
+                break;
+            }
+        }
+
+        ja_log(s_in, 3);
+        ja_log(s_out, 3);
+
+        var angle = (180 + (s_in[0] - s_out[0])) % 360;
+        ja_log("turn angle is: " + angle, 2);
+        //No other possible turns
+        if(node.attributes.segIDs.length <= 2) return "junction_none"; //No instruction
+        //Is it a roundabout?
+        if(false) {
+            ja_log("Roundabout logic", 3);
+            //FIXME
+        } else {
+            if(Math.abs(angle) <= 44) {
+                ja_log("Turn is <= 44", 2);
+                //other unrestricted <45 turns?
+                for(i=0; i< angles.length; i++) {
+                    ja_log("Checking angle " + i, 2);
+                    ja_log(angles[i],2);
+                    if(angles[i][1] != s_in[1] && angles[i][1] != s_out[1]) {
+                        //FIXME: check for restricted turn also
+                        if(Math.abs((180 + (s_in[0] - angles[i][0])) % 360) < 45) {
+                            ja_log("Found other turn <= 44", 3);
+                            return "junction_turn";
+                        }
+                    }
+                }
+                ja_log("\"straight\": no instruction", 3);
+                return "junction_none";
+            } else if(Math.abs(angle) <= 46) {
+                ja_log("Angle is in gray zone 44-46", 3);
+                return "junction_problem";
+            } else {
+                ja_log("Normal turn", 3);
+                return "junction"; //Normal turn (left|right)
+            }
+        }
+        ja_log("No matching turn instruction logic", 3);
+        return "junction"; //default
+    }
+
     function ja_calculate() {
+        ja_log(window.Waze.map, 3);
+        if(typeof ja_mapLayer === 'undefined') { return 1;}
         //clear old info
         ja_mapLayer.destroyFeatures();
 
@@ -171,8 +304,10 @@ function run_ja() {
                         ja_nodes.push(window.Waze.selectionManager.selectedItems[i].model.attributes.toNodeID);
                     }
                     break;
+                case "venue":
+                    break;
                 default:
-                    ja_log("Found unknown item type: " + window.Waze.selectionManager.selectedItems[i].model.type, 1);
+                    ja_log("Found unknown item type: " + window.Waze.selectionManager.selectedItems[i].model.type, 2);
             }
         }
 
@@ -183,7 +318,9 @@ function run_ja() {
             if (node == null || !node.hasOwnProperty('attributes')) {
                 //Oh oh.. should not happen?
                 ja_log("Oh oh.. should not happen?",1);
-                ja_log(ja_nodes, 2);
+                ja_log(node, 2);
+                ja_log(ja_nodes[i], 2);
+                //ja_log(ja_nodes, 2);
                 ja_log(window.Waze.model, 3);
                 ja_log(window.Waze.model.nodes, 3);
                 continue;
@@ -204,14 +341,24 @@ function run_ja() {
             selected_segments = 0;
 
             for (j = 0; j < segments.length; j++) {
-                s = window.Waze.model.segments.get(segments[j]);
+                s = node.model.segments.objects[segments[j]];
+                if(typeof s === 'undefined') {
+                    //Meh. Something went wrong, and we lost track of the segment. This needs a proper fix, but for now
+                    // it should be sufficient to just restart the calculation
+                    ja_log("Failed to read segment data from model. Restarting calculations.", 1);
+                    if(last_restart == 0) {
+                        last_restart = new Date().getTime();
+                        setTimeout(ja_calculate, 500);
+                    }
+                    return 4;
+                }
                 a = ja_getAngle(ja_nodes[i], s);
-                ja_log("j: " + j + "; Segment " + segments[j] + " angle is " + a, 3);
+                ja_log("j: " + j + "; Segment " + segments[j] + " angle is " + a, 2);
                 angles[j] = [a, segments[j], s != null ? s.isSelected() : false];
                 if (s != null ? s.isSelected() : false) selected_segments++;
             }
 
-            ja_log(angles, 2);
+            ja_log(angles, 1);
             //sort angle data (ascending)
             angles.sort(function (a, b) {
                 return a[0] - b[0]
@@ -219,6 +366,7 @@ function run_ja() {
             ja_log(angles, 3);
             ja_log(selected_segments, 3);
 
+            var ja_label_distance;
             switch (window.Waze.map.zoom) {
                 case 9:
                     ja_label_distance = 4;
@@ -248,6 +396,9 @@ function run_ja() {
                     ja_label_distance = 400;
                     break;
             }
+
+            ja_label_distance = ja_label_distance * (1+(rounding < 0 ? 0.2*-rounding : 0));
+
             ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
 
             //if we have two connected segments selected, do some magic to get the turn angle only =)
@@ -271,20 +422,22 @@ function run_ja() {
                 }
 
                 if (a > 180) {
-                    //a2 = a - 180;
                     ha = ha + 180;
                 }
 
 
                 ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + " and position for label should be at " + ha, 3);
 
+                //Guess some routing instructions based on segment types, angles etc
+                ja_junction_type = ja_guess_routing_instruction(node, ja_selected[0][1], ja_selected[1][1], angles);
+                ja_log("Type is: " + ja_junction_type, 3);
                 //put the angle point
                 ja_features.push(new window.OpenLayers.Feature.Vector(
                     new window.OpenLayers.Geometry.Point(
                         node.geometry.x + (ja_extra_space_multiplier * ja_label_distance * Math.cos((ha * Math.PI) / 180)),
                         node.geometry.y + (ja_extra_space_multiplier * ja_label_distance * Math.sin((ha * Math.PI) / 180))
                     )
-                    , { angle: Math.round(Math.abs(180 - a)) + "°", ja_type: "junction" }
+                    , { angle: ja_round(Math.abs(180 - a)) + "°", ja_type: ja_junction_type }
                 ));
             }
             else {
@@ -299,7 +452,7 @@ function run_ja() {
                         new window.OpenLayers.Geometry.Point(
                             node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
                         )
-                        , { angle: Math.round(a) + "°", ja_type: "generic" }
+                        , { angle: ja_round(a) + "°", ja_type: "generic" }
                     ));
                 }
             }
@@ -308,6 +461,7 @@ function run_ja() {
         ja_log(ja_features, 2);
         //Update the displayed angles
         ja_mapLayer.addFeatures(ja_features);
+        last_restart = 0;
     }
 
     function ja_points_equal(point1, point2) {
@@ -332,6 +486,8 @@ function run_ja() {
 
     //get the absolute angle for a segment end point
     function ja_getAngle(ja_node, ja_segment) {
+        ja_log("node: " + ja_node, 2);
+        ja_log("segment: " + ja_segment, 2);
         if (ja_node == null || ja_segment == null) return null;
         if (ja_segment.attributes.fromNodeID == ja_node) {
             ja_dx = ja_get_second_point(ja_segment).x - ja_get_first_point(ja_segment).x;
@@ -340,9 +496,41 @@ function run_ja() {
             ja_dx = ja_get_next_to_last_point(ja_segment).x - ja_get_last_point(ja_segment).x;
             ja_dy = ja_get_next_to_last_point(ja_segment).y - ja_get_last_point(ja_segment).y;
         }
-        ja_log(ja_node + " / " + ja_segment + ": dx:" + ja_dx + ", dy:" + ja_dy);
+        ja_log(ja_node + " / " + ja_segment + ": dx:" + ja_dx + ", dy:" + ja_dy, 2);
         ja_angle = Math.atan2(ja_dy, ja_dx);
         return (360 + (ja_angle * 180 / Math.PI)) % 360;
+    }
+	
+    /**
+     * Decimal adjustment of a number. Borrowed (with some modifications) from
+     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round
+     * ja_round(55.55, -1); // 55.6
+     * ja_round(55.549, -1); // 55.5
+     * ja_round(55, 1); // 60
+     * ja_round(54.9, 1); // 50
+     *
+     * @param	{String}	type	The type of adjustment.
+     * @param	{Number}	value	The number.
+     * @param	{Integer}	exp		The exponent (the 10 logarithm of the adjustment base).
+     * @returns	{Number}			The adjusted value.
+     */
+    function ja_round(value) {
+        // If the exp is undefined or zero...
+        if (typeof rounding === 'undefined' || +rounding === 0) {
+            return Math.round(value);
+        }
+        value = +value;
+        rounding = +rounding;
+        // If the value is not a number or the exp is not an integer...
+        if (isNaN(value) || !(typeof rounding === 'number' && rounding % 1 === 0)) {
+            return NaN;
+        }
+        // Shift
+        value = value.toString().split('e');
+        value = Math.round(+(value[0] + 'e' + (value[1] ? (+value[1] - rounding) : -rounding)));
+        // Shift back
+        value = value.toString().split('e');
+        return +(value[0] + 'e' + (value[1] ? (+value[1] + rounding) : rounding));
     }
 
     ja_bootstrap();
