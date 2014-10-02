@@ -206,6 +206,8 @@ function run_ja() {
     }
 
     function ja_calculate() {
+        ja_log(window.Waze.map, 3);
+        if(typeof ja_mapLayer === 'undefined') { return 1;}
         //clear old info
         ja_mapLayer.destroyFeatures();
 
@@ -231,8 +233,10 @@ function run_ja() {
                         ja_nodes.push(window.Waze.selectionManager.selectedItems[i].model.attributes.toNodeID);
                     }
                     break;
+                case "venue":
+                    break;
                 default:
-                    ja_log("Found unknown item type: " + window.Waze.selectionManager.selectedItems[i].model.type, 1);
+                    ja_log("Found unknown item type: " + window.Waze.selectionManager.selectedItems[i].model.type, 2);
             }
         }
 
