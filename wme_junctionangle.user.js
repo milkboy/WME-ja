@@ -205,6 +205,75 @@ function run_ja() {
         }
     }
 
+    /**
+     *
+     * @param node Junction node
+     * @param s_in "In" segment id
+     * @param s_out "Out" segment id
+     * @param angles array of segment absolute angles [0] angle, [1] segment id, 2[?]
+     * @returns {string}
+     */
+    function ja_guess_routing_instruction(node, s_in, s_out, angles) {
+        ja_log(node, 3);
+        ja_log(s_in, 3);
+        ja_log(s_out, 3);
+        ja_log(angles, 3);
+
+        for(i=0; i< angles.length; i++) {
+            ja_log(angles[i], 3);
+            if (angles[i][1] == s_in) {
+                s_in = angles[i];
+                break;
+            }
+        }
+        for(i=0; i< angles.length; i++) {
+            ja_log(angles[i], 3);
+            if(angles[i][1] == s_out) {
+                s_out = angles[i];
+                break;
+            }
+        }
+
+        ja_log(s_in, 3);
+        ja_log(s_out, 3);
+
+        var angle = (180 + (s_in[0] - s_out[0])) % 360;
+        ja_log("turn angle is: " + angle, 2);
+        //No other possible turns
+        if(node.attributes.segIDs.length <= 2) return "junction_none"; //No instruction
+        //Is it a roundabout?
+        if(false) {
+            ja_log("Roundabout logic", 3);
+            //FIXME
+        } else {
+            if(Math.abs(angle) <= 44) {
+                ja_log("Turn is <= 44", 2);
+                //other unrestricted <45 turns?
+                for(i=0; i< angles.length; i++) {
+                    ja_log("Checking angle " + i, 2);
+                    ja_log(angles[i],2);
+                    if(angles[i][1] != s_in[1] && angles[i][1] != s_out[1]) {
+                        //FIXME: check for restricted turn also
+                        if(Math.abs((180 + (s_in[0] - angles[i][0])) % 360) < 45) {
+                            ja_log("Found other turn <= 44", 3);
+                            return "junction_turn";
+                        }
+                    }
+                }
+                ja_log("\"straight\": no instruction", 3);
+                return "junction_none";
+            } else if(Math.abs(angle) <= 46) {
+                ja_log("Angle is in gray zone 44-46", 3);
+                return "junction_problem";
+            } else {
+                ja_log("Normal turn", 3);
+                return "junction"; //Normal turn (left|right)
+            }
+        }
+        ja_log("No matching turn instruction logic", 3);
+        return "junction"; //default
+    }
+
     function ja_calculate() {
         ja_log(window.Waze.map, 3);
         if(typeof ja_mapLayer === 'undefined') { return 1;}
