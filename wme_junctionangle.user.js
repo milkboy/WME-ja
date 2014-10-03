@@ -81,7 +81,7 @@ function run_ja() {
                     symbolizer: {
                         pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
                         fontSize: "12px",
-                        fillColor: "#4cc600",
+                        fillColor: ja_getOption("turnInstructionColor"),
                         strokeColor: "#183800"
                     }
                 }),
@@ -94,7 +94,7 @@ function run_ja() {
                     symbolizer: {
                         pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
                         fontSize: "12px",
-                        fillColor: "#abb7ff", //pale blue
+                        fillColor: ja_getOption("noInstructionColor"), //pale blue
                         strokeColor: "#183800"
                     }
                 }),
@@ -133,7 +133,7 @@ function run_ja() {
                     symbolizer: {
                         pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
                         fontSize: "12px",
-                        fillColor: "#a0a0a0", //gray
+                        fillColor: ja_getOption("turnInstructionColor"),
                         strokeColor: "#183800"
                     }
                 })
@@ -144,6 +144,9 @@ function run_ja() {
     }
 
     function junctionangle_init() {
+        //Load saved settings (if any)
+        ja_load();
+
 
         //Listen for selected nodes change event
         window.Waze.selectionManager.events.register("selectionchanged", null, ja_calculate);
@@ -167,13 +170,13 @@ function run_ja() {
         //HTML changes after login, even though the page is not reloaded. Better do init again.
         window.Waze.loginManager.events.register("afterloginchanged", null, junctionangle_init);
 
-        window.addEventListener("beforeunload", ja_apply, false);
+        window.addEventListener("beforeunload", ja_save, false);
 
         /**
          * Add config setting
          */
         var ja_settings = document.createElement("section");
-        ja_settings.innerHTML = "hmm<p>Foo bar</p>";
+        ja_settings.innerHTML = "Junction Angle settings (please be careful, as no validation is performed yet)";
 
         var section = document.createElement('p');
         section.style.paddingTop = "8px";
@@ -181,7 +184,11 @@ function run_ja() {
         section.id = "jaOptions";
         section.innerHTML  = '<b>PLOP</b><br>'
             + '<input type="checkbox" id="_jaCbGuessRouting" /> Guess navigation prompts<br>'
-            + '<input type="submit" value="Apply" onclick="return ja_apply();"> </input>'
+            + '<input type="text" size="10" MAXLENGTH="7" id="_jaTbNoInstructionColor" /> Color for no instruction<br>'
+            + '<input type="text" size="10" MAXLENGTH="7" id="_jaTbTurnInstructionColor" /> Color for normal turn<br>'
+            + '<input type="text" size="10" MAXLENGTH="7" id="_jaTbProblemColor" /> Color for angles to avoid<br>'
+            + '<input type="submit" value="Apply" onclick="return ja_save();"> </input>'
+            + '<input type="submit" value="Reset to default" onclick="return ja_reset();"> </input>'
         ;
         ja_settings.appendChild(section);
 
@@ -240,6 +247,8 @@ function run_ja() {
         } else {
             ja_log("Oh, nice.. We already had a layer?", 3);
         }
+
+        ja_apply();
     }
 
     /**
@@ -256,17 +265,17 @@ function run_ja() {
         ja_log(s_out, 3);
         ja_log(angles, 3);
 
-        for(i=0; i< angles.length; i++) {
-            ja_log(angles[i], 3);
-            if (angles[i][1] == s_in) {
-                s_in = angles[i];
+        for(k=0; k< angles.length; k++) {
+            ja_log(angles[k], 3);
+            if (angles[k][1] == s_in) {
+                s_in = angles[k];
                 break;
             }
         }
-        for(i=0; i< angles.length; i++) {
-            ja_log(angles[i], 3);
-            if(angles[i][1] == s_out) {
-                s_out = angles[i];
+        for(k=0; k< angles.length; k++) {
+            ja_log(angles[k], 3);
+            if(angles[k][1] == s_out) {
+                s_out = angles[k];
                 break;
             }
         }
@@ -286,12 +295,12 @@ function run_ja() {
             if(Math.abs(angle) <= 44) {
                 ja_log("Turn is <= 44", 2);
                 //other unrestricted <45 turns?
-                for(i=0; i< angles.length; i++) {
-                    ja_log("Checking angle " + i, 2);
-                    ja_log(angles[i],2);
-                    if(angles[i][1] != s_in[1] && angles[i][1] != s_out[1]) {
+                for(k=0; k< angles.length; k++) {
+                    ja_log("Checking angle " + k, 2);
+                    ja_log(angles[k],2);
+                    if(angles[k][1] != s_in[1] && angles[k][1] != s_out[1]) {
                         //FIXME: check for restricted turn also
-                        if(Math.abs((180 + (s_in[0] - angles[i][0])) % 360) < 45) {
+                        if(Math.abs((180 + (s_in[0] - angles[k][0])) % 360) < 45) {
                             ja_log("Found other turn <= 44", 3);
                             return "junction_turn";
                         }
@@ -343,6 +352,7 @@ function run_ja() {
                     break;
                 default:
                     ja_log("Found unknown item type: " + window.Waze.selectionManager.selectedItems[i].model.type, 2);
+                    break;
             }
         }
 
@@ -351,7 +361,7 @@ function run_ja() {
         for (i = 0; i < ja_nodes.length; i++) {
             node = window.Waze.model.nodes.get(ja_nodes[i]);
             if (node == null || !node.hasOwnProperty('attributes')) {
-                //Oh oh.. should not happen?
+                //Oh oh.. should not happen? We want to use a node that does not exist
                 ja_log("Oh oh.. should not happen?",1);
                 ja_log(node, 2);
                 ja_log(ja_nodes[i], 2);
@@ -393,7 +403,7 @@ function run_ja() {
                 if (s != null ? s.isSelected() : false) selected_segments++;
             }
 
-            ja_log(angles, 1);
+            ja_log(angles, 2);
             //sort angle data (ascending)
             angles.sort(function (a, b) {
                 return a[0] - b[0]
@@ -464,11 +474,10 @@ function run_ja() {
                 ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + " and position for label should be at " + ha, 3);
 
                 //Guess some routing instructions based on segment types, angles etc
-                if(ja_getOption("guess", false)) {
+                var ja_junction_type = "junction";
+                if(ja_getOption("guess")) {
                     ja_junction_type = ja_guess_routing_instruction(node, ja_selected[0][1], ja_selected[1][1], angles);
                     ja_log("Type is: " + ja_junction_type, 3);
-                } else {
-                    ja_junction_type = "junction";
                 }
                 //put the angle point
                 ja_features.push(new window.OpenLayers.Feature.Vector(
@@ -572,7 +581,7 @@ function run_ja() {
         return +(value[0] + 'e' + (value[1] ? (+value[1] + ja_rounding) : ja_rounding));
     }
 
-    var ja_options;
+    var ja_options = {};
 
     function ja_getOption(name, defaultValue) {
         if(!(name in ja_options)) {
@@ -590,27 +599,45 @@ function run_ja() {
     }
 
     ja_load = function loadJAOptions() {
-        alert("Should load now.");
+        ja_log("Should load settings now.", 2);
         if(localStorage != null) {
-            ja_log("We have local storage! =)",1);
+            ja_log("We have local storage! =)",2);
             ja_options = JSON.parse(localStorage.getItem("wme_ja_options"));
         }
-        if(ja_options == null) ja_options = { };
         ja_log(ja_options, 1);
+        if(ja_options == null) {
+            ja_options = { };
+        } else {
+        }
     };
 
-    ja_apply = function applyJAOptions() {
-        alert('applying options');
+    ja_save = function applyJAOptions() {
         ja_setOption("guess", document.getElementById("_jaCbGuessRouting").checked);
-        window.Waze.map.getLayersBy("uniqueName","junction_angles")[0].styleMap = ja_style();
+        ja_setOption("noInstructionColor", document.getElementById("_jaTbNoInstructionColor").value);
+        ja_setOption("turnInstructionColor", document.getElementById("_jaTbTurnInstructionColor").value);
+        ja_setOption("problemColor", document.getElementById("_jaTbProblemColor").value);
+        ja_apply();
         return false;
     };
 
-    ja_load();
+    ja_apply = function applyJAOptions() {
+        document.getElementById("_jaCbGuessRouting").checked = ja_getOption("guess", false);
+        document.getElementById("_jaTbNoInstructionColor").value = ja_getOption("noInstructionColor", "#abb7ff");
+        document.getElementById("_jaTbTurnInstructionColor").value = ja_getOption("turnInstructionColor", "#4cc600");
+        document.getElementById("_jaTbProblemColor").value = ja_getOption("problemColor", "#a0a0a0");
+        window.Waze.map.getLayersBy("uniqueName","junction_angles")[0].styleMap = ja_style();
+    };
 
-    ja_log(ja_options, 1);
+    ja_reset = function resetJAOptions() {
+        if(localStorage != null) {
+            localStorage.setItem("wme_ja_options","");
+        }
+        ja_options = {};
+        ja_apply();
+    };
 
     ja_bootstrap();
+
 }
 
 //Dynamically create, add and run the script in the real page context
