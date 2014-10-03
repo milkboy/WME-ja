@@ -20,6 +20,10 @@ Also available at http://userscripts.org/scripts/show/160864
 ![Screenshot](http://wikberg.fi/grfx/wme_ja.png)
 
 ###Changelog
+####1.6
+- Add color codes for different turn instructions
+- Add user configurable options
+
 ####1.5.10
 - Fixes by tkr85 (after latest WME update)
 

@@ -5,7 +5,7 @@
   "description": "Waze Map Editor (WME) addon to help with junction design. If two connected segments are selected, it shows the turn angle, otherwise the the angle between each segment.",
   "author": "Michael Wikberg <michael@wikberg.fi>",
   "license": "Creative Commons by-nc-sa 3.0",
-  "version": "1.5.10.1",
+  "version": "1.6",
   "homepage": "https://github.com/milkboy/WME-ja",
   "icon": "ja48.png",
   "lib": "firefox"
