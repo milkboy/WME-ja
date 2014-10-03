@@ -27,9 +27,9 @@ function run_ja() {
     var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
     var $;
     var ja_features = [];
-    var rounding = 0; //number of digits to round: -2 -> xx.yy, 0-> xx, 2->x00
+    var ja_rounding = 0; //number of digits to round: -2 -> xx.yy, 0-> xx, 2->x00
 
-    var last_restart = 0;
+    var ja_last_restart = 0;
 
     function ja_bootstrap() {
         try {
@@ -52,6 +52,95 @@ function run_ja() {
                 console.log("WME Junction Angle: " + ja_log_msg);
             }
         }
+    }
+
+    /**
+     * Make some style settings
+     */
+    function ja_style() {
+        var ja_style = new window.OpenLayers.Style({
+            fillColor: "#ffcc88",
+            strokeColor: "#ff9966",
+            strokeWidth: 2,
+            label: "${angle}",
+            fontWeight: "bold",
+            pointRadius: 10 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
+            fontSize: "10px"
+        }, {
+            rules: [
+                new window.OpenLayers.Rule({
+                    symbolizer: {
+                    }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#4cc600",
+                        strokeColor: "#183800"
+                    }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction_none"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#abb7ff", //pale blue
+                        strokeColor: "#183800"
+                    }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction_keep"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#abb7ff", //pale blue
+                        strokeColor: "#183800"
+                    }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction_exit"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#abb7ff", //pale blue
+                        strokeColor: "#183800"
+                    }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: "junction_problem"
+                    }),
+                    symbolizer: {
+                        pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
+                        fontSize: "12px",
+                        fillColor: "#a0a0a0", //gray
+                        strokeColor: "#183800"
+                    }
+                })
+
+            ]
+        });
+        return ja_style;
     }
 
     function junctionangle_init() {
@@ -78,91 +167,37 @@ function run_ja() {
         //HTML changes after login, even though the page is not reloaded. Better do init again.
         window.Waze.loginManager.events.register("afterloginchanged", null, junctionangle_init);
 
-        /**
-         * Make some style settings
-         */
-        var ja_style = new window.OpenLayers.Style({
-            fillColor: "#ffcc88",
-            strokeColor: "#ff9966",
-            strokeWidth: 2,
-            label: "${angle}",
-            fontWeight: "bold",
-            pointRadius: 10 + (rounding < 0 ? 4*-rounding : 0),
-            fontSize: "10px"
-        }, {
-            rules: [
-                new window.OpenLayers.Rule({
-                    symbolizer: {
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: "junction"
-                    }),
-                    symbolizer: {
-                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
-                        fontSize: "12px",
-                        fillColor: "#4cc600",
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: "junction_none"
-                    }),
-                    symbolizer: {
-                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
-                        fontSize: "12px",
-                        fillColor: "#abb7ff", //pale blue
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: "junction_keep"
-                    }),
-                    symbolizer: {
-                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
-                        fontSize: "12px",
-                        fillColor: "#abb7ff", //pale blue
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: "junction_exit"
-                    }),
-                    symbolizer: {
-                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
-                        fontSize: "12px",
-                        fillColor: "#abb7ff", //pale blue
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: "junction_problem"
-                    }),
-                    symbolizer: {
-                        pointRadius: 13 + (rounding < 0 ? 4*-rounding : 0),
-                        fontSize: "12px",
-                        fillColor: "#a0a0a0", //gray
-                        strokeColor: "#183800"
-                    }
-                })
+        window.addEventListener("beforeunload", ja_apply, false);
 
-            ]
-        });
+        /**
+         * Add config setting
+         */
+        var ja_settings = document.createElement("section");
+        ja_settings.innerHTML = "hmm<p>Foo bar</p>";
+
+        var section = document.createElement('p');
+        section.style.paddingTop = "8px";
+        section.style.textIndent = "16px";
+        section.id = "jaOptions";
+        section.innerHTML  = '<b>PLOP</b><br>'
+            + '<input type="checkbox" id="_jaCbGuessRouting" /> Guess navigation prompts<br>'
+            + '<input type="submit" value="Apply" onclick="return ja_apply();"> </input>'
+        ;
+        ja_settings.appendChild(section);
+
+        var userTabs = document.getElementById('user-info');
+        var navTabs = document.getElementsByClassName('nav-tabs', userTabs)[0];
+        var tabContent = document.getElementsByClassName('tab-content', userTabs)[0];
+
+
+        ja_settings.id = "sidepanel-ja";
+        ja_settings.className = "tab-pane";
+        tabContent.appendChild(ja_settings);
+
+        jatab = document.createElement('li');
+        jatab.innerHTML = '<a href="#sidepanel-ja" data-toggle="tab">JAI</a>';
+        navTabs.appendChild(jatab);
+
 
         //Add support for translations. Default (and fallback) is "en".
         //Note, don't make typos in "acceleratorName", as it has to match the layer name (with whitespace removed
@@ -178,19 +213,19 @@ function run_ja() {
                 break;
         }
 
-        layername = I18n.translate("layers.name.junction_angles","bar");
+        ja_layername = I18n.translate("layers.name.junction_angles","bar");
 
         //try to see if we already have a layer
         if (window.Waze.map.getLayersBy("uniqueName","junction_angles").length == 0) {
 
             // Create a vector layer and give it your style map.
-            ja_mapLayer = new window.OpenLayers.Layer.Vector(layername, {
+            ja_mapLayer = new window.OpenLayers.Layer.Vector(ja_layername, {
                 displayInLayerSwitcher: true,
                 uniqueName: "junction_angles",
                 shortcutKey: "S+j",
-                accelerator: "toggle" + layername.replace(/\s+/g,''),
+                accelerator: "toggle" + ja_layername.replace(/\s+/g,''),
                 className: "junction-angles",
-                styleMap: new window.OpenLayers.StyleMap(ja_style)
+                styleMap: new window.OpenLayers.StyleMap(ja_style())
             });
 
             window.Waze.map.addLayer(ja_mapLayer);
@@ -346,8 +381,8 @@ function run_ja() {
                     //Meh. Something went wrong, and we lost track of the segment. This needs a proper fix, but for now
                     // it should be sufficient to just restart the calculation
                     ja_log("Failed to read segment data from model. Restarting calculations.", 1);
-                    if(last_restart == 0) {
-                        last_restart = new Date().getTime();
+                    if(ja_last_restart == 0) {
+                        ja_last_restart = new Date().getTime();
                         setTimeout(ja_calculate, 500);
                     }
                     return 4;
@@ -397,7 +432,7 @@ function run_ja() {
                     break;
             }
 
-            ja_label_distance = ja_label_distance * (1+(rounding < 0 ? 0.2*-rounding : 0));
+            ja_label_distance = ja_label_distance * (1+(ja_rounding < 0 ? 0.2*-ja_rounding : 0));
 
             ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
 
@@ -429,8 +464,12 @@ function run_ja() {
                 ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + " and position for label should be at " + ha, 3);
 
                 //Guess some routing instructions based on segment types, angles etc
-                ja_junction_type = ja_guess_routing_instruction(node, ja_selected[0][1], ja_selected[1][1], angles);
-                ja_log("Type is: " + ja_junction_type, 3);
+                if(ja_getOption("guess", false)) {
+                    ja_junction_type = ja_guess_routing_instruction(node, ja_selected[0][1], ja_selected[1][1], angles);
+                    ja_log("Type is: " + ja_junction_type, 3);
+                } else {
+                    ja_junction_type = "junction";
+                }
                 //put the angle point
                 ja_features.push(new window.OpenLayers.Feature.Vector(
                     new window.OpenLayers.Geometry.Point(
@@ -461,7 +500,7 @@ function run_ja() {
         ja_log(ja_features, 2);
         //Update the displayed angles
         ja_mapLayer.addFeatures(ja_features);
-        last_restart = 0;
+        ja_last_restart = 0;
     }
 
     function ja_points_equal(point1, point2) {
@@ -516,22 +555,60 @@ function run_ja() {
      */
     function ja_round(value) {
         // If the exp is undefined or zero...
-        if (typeof rounding === 'undefined' || +rounding === 0) {
+        if (typeof ja_rounding === 'undefined' || +ja_rounding === 0) {
             return Math.round(value);
         }
         value = +value;
-        rounding = +rounding;
+        ja_rounding = +ja_rounding;
         // If the value is not a number or the exp is not an integer...
-        if (isNaN(value) || !(typeof rounding === 'number' && rounding % 1 === 0)) {
+        if (isNaN(value) || !(typeof ja_rounding === 'number' && ja_rounding % 1 === 0)) {
             return NaN;
         }
         // Shift
         value = value.toString().split('e');
-        value = Math.round(+(value[0] + 'e' + (value[1] ? (+value[1] - rounding) : -rounding)));
+        value = Math.round(+(value[0] + 'e' + (value[1] ? (+value[1] - ja_rounding) : -ja_rounding)));
         // Shift back
         value = value.toString().split('e');
-        return +(value[0] + 'e' + (value[1] ? (+value[1] + rounding) : rounding));
+        return +(value[0] + 'e' + (value[1] ? (+value[1] + ja_rounding) : ja_rounding));
     }
+
+    var ja_options;
+
+    function ja_getOption(name, defaultValue) {
+        if(!(name in ja_options)) {
+            ja_options[name] = defaultValue;
+        }
+        return ja_options[name];
+    }
+
+    function ja_setOption(name, val) {
+        ja_options[name] = val;
+        if(localStorage) {
+            localStorage.setItem("wme_ja_options", JSON.stringify(ja_options));
+        }
+        ja_log(ja_options,1);
+    }
+
+    ja_load = function loadJAOptions() {
+        alert("Should load now.");
+        if(localStorage != null) {
+            ja_log("We have local storage! =)",1);
+            ja_options = JSON.parse(localStorage.getItem("wme_ja_options"));
+        }
+        if(ja_options == null) ja_options = { };
+        ja_log(ja_options, 1);
+    };
+
+    ja_apply = function applyJAOptions() {
+        alert('applying options');
+        ja_setOption("guess", document.getElementById("_jaCbGuessRouting").checked);
+        window.Waze.map.getLayersBy("uniqueName","junction_angles")[0].styleMap = ja_style();
+        return false;
+    };
+
+    ja_load();
+
+    ja_log(ja_options, 1);
 
     ja_bootstrap();
 }
