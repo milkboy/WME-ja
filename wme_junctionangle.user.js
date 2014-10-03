@@ -182,11 +182,12 @@ function run_ja() {
         section.style.paddingTop = "8px";
         section.style.textIndent = "16px";
         section.id = "jaOptions";
-        section.innerHTML  = '<b>PLOP</b><br>'
+        section.innerHTML  = 'Settings<br>'
+            + '<input type="text" size="2" maxlength="2" id="_jaTbDecimals" /> Number of decimals<br>'
             + '<input type="checkbox" id="_jaCbGuessRouting" /> Guess navigation prompts<br>'
-            + '<input type="text" size="10" MAXLENGTH="7" id="_jaTbNoInstructionColor" /> Color for no instruction<br>'
-            + '<input type="text" size="10" MAXLENGTH="7" id="_jaTbTurnInstructionColor" /> Color for normal turn<br>'
-            + '<input type="text" size="10" MAXLENGTH="7" id="_jaTbProblemColor" /> Color for angles to avoid<br>'
+            + '<input type="text" size="10" maxlength="7" id="_jaTbNoInstructionColor" /> Color for no instruction<br>'
+            + '<input type="text" size="10" maxlength="7" id="_jaTbTurnInstructionColor" /> Color for normal turn<br>'
+            + '<input type="text" size="10" maxlength="7" id="_jaTbProblemColor" /> Color for angles to avoid<br>'
             + '<input type="submit" value="Apply" onclick="return ja_save();"> </input>'
             + '<input type="submit" value="Reset to default" onclick="return ja_reset();"> </input>'
         ;
@@ -260,6 +261,7 @@ function run_ja() {
      * @returns {string}
      */
     function ja_guess_routing_instruction(node, s_in, s_out, angles) {
+        ja_log("Guessing instructions",1);
         ja_log(node, 3);
         ja_log(s_in, 3);
         ja_log(s_out, 3);
@@ -611,11 +613,12 @@ function run_ja() {
         }
     };
 
-    ja_save = function applyJAOptions() {
+    ja_save = function saveJAOptions() {
         ja_setOption("guess", document.getElementById("_jaCbGuessRouting").checked);
         ja_setOption("noInstructionColor", document.getElementById("_jaTbNoInstructionColor").value);
         ja_setOption("turnInstructionColor", document.getElementById("_jaTbTurnInstructionColor").value);
         ja_setOption("problemColor", document.getElementById("_jaTbProblemColor").value);
+        ja_setOption("decimals", -document.getElementById("_jaTbDecimals").value);
         ja_apply();
         return false;
     };
@@ -625,6 +628,8 @@ function run_ja() {
         document.getElementById("_jaTbNoInstructionColor").value = ja_getOption("noInstructionColor", "#abb7ff");
         document.getElementById("_jaTbTurnInstructionColor").value = ja_getOption("turnInstructionColor", "#4cc600");
         document.getElementById("_jaTbProblemColor").value = ja_getOption("problemColor", "#a0a0a0");
+        document.getElementById("_jaTbDecimals").value = -ja_getOption("decimals", 0);
+        ja_rounding = ja_getOption("decimals", 0);
         window.Waze.map.getLayersBy("uniqueName","junction_angles")[0].styleMap = ja_style();
     };
 
