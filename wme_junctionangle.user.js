@@ -182,13 +182,13 @@ function run_ja() {
         section.style.paddingTop = "8px";
         section.style.textIndent = "16px";
         section.id = "jaOptions";
-        section.innerHTML  = 'Settings<br>'
+        section.innerHTML  = '<hr />'
             + '<input type="text" size="2" maxlength="2" id="_jaTbDecimals" /> Number of decimals<br>'
             + '<input type="checkbox" id="_jaCbGuessRouting" /> Guess navigation prompts<br>'
-            + '<input type="text" size="10" maxlength="7" id="_jaTbNoInstructionColor" /> Color for no instruction<br>'
-            + '<input type="text" size="10" maxlength="7" id="_jaTbTurnInstructionColor" /> Color for normal turn<br>'
-            + '<input type="text" size="10" maxlength="7" id="_jaTbProblemColor" /> Color for angles to avoid<br>'
-            + '<input type="submit" value="Apply" onclick="return ja_save();"> </input>'
+            + '<input type="text" size="8" maxlength="7" id="_jaTbNoInstructionColor" /> Color for no instruction<br>'
+            + '<input type="text" size="8" maxlength="7" id="_jaTbTurnInstructionColor" /> Color for normal turn<br>'
+            + '<input type="text" size="8" maxlength="7" id="_jaTbProblemColor" /> Color for angles to avoid<br>'
+            + '<br /><input type="submit" value="Apply" onclick="return ja_save();"> </input>'
             + '<input type="submit" value="Reset to default" onclick="return ja_reset();"> </input>'
         ;
         ja_settings.appendChild(section);
@@ -197,15 +197,15 @@ function run_ja() {
         var navTabs = document.getElementsByClassName('nav-tabs', userTabs)[0];
         var tabContent = document.getElementsByClassName('tab-content', userTabs)[0];
 
-
         ja_settings.id = "sidepanel-ja";
         ja_settings.className = "tab-pane";
-        tabContent.appendChild(ja_settings);
+        if(tabContent != null)
+            tabContent.appendChild(ja_settings);
 
         jatab = document.createElement('li');
         jatab.innerHTML = '<a href="#sidepanel-ja" data-toggle="tab">JAI</a>';
-        navTabs.appendChild(jatab);
-
+        if(navTabs != null)
+            navTabs.appendChild(jatab);
 
         //Add support for translations. Default (and fallback) is "en".
         //Note, don't make typos in "acceleratorName", as it has to match the layer name (with whitespace removed
@@ -624,11 +624,13 @@ function run_ja() {
     };
 
     ja_apply = function applyJAOptions() {
-        document.getElementById("_jaCbGuessRouting").checked = ja_getOption("guess", false);
-        document.getElementById("_jaTbNoInstructionColor").value = ja_getOption("noInstructionColor", "#abb7ff");
-        document.getElementById("_jaTbTurnInstructionColor").value = ja_getOption("turnInstructionColor", "#4cc600");
-        document.getElementById("_jaTbProblemColor").value = ja_getOption("problemColor", "#a0a0a0");
-        document.getElementById("_jaTbDecimals").value = -ja_getOption("decimals", 0);
+        if(document.getElementById("_jaCbGuessRouting") != null) {
+            document.getElementById("_jaCbGuessRouting").checked = ja_getOption("guess", false);
+            document.getElementById("_jaTbNoInstructionColor").value = ja_getOption("noInstructionColor", "#abb7ff");
+            document.getElementById("_jaTbTurnInstructionColor").value = ja_getOption("turnInstructionColor", "#4cc600");
+            document.getElementById("_jaTbProblemColor").value = ja_getOption("problemColor", "#a0a0a0");
+            document.getElementById("_jaTbDecimals").value = -ja_getOption("decimals", 0);
+        }
         ja_rounding = ja_getOption("decimals", 0);
         window.Waze.map.getLayersBy("uniqueName","junction_angles")[0].styleMap = ja_style();
     };
