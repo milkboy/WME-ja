@@ -107,7 +107,7 @@ function run_ja() {
                     symbolizer: {
                         pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
                         fontSize: "12px",
-                        fillColor: "#abb7ff", //pale blue
+                        fillColor: ja_getOption("keepInstructionColor"), //pale blue
                         strokeColor: "#183800"
                     }
                 }),
@@ -120,7 +120,7 @@ function run_ja() {
                     symbolizer: {
                         pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
                         fontSize: "12px",
-                        fillColor: "#abb7ff", //pale blue
+                        fillColor: ja_getOption("exitInstructionColor"), //pale blue
                         strokeColor: "#183800"
                     }
                 }),
@@ -133,7 +133,7 @@ function run_ja() {
                     symbolizer: {
                         pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
                         fontSize: "12px",
-                        fillColor: ja_getOption("turnInstructionColor"),
+                        fillColor: ja_getOption("problemInstructionColor"),
                         strokeColor: "#183800"
                     }
                 })
@@ -186,6 +186,8 @@ function run_ja() {
             + '<input type="text" size="2" maxlength="2" id="_jaTbDecimals" /> Number of decimals<br>'
             + '<input type="checkbox" id="_jaCbGuessRouting" /> Guess navigation prompts<br>'
             + '<input type="text" size="8" maxlength="7" id="_jaTbNoInstructionColor" /> Color for no instruction<br>'
+            + '<input type="text" size="8" maxlength="7" id="_jaTbKeepInstructionColor" /> Color for keep instruction<br>'
+            + '<input type="text" size="8" maxlength="7" id="_jaTbExitInstructionColor" /> Color for exit instruction<br>'
             + '<input type="text" size="8" maxlength="7" id="_jaTbTurnInstructionColor" /> Color for normal turn<br>'
             + '<input type="text" size="8" maxlength="7" id="_jaTbProblemColor" /> Color for angles to avoid<br>'
             + '<br /><input type="submit" value="Apply" onclick="return ja_save();"> </input>'
@@ -262,7 +264,7 @@ function run_ja() {
      */
     function ja_guess_routing_instruction(node, s_in_a, s_out_a, angles) {
         ja_log("Guessing instructions",2);
-        ja_log(node, 3);
+        ja_log(node, 2);
         ja_log(s_in_a, 3);
         ja_log(s_out_a, 3);
         ja_log(angles, 3);
@@ -283,15 +285,20 @@ function run_ja() {
         }
 
         var s_n = {};
-        for(k=0; k<node.attributes.segIDs.length;k++) {
-            s_n[node.attributes.segIDs[k]] =node.model.segments.objects[node.attributes.segIDs[k]];
+        for(k=0; k<node.attributes.segIDs.length; k++) {
+            s_n[node.attributes.segIDs[k]] = node.model.segments.objects[node.attributes.segIDs[k]];
         }
 
         ja_log(s_in_a, 3);
         ja_log(s_out_a, 3);
-        ja_log(s_n, 3);
+        ja_log(s_n, 2);
 
-        var angle = (180 + (s_out_a[0] - s_in_a[0])) % 360;
+        var angle = (s_out_a[0] - s_in_a[0]) - 180;
+        if(angle > 180)
+            angle = angle - 360;
+        else if(angle < -180)
+            angle = angle + 360;
+
         ja_log("turn angle is: " + angle, 2);
         //No other possible turns
         if(node.attributes.segIDs.length <= 2) {
@@ -304,47 +311,41 @@ function run_ja() {
             //FIXME
         } else {
             if(Math.abs(angle) <= 44) {
-                ja_log("Turn is <= 44", 3);
+                ja_log("Turn is <= 44", 2);
                 //other unrestricted <45 turns?
                 for(k=0; k< angles.length; k++) {
-                    ja_log("Checking angle " + k, 3);
-                    ja_log(angles[k],3);
+                    ja_log("Checking angle " + k, 2);
+                    ja_log(angles[k],2);
+                    ja_log(Math.abs((180 + (angles[k][0] - s_in_a[0])) % 360), 2);
                     if(angles[k][1] != s_in_a[1] && angles[k][1] != s_out_a[1]) {
                         if(Math.abs((180 + (angles[k][0] - s_in_a[0])) % 360) < 45 &&
                             ja_is_turn_allowed(s_n[s_in_a[1]], node, s_n[angles[k][1]])) {
                             ja_log("Found other allowed turn <= 44", 2);
                             return "junction"; //Issue turn (left|right)
+                        } else {
+                            ja_log("Found other (disallowed) turn <= 44", 2);
                         }
                     }
                 }
-                ja_log("\"straight\": no instruction", 3);
+                ja_log("\"straight\": no instruction", 2);
                 return "junction_none";
             } else if(Math.abs(angle) <= 46) {
-                ja_log("Angle is in gray zone 44-46", 3);
+                ja_log("Angle is in gray zone 44-46", 2);
                 return "junction_problem";
             } else {
-                ja_log("Normal turn", 3);
+                ja_log("Normal turn", 2);
                 return "junction"; //Normal turn (left|right)
             }
         }
-        ja_log("No matching turn instruction logic", 3);
+        ja_log("No matching turn instruction logic", 2);
         return "junction"; //default
     }
 
     function ja_is_turn_allowed(s_from, via_node, s_to) {
-        ja_log("Allow from " + s_from.attributes.id + " to " + s_to.attributes.id + " via " + node.attributes.id + "?", 3);
-        //a->b
-        if(s_to.attributes.fromNodeID == via_node.attributes.id) {
-            ja_log("a->b", 3);
-            ja_log(s_to.attributes.fromConnections, 1);
-            return s_from.attributes.id in s_to.attributes.fromConnections;
-        }
-        //b->a
-        else {
-            ja_log("b->a", 3);
-            ja_log(s_to.attributes.toConnections, 1);
-            return s_from.attributes.id in s_to.attributes.toConnections;
-        }
+        ja_log("Allow from " + s_from.attributes.id + " to " + s_to.attributes.id + " via " + node.attributes.id + "?"
+            + via_node.isTurnAllowedBySegDirections(s_from, s_to), 2);
+
+        return via_node.isTurnAllowedBySegDirections(s_from, s_to);
     }
 
     function ja_calculate() {
@@ -381,6 +382,7 @@ function run_ja() {
                     ja_log("Found unknown item type: " + window.Waze.selectionManager.selectedItems[i].model.type, 2);
                     break;
             }
+            ja_log(ja_nodes, 2);
         }
 
         ja_features = [];
@@ -389,7 +391,7 @@ function run_ja() {
             node = window.Waze.model.nodes.get(ja_nodes[i]);
             if (node == null || !node.hasOwnProperty('attributes')) {
                 //Oh oh.. should not happen? We want to use a node that does not exist
-                ja_log("Oh oh.. should not happen?",1);
+                ja_log("Oh oh.. should not happen?",2);
                 ja_log(node, 2);
                 ja_log(ja_nodes[i], 2);
                 //ja_log(ja_nodes, 2);
@@ -413,7 +415,7 @@ function run_ja() {
             selected_segments = 0;
 
             for (j = 0; j < segments.length; j++) {
-                s = node.model.segments.objects[segments[j]];
+                s = window.Waze.model.segments.objects[segments[j]];
                 if(typeof s === 'undefined') {
                     //Meh. Something went wrong, and we lost track of the segment. This needs a proper fix, but for now
                     // it should be sufficient to just restart the calculation
@@ -430,13 +432,7 @@ function run_ja() {
                 if (s != null ? s.isSelected() : false) selected_segments++;
             }
 
-            ja_log(angles, 2);
-            //sort angle data (ascending)
-            angles.sort(function (a, b) {
-                return a[0] - b[0]
-            });
             ja_log(angles, 3);
-            ja_log(selected_segments, 3);
 
             var ja_label_distance;
             switch (window.Waze.map.zoom) {
@@ -483,12 +479,13 @@ function run_ja() {
                         ja_selected.push(angles[j]);
                     }
                 }
-                ja_selected.reverse();
+                //ja_selected.reverse();
 
                 a = ((ja_selected[1][0] - ja_selected[0][0]) + 360) % 360;
                 ha = (360 + (ja_selected[0][0] + ja_selected[1][0]) / 2) % 360;
 
                 ja_log(a, 3);
+
                 if (a < 60) {
                     ja_log("Sharp angle", 2);
                     ja_extra_space_multiplier = 2;
@@ -502,11 +499,12 @@ function run_ja() {
                 if(ha > 40 && ha < 120) ja_extra_space_multiplier = 2;
 
 
-                ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + " and position for label should be at " + ha, 3);
+                ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + " and position for label should be at " + ha, 2);
 
                 //Guess some routing instructions based on segment types, angles etc
                 var ja_junction_type = "junction";
                 if(ja_getOption("guess")) {
+                    ja_log(ja_selected, 1);
                     ja_junction_type = ja_guess_routing_instruction(node, ja_selected[0][1], ja_selected[1][1], angles);
                     ja_log("Type is: " + ja_junction_type, 3);
                 }
@@ -520,6 +518,13 @@ function run_ja() {
                 ));
             }
             else {
+                //sort angle data (ascending)
+                angles.sort(function (a, b) {
+                    return a[0] - b[0]
+                });
+                ja_log(angles, 3);
+                ja_log(selected_segments, 3);
+
                 //get all segment angles
                 for (j = 0; j < angles.length; j++) {
                     a = (360 + (angles[(j + 1) % angles.length][0] - angles[j][0])) % 360;
@@ -577,7 +582,7 @@ function run_ja() {
         }
         ja_log(ja_node + " / " + ja_segment + ": dx:" + ja_dx + ", dy:" + ja_dy, 2);
         ja_angle = Math.atan2(ja_dy, ja_dx);
-        return (360 + (ja_angle * 180 / Math.PI)) % 360;
+        return ((ja_angle * 180 / Math.PI)) % 360;
     }
 	
     /**
@@ -645,6 +650,8 @@ function run_ja() {
     ja_save = function saveJAOptions() {
         ja_setOption("guess", document.getElementById("_jaCbGuessRouting").checked);
         ja_setOption("noInstructionColor", document.getElementById("_jaTbNoInstructionColor").value);
+        ja_setOption("keepInstructionColor", document.getElementById("_jaTbKeepInstructionColor").value);
+        ja_setOption("exitInstructionColor", document.getElementById("_jaTbExitInstructionColor").value);
         ja_setOption("turnInstructionColor", document.getElementById("_jaTbTurnInstructionColor").value);
         ja_setOption("problemColor", document.getElementById("_jaTbProblemColor").value);
         ja_setOption("decimals", -document.getElementById("_jaTbDecimals").value);
@@ -655,7 +662,9 @@ function run_ja() {
     ja_apply = function applyJAOptions() {
         if(document.getElementById("_jaCbGuessRouting") != null) {
             document.getElementById("_jaCbGuessRouting").checked = ja_getOption("guess", false);
-            document.getElementById("_jaTbNoInstructionColor").value = ja_getOption("noInstructionColor", "#abb7ff");
+            document.getElementById("_jaTbNoInstructionColor").value = ja_getOption("noInstructionColor", "#ffffff");
+            document.getElementById("_jaTbKeepInstructionColor").value = ja_getOption("keepInstructionColor", "#aeff3b");
+            document.getElementById("_jaTbExitInstructionColor").value = ja_getOption("exitInstructionColor", "#6cb5ff");
             document.getElementById("_jaTbTurnInstructionColor").value = ja_getOption("turnInstructionColor", "#4cc600");
             document.getElementById("_jaTbProblemColor").value = ja_getOption("problemColor", "#a0a0a0");
             document.getElementById("_jaTbDecimals").value = -ja_getOption("decimals", 0);
