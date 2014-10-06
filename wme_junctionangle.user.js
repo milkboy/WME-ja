@@ -255,56 +255,65 @@ function run_ja() {
     /**
      *
      * @param node Junction node
-     * @param s_in "In" segment id
-     * @param s_out "Out" segment id
+     * @param s_in_a "In" segment id
+     * @param s_out_a "Out" segment id
      * @param angles array of segment absolute angles [0] angle, [1] segment id, 2[?]
      * @returns {string}
      */
-    function ja_guess_routing_instruction(node, s_in, s_out, angles) {
-        ja_log("Guessing instructions",1);
+    function ja_guess_routing_instruction(node, s_in_a, s_out_a, angles) {
+        ja_log("Guessing instructions",2);
         ja_log(node, 3);
-        ja_log(s_in, 3);
-        ja_log(s_out, 3);
+        ja_log(s_in_a, 3);
+        ja_log(s_out_a, 3);
         ja_log(angles, 3);
 
         for(k=0; k< angles.length; k++) {
             ja_log(angles[k], 3);
-            if (angles[k][1] == s_in) {
-                s_in = angles[k];
+            if (angles[k][1] == s_in_a) {
+                s_in_a = angles[k];
                 break;
             }
         }
         for(k=0; k< angles.length; k++) {
             ja_log(angles[k], 3);
-            if(angles[k][1] == s_out) {
-                s_out = angles[k];
+            if(angles[k][1] == s_out_a) {
+                s_out_a = angles[k];
                 break;
             }
         }
 
-        ja_log(s_in, 3);
-        ja_log(s_out, 3);
+        var s_n = {};
+        for(k=0; k<node.attributes.segIDs.length;k++) {
+            s_n[node.attributes.segIDs[k]] =node.model.segments.objects[node.attributes.segIDs[k]];
+        }
 
-        var angle = (180 + (s_in[0] - s_out[0])) % 360;
+        ja_log(s_in_a, 3);
+        ja_log(s_out_a, 3);
+        ja_log(s_n, 3);
+
+        var angle = (180 + (s_out_a[0] - s_in_a[0])) % 360;
         ja_log("turn angle is: " + angle, 2);
         //No other possible turns
-        if(node.attributes.segIDs.length <= 2) return "junction_none"; //No instruction
+        if(node.attributes.segIDs.length <= 2) {
+            ja_log("Only one possible turn", 2);
+            return "junction_none";
+        } //No instruction
         //Is it a roundabout?
         if(false) {
-            ja_log("Roundabout logic", 3);
+            ja_log("Roundabout logic", 2);
             //FIXME
         } else {
             if(Math.abs(angle) <= 44) {
-                ja_log("Turn is <= 44", 2);
+                ja_log("Turn is <= 44", 3);
                 //other unrestricted <45 turns?
                 for(k=0; k< angles.length; k++) {
-                    ja_log("Checking angle " + k, 2);
-                    ja_log(angles[k],2);
-                    if(angles[k][1] != s_in[1] && angles[k][1] != s_out[1]) {
-                        //FIXME: check for restricted turn also
-                        if(Math.abs((180 + (s_in[0] - angles[k][0])) % 360) < 45) {
-                            ja_log("Found other turn <= 44", 3);
-                            return "junction_turn";
+                    ja_log("Checking angle " + k, 3);
+                    ja_log(angles[k],3);
+                    if(angles[k][1] != s_in_a[1] && angles[k][1] != s_out_a[1]) {
+                        if(Math.abs((180 + (angles[k][0] - s_in_a[0])) % 360) < 45 &&
+                            ja_is_turn_allowed(s_n[s_in_a[1]], node, s_n[angles[k][1]])) {
+                            ja_log("Found other allowed turn <= 44", 2);
+                            return "junction"; //Issue turn (left|right)
                         }
                     }
                 }
@@ -320,6 +329,22 @@ function run_ja() {
         }
         ja_log("No matching turn instruction logic", 3);
         return "junction"; //default
+    }
+
+    function ja_is_turn_allowed(s_from, via_node, s_to) {
+        ja_log("Allow from " + s_from.attributes.id + " to " + s_to.attributes.id + " via " + node.attributes.id + "?", 3);
+        //a->b
+        if(s_to.attributes.fromNodeID == via_node.attributes.id) {
+            ja_log("a->b", 3);
+            ja_log(s_to.attributes.fromConnections, 1);
+            return s_from.attributes.id in s_to.attributes.fromConnections;
+        }
+        //b->a
+        else {
+            ja_log("b->a", 3);
+            ja_log(s_to.attributes.toConnections, 1);
+            return s_from.attributes.id in s_to.attributes.toConnections;
+        }
     }
 
     function ja_calculate() {
@@ -458,6 +483,7 @@ function run_ja() {
                         ja_selected.push(angles[j]);
                     }
                 }
+                ja_selected.reverse();
 
                 a = ((ja_selected[1][0] - ja_selected[0][0]) + 360) % 360;
                 ha = (360 + (ja_selected[0][0] + ja_selected[1][0]) / 2) % 360;
@@ -469,8 +495,11 @@ function run_ja() {
                 }
 
                 if (a > 180) {
-                    ha = ha + 180;
+                    ha = (ha + 180) % 360;
                 }
+
+                //Move point a bit if it's on the top (Bridge icon will obscure it otherwise)
+                if(ha > 40 && ha < 120) ja_extra_space_multiplier = 2;
 
 
                 ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + " and position for label should be at " + ha, 3);
@@ -597,7 +626,7 @@ function run_ja() {
         if(localStorage) {
             localStorage.setItem("wme_ja_options", JSON.stringify(ja_options));
         }
-        ja_log(ja_options,1);
+        ja_log(ja_options,3);
     }
 
     ja_load = function loadJAOptions() {
@@ -606,7 +635,7 @@ function run_ja() {
             ja_log("We have local storage! =)",2);
             ja_options = JSON.parse(localStorage.getItem("wme_ja_options"));
         }
-        ja_log(ja_options, 1);
+        ja_log(ja_options, 2);
         if(ja_options == null) {
             ja_options = { };
         } else {
