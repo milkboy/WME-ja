@@ -33,7 +33,9 @@ function run_ja() {
 
     function ja_bootstrap() {
         try {
-            if ((typeof window.Waze.map != undefined) && (undefined != typeof window.Waze.map.events.register) && (undefined != typeof window.Waze.selectionManager.events.register ) && (undefined != typeof window.Waze.loginManager.events.register)) {
+            if ((typeof window.Waze.map !== 'undefined') && ('undefined' !== typeof window.Waze.map.events.register) &&
+                ('undefined' !== typeof window.Waze.selectionManager.events.register ) &&
+                ('undefined' !== typeof window.Waze.loginManager.events.register)) {
                 setTimeout(junctionangle_init, 500);
             } else {
                 setTimeout(ja_bootstrap, 1000);
@@ -133,7 +135,7 @@ function run_ja() {
                     symbolizer: {
                         pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
                         fontSize: "12px",
-                        fillColor: ja_getOption("problemInstructionColor"),
+                        fillColor: ja_getOption("problemColor"),
                         strokeColor: "#183800"
                     }
                 })
