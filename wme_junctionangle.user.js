@@ -6,8 +6,8 @@
 // @updateURL           https://userscripts.org/scripts/source/160864.user.js
 // @version             1.6
 // @grant               none
-// @copyright			2013 Michael Wikberg <michael@wikberg.fi>
-// @license				CC-BY-NC-SA
+// @copyright           2013 Michael Wikberg <michael@wikberg.fi>
+// @license             CC-BY-NC-SA
 // ==/UserScript==
 
 /**
