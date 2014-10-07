@@ -367,6 +367,8 @@ function run_ja() {
         ja_log(s_in_a, 3);
         ja_log(s_out_a, 3);
         ja_log(angles, 3);
+        var s_in_id = s_in_a;
+        var s_out_id = s_out_a;
 
         for(k=0; k< angles.length; k++) {
             ja_log(angles[k], 3);
@@ -383,9 +385,19 @@ function run_ja() {
             }
         }
 
-        var s_n = {};
+        var s_n = {}, s_in, s_out, street_n = {}, street_in;
         for(k=0; k<node.attributes.segIDs.length; k++) {
-            s_n[node.attributes.segIDs[k]] = node.model.segments.objects[node.attributes.segIDs[k]];
+            if (node.attributes.segIDs[k] == s_in_id) {
+                s_in = node.model.segments.objects[node.attributes.segIDs[k]];
+                street_in = ja_get_streets(node.attributes.segIDs[k]);
+            } else {
+                if(node.attributes.segIDs[k] == s_out_id) {
+                    //store for later use
+                    s_out = node.model.segments.objects[node.attributes.segIDs[k]];
+                }
+                s_n[node.attributes.segIDs[k]] = node.model.segments.objects[node.attributes.segIDs[k]];
+                street_n[node.attributes.segIDs[k]] = ja_get_streets(node.attributes.segIDs[k]);
+            }
         }
 
         ja_log(s_in_a, 3);
@@ -404,26 +416,209 @@ function run_ja() {
             ja_log("Only one possible turn", 2);
             return "junction_none";
         } //No instruction
+
+        /*
+         *
+         * Here be dragons!
+         *
+         */
+
         //Is it a roundabout?
         if(false) {
             ja_log("Roundabout logic", 2);
             //FIXME
         } else {
+            ja_log(s_n,2);
+            ja_log("Altnames:",2);
+            ja_log(street_n,2);
+
             if(Math.abs(angle) <= 44) {
                 ja_log("Turn is <= 44", 2);
+
+                //FIXME: Need to have logic for multiple <45 matches?...
                 //other unrestricted <45 turns?
                 for(k=0; k< angles.length; k++) {
                     ja_log("Checking angle " + k, 2);
                     ja_log(angles[k],2);
-                    ja_log(Math.abs((180 + (angles[k][0] - s_in_a[0])) % 360), 2);
-                    if(angles[k][1] != s_in_a[1] && angles[k][1] != s_out_a[1]) {
-                        if(Math.abs((180 + (angles[k][0] - s_in_a[0])) % 360) < 45 &&
-                            ja_is_turn_allowed(s_n[s_in_a[1]], node, s_n[angles[k][1]])) {
+                    if(angles[k][1] != s_in_id && angles[k][1] != s_out_id) {
+                        var tmp_angle = (180 + (angles[k][0] - s_in_a[0]));
+                        if(tmp_angle > 180) tmp_angle -= 360;
+                        if(tmp_angle < -180) tmp_angle += 360;
+                        ja_log(tmp_angle, 2);
+                        if(
+                            Math.abs(tmp_angle < 45) &&  //Angle is < 45
+                            ja_is_turn_allowed(s_in, node, s_n[angles[k][1]]) && //Direction is allowed FIXME: Need to check for disallowed turns somehow!
+                            Math.abs(angles[k][0] - s_out_a[0]) > 1 //Arbitrarily chosen angle for "overlapping" segments.
+                            ){
                             ja_log("Found other allowed turn <= 44", 2);
-                            return "junction"; //Issue turn (left|right)
-                        } else {
-                            ja_log("Found other (disallowed) turn <= 44", 2);
+
+                            /*
+                             * Begin "best continuation" logic
+                             */
+                            //2 Is there any alt on both s-in & s-out?
+                            ja_log("BC 2: FIXME: is this actually correct? Should be able to work without alts also (might need some fixing though)?", 2);
+                            var tmp_street_out = {};
+                            tmp_street_out[s_out_id] = street_n[s_out_id];
+                            if(street_in.secondary.length > 0 && street_n[s_out_id].secondary.length > 0) {
+                                //3 Is s-out a type match?
+                                ja_log("BC 3", 2);
+                                ja_log("Both in and out have alts", 2);
+                                //Road types match?
+                                ja_log("BC3: checking i.pt: " + street_in.primary.type + " vs o.pt: " + street_n[s_out_id].primary.type, 2);
+                                ja_log(street_in.primary, 2);
+                                if(ja_segment_type_match(s_in, new Array(s_out))) {
+                                    //4 Does s-in have a primary name?
+                                    ja_log("BC 4", 2);
+                                    if(street_in.primary.name) {
+                                        //5 Is s-out a primary OR cross name match?
+                                        ja_log("BC 5", 2);
+                                        if(street_in.primary.name == street_n[s_out_id].primary.name ||
+                                            ja_cross_name_match(street_in,  tmp_street_out)) {
+                                            //6 Is any SN a primary name AND type match?
+                                            //FIXME: Does this mean match to s_in?
+                                            ja_log("BC 6", 2);
+                                            if(ja_primary_name_and_type_match(street_in, street_n)) {
+                                                ja_log("Found a name+type match");
+                                                return "junction_keep";
+                                            } else {
+                                                return "junction_none";
+                                            }
+                                        } else {
+                                            //10    Is any SN a primary name AND type match?
+                                            ja_log("BC 10", 2);
+                                            if(ja_primary_name_and_type_match(street_in, street_n)) {
+                                                return "junction_keep";
+                                            } else {
+                                                //11
+                                                ja_log("BC 11", 2);
+                                                if(new Array(street_n[s_out_id]).some(ja_alt_name_match)) {
+                                                    ja_log("BC 12", 2);
+                                                } else {
+                                                    ja_log("BC 13", 2);
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        //7 Is any SN a primary OR cross match name?
+                                        ja_log("BC 7", 2);
+                                        //FIXME: name cross match logic?
+                                        if(street_n.some(ja_cross_name_match)) {
+                                            return "junction_keep";
+                                        } else {
+                                            //8 Is s-out a primary OR cross name match?
+                                            ja_log("BC 8", 2);
+                                            //FIXME: cross name match
+                                            if(street_n[s_out_id].primary.name == street_n[s_in_id].primary.name) {
+                                                return "junction_none";
+                                            } else {
+                                                //9 Is any SN a type match?
+                                                ja_log("BC 9", 2);
+                                                if(street_n.some(ja_segment_type_match)) {
+                                                    return "junction_keep";
+                                                } else {
+                                                    return "junction_none";
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    //14 Is SN a type match?
+                                    ja_log("BC 14", 2);
+                                    if(ja_segment_type_match(s_in, s_n)) {
+                                        //15    Is SN a primary OR cross name match?
+                                        ja_log("BC 15", 2);
+                                        if(ja_cross_name_match(street_in, street_n || ja_alt_name_match(street_in, street_n))) {
+                                            //Keep
+                                            return "junction_keep";
+                                        } else {
+                                            //16    Does s-in have a primary name?
+                                            ja_log("BC 16", 2);
+                                            if(street_in.primary.name) {
+                                                //17    Is s-out a primary OR cross match?
+                                                ja_log("BC 17", 2);
+                                                if(ja_primary_name_match(street_in, new Array(tmp_street_out))) {
+                                                    return "junction_none";
+                                                } else {
+                                                    //18    Is s-out an alternate name match?
+                                                    ja_log("BC 18", 2);
+                                                    if(ja_alt_name_match(street_in, new Array(tmp_street_out))) {
+                                                        //19    Is any SN an alternate name match?
+                                                        if(ja_alt_name_match(street_in, street_n)) {
+                                                            return "junction_keep";
+                                                        } else {
+                                                            return "junction_none";
+                                                        }
+                                                    } else {
+                                                        return "junction_keep";
+                                                    }
+                                                }
+                                            } else {
+                                                //keep
+                                                return "junction_keep";
+                                            }
+                                        }
+                                    } else {
+                                        //20    Is s-out a primary name match?
+                                        ja_log("BC 20", 2);
+                                        if(ja_primary_name_match(street_in, new Array(tmp_street_out))) {
+                                            //21    Is any SN a primary or cross name match?
+                                            ja_log("BC 21", 2);
+                                            if(ja_primary_name_match(street_in, street_n) || ja_cross_name_match(street_in, street_n)) {
+                                                return "junction_keep";
+                                            } else {
+                                                return "junction_none";
+                                            }
+                                        } else {
+                                            //22    Is any SN a primary name match?
+                                            ja_log("BC 22", 2);
+                                            if(ja_primary_name_match(street_in, street_n)) {
+                                                return "junction_keep";
+                                            } else {
+                                                //23    Is s-out a cross name match?
+                                                ja_log("BC 23", 2);
+                                                if(ja_cross_name_match(street_in, new Array(tmp_street_out))) {
+                                                    //24    Is any SN a cross name match?
+                                                    ja_log("BC 24", 2);
+                                                    if(ja_cross_name_match(street_in, street_n)) {
+                                                        return "junction_keep";
+                                                    } else {
+                                                        return "junction_none";
+                                                    }
+                                                } else {
+                                                    //25    Is any SN a cross name match?
+                                                    ja_log("BC 25", 2);
+                                                    if(ja_cross_name_match(street_in, street_n)) {
+                                                        return "junction_keep";
+                                                    } else {
+                                                        //26    Does s-in have a primary name?
+                                                        ja_log("BC 26", 2);
+                                                        if(street_in.primary.name) {
+                                                            //27    Is s-out an alternate name match?
+                                                            ja_log("BC 27", 2);
+                                                            if(ja_alt_name_match(street_in, new Array(tmp_street_out))) {
+                                                                //28
+                                                                ja_log("BC 28", 2);
+                                                                if(ja_alt_name_match(street_in, street_n)) {
+                                                                    return "junction_keep";
+                                                                } else {
+                                                                    return "junction_none";
+                                                                }
+                                                            } else {
+                                                                return "junction_keep";
+                                                            }
+                                                        } else {
+                                                            return "junction_keep";
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
+                    } else {
+                        ja_log("Found no other <= 44 turns", 2);
                     }
                 }
                 ja_log("\"straight\": no instruction", 2);
