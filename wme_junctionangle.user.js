@@ -31,6 +31,14 @@ function run_ja() {
 
     var ja_last_restart = 0;
 
+    var ja_routing_type = {
+        BC: "junction__none",
+        KEEP: "junction_keep",
+        TURN: "junction",
+        EXIT: "junction_exit", //not actually used (yet)
+        PROBLEM: "junction_problem"
+    };
+
     function ja_bootstrap() {
         try {
             if ((typeof window.Waze.map !== 'undefined') && ('undefined' !== typeof window.Waze.map.events.register) &&
@@ -60,13 +68,14 @@ function run_ja() {
      * Make some style settings
      */
     function ja_style() {
+        ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0)), 2);
         return new window.OpenLayers.Style({
             fillColor: "#ffcc88",
             strokeColor: "#ff9966",
             strokeWidth: 2,
             label: "${angle}",
             fontWeight: "bold",
-            pointRadius: 10 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
+            pointRadius: parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
             fontSize: "10px"
         }, {
             rules: [
@@ -78,10 +87,10 @@ function run_ja() {
                     filter: new window.OpenLayers.Filter.Comparison({
                         type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
                         property: "ja_type",
-                        value: "junction"
+                        value: ja_routing_type.TURN
                     }),
                     symbolizer: {
-                        pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
+                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
                         fontSize: "12px",
                         fillColor: ja_getOption("turnInstructionColor"),
                         strokeColor: "#183800"
@@ -91,12 +100,12 @@ function run_ja() {
                     filter: new window.OpenLayers.Filter.Comparison({
                         type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
                         property: "ja_type",
-                        value: "junction_none"
+                        value: ja_routing_type.BC
                     }),
                     symbolizer: {
-                        pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
+                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
                         fontSize: "12px",
-                        fillColor: ja_getOption("noInstructionColor"), //pale blue
+                        fillColor: ja_getOption("noInstructionColor"),
                         strokeColor: "#183800"
                     }
                 }),
@@ -104,12 +113,12 @@ function run_ja() {
                     filter: new window.OpenLayers.Filter.Comparison({
                         type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
                         property: "ja_type",
-                        value: "junction_keep"
+                        value: ja_routing_type.KEEP
                     }),
                     symbolizer: {
-                        pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
+                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
                         fontSize: "12px",
-                        fillColor: ja_getOption("keepInstructionColor"), //pale blue
+                        fillColor: ja_getOption("keepInstructionColor"),
                         strokeColor: "#183800"
                     }
                 }),
@@ -117,12 +126,12 @@ function run_ja() {
                     filter: new window.OpenLayers.Filter.Comparison({
                         type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
                         property: "ja_type",
-                        value: "junction_exit"
+                        value: ja_routing_type.EXIT
                     }),
                     symbolizer: {
-                        pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
+                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
                         fontSize: "12px",
-                        fillColor: ja_getOption("exitInstructionColor"), //pale blue
+                        fillColor: ja_getOption("exitInstructionColor"),
                         strokeColor: "#183800"
                     }
                 }),
@@ -130,10 +139,10 @@ function run_ja() {
                     filter: new window.OpenLayers.Filter.Comparison({
                         type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
                         property: "ja_type",
-                        value: "junction_problem"
+                        value: ja_routing_type.PROBLEM
                     }),
                     symbolizer: {
-                        pointRadius: 13 + (ja_rounding < 0 ? 4 * -ja_rounding : 0),
+                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
                         fontSize: "12px",
                         fillColor: ja_getOption("problemColor"),
                         strokeColor: "#183800"
@@ -185,10 +194,11 @@ function run_ja() {
         section.id = "jaOptions";
         section.innerHTML  = '<hr />'
             + '<input type="text" size="2" maxlength="2" id="_jaTbDecimals" /> Number of decimals<br>'
+            + '<input type="text" size="2" maxlength="2" id="_jaTbPointSize" /> Base point size<br>'
             + '<input type="checkbox" id="_jaCbGuessRouting" /> Guess navigation prompts<br>'
             + '<input type="text" size="8" maxlength="7" id="_jaTbNoInstructionColor" /> Color for no instruction<br>'
             + '<input type="text" size="8" maxlength="7" id="_jaTbKeepInstructionColor" /> Color for keep instruction<br>'
-            + '<input type="text" size="8" maxlength="7" id="_jaTbExitInstructionColor" /> Color for exit instruction<br>'
+            + '<input type="text" size="8" maxlength="7" id="_jaTbExitInstructionColor" disabled="disabled"/> Color for exit instruction<br>'
             + '<input type="text" size="8" maxlength="7" id="_jaTbTurnInstructionColor" /> Color for normal turn<br>'
             + '<input type="text" size="8" maxlength="7" id="_jaTbProblemColor" /> Color for angles to avoid<br>'
             + '<br /><input type="submit" value="Apply" onclick="return ja_save();"> </input>'
@@ -202,8 +212,11 @@ function run_ja() {
 
         ja_settings.id = "sidepanel-ja";
         ja_settings.className = "tab-pane";
-        if(tabContent != null)
+        if(tabContent != null) {
             tabContent.appendChild(ja_settings);
+        } else {
+            ja_log("Could not append setting to tabContent!?!", 1);
+        }
 
         jatab = document.createElement('li');
         jatab.innerHTML = '<!--suppress HtmlUnknownAnchorTarget --><a href="#sidepanel-ja" data-toggle="tab">JAI</a>';
@@ -318,13 +331,17 @@ function run_ja() {
     //TODO: TEST
     function ja_alt_name_match(street_in, streets) {
         return Object.getOwnPropertyNames(streets).some(function (street_n_id, index, array) {
-            street_n_element = streets[street_n_id];
+            var street_n_element = streets[street_n_id];
             ja_log("AN alt name check: Checking element " + index, 2);
             ja_log(street_n_element, 2);
+
+            if(street_in.secondary.length == 0) return false;
+            if(street_n_element.secondary.length == 0) return false;
+
             return street_in.secondary.some(function (street_in_secondary, index2, array2) {
                 ja_log("AN2 checking element " + index2, 2);
                 ja_log(street_in_secondary, 2);
-                return street_n_secondary.some(function (street_n_secondary_element, index3,  array3) {
+                return street_n_element.secondary.some(function (street_n_secondary_element, index3,  array3) {
                     ja_log("AN3 Checking in.s: " + street_in_secondary.name + " vs n.s." + index3 + ": " + street_n_secondary_element.name, 2);
                     return street_in_secondary.name == street_n_secondary_element.name;
                 });
@@ -339,7 +356,6 @@ function run_ja() {
      * @returns {boolean}
      */
     function ja_segment_type_match(segment_in, segments) {
-        ja_log("AAAAAAAA", 2);
         ja_log(segment_in, 2);
         ja_log(segments, 2);
         //ja_log(window.Waze.model.segments, 2);
@@ -432,7 +448,7 @@ function run_ja() {
         //No other possible turns
         if(node.attributes.segIDs.length <= 2) {
             ja_log("Only one possible turn", 2);
-            return "junction_none";
+            return ja_routing_type.BC;
         } //No instruction
 
         /*
@@ -496,15 +512,15 @@ function run_ja() {
                                             ja_log("BC 6", 2);
                                             if(ja_primary_name_and_type_match(street_in, street_n)) {
                                                 ja_log("Found a name+type match", 2);
-                                                return "junction_keep";
+                                                return ja_routing_type.KEEP;
                                             } else {
-                                                return "junction_none";
+                                                return ja_routing_type.BC;
                                             }
                                         } else {
                                             //10    Is any SN a primary name AND type match?
                                             ja_log("BC 10", 2);
                                             if(ja_primary_name_and_type_match(street_in, street_n)) {
-                                                return "junction_keep";
+                                                return ja_routing_type.KEEP;
                                             } else {
                                                 //11    Is s-out an alternate name match?
                                                 ja_log("BC 11", 2);
@@ -514,18 +530,18 @@ function run_ja() {
                                                     if(ja_primary_name_match(street_in, street_n)
                                                         || ja_cross_name_match(street_in, street_n)
                                                         || ja_alt_name_match(street_in, street_n)) {
-                                                        return "junction_keep";
+                                                        return ja_routing_type.KEEP;
                                                     } else {
-                                                        return "junction_none";
+                                                        return ja_routing_type.BC;
                                                     }
                                                 } else {
                                                     //13    Is any SN an alternate name AND type match?
                                                     ja_log("BC 13", 2);
                                                     if(ja_alt_name_match(street_in, street_n)
                                                         && ja_segment_type_match(s_in, s_out)) {
-                                                        return "junction_keep";
+                                                        return ja_routing_type.KEEP;
                                                     } else {
-                                                        return "junction_none";
+                                                        return ja_routing_type.BC;
                                                     }
                                                 }
                                             }
@@ -535,20 +551,20 @@ function run_ja() {
                                         ja_log("BC 7", 2);
                                         if(ja_primary_name_match(street_in, street_n)
                                             || ja_cross_name_match(street_in, street_n)) {
-                                            return "junction_keep";
+                                            return ja_routing_type.KEEP;
                                         } else {
                                             //8 Is s-out a primary OR cross name match?
                                             ja_log("BC 8", 2);
                                             if(ja_primary_name_match(street_in, tmp_street_out)
                                                 || ja_cross_name_match(street_in, tmp_street_out)) {
-                                                return "junction_none";
+                                                return ja_routing_type.BC;
                                             } else {
                                                 //9 Is any SN a type match?
                                                 ja_log("BC 9", 2);
                                                 if(ja_segment_type_match(s_in, s_n)) {
-                                                    return "junction_keep";
+                                                    return ja_routing_type.KEEP;
                                                 } else {
-                                                    return "junction_none";
+                                                    return ja_routing_type.BC;
                                                 }
                                             }
                                         }
@@ -561,7 +577,7 @@ function run_ja() {
                                         ja_log("BC 15", 2);
                                         if(ja_cross_name_match(street_in, street_n || ja_cross_name_match(street_in, street_n))) {
                                             //Keep
-                                            return "junction_keep";
+                                            return ja_routing_type.KEEP;
                                         } else {
                                             //16    Does s-in have a primary name?
                                             ja_log("BC 16", 2);
@@ -570,24 +586,24 @@ function run_ja() {
                                                 ja_log("BC 17", 2);
                                                 if(ja_primary_name_match(street_in, tmp_street_out)
                                                     || ja_cross_name_match(street_in, tmp_street_out)) {
-                                                    return "junction_none";
+                                                    return ja_routing_type.BC;
                                                 } else {
                                                     //18    Is s-out an alternate name match?
                                                     ja_log("BC 18", 2);
                                                     if(ja_alt_name_match(street_in, tmp_street_out)) {
                                                         //19    Is any SN an alternate name match?
                                                         if(ja_alt_name_match(street_in, street_n)) {
-                                                            return "junction_keep";
+                                                            return ja_routing_type.KEEP;
                                                         } else {
-                                                            return "junction_none";
+                                                            return ja_routing_type.BC;
                                                         }
                                                     } else {
-                                                        return "junction_keep";
+                                                        return ja_routing_type.KEEP;
                                                     }
                                                 }
                                             } else {
                                                 //keep
-                                                return "junction_keep";
+                                                return ja_routing_type.KEEP;
                                             }
                                         }
                                     } else {
@@ -597,15 +613,15 @@ function run_ja() {
                                             //21    Is any SN a primary or cross name match?
                                             ja_log("BC 21", 2);
                                             if(ja_primary_name_match(street_in, street_n) || ja_cross_name_match(street_in, street_n)) {
-                                                return "junction_keep";
+                                                return ja_routing_type.KEEP;
                                             } else {
-                                                return "junction_none";
+                                                return ja_routing_type.BC;
                                             }
                                         } else {
                                             //22    Is any SN a primary name match?
                                             ja_log("BC 22", 2);
                                             if(ja_primary_name_match(street_in, street_n)) {
-                                                return "junction_keep";
+                                                return ja_routing_type.KEEP;
                                             } else {
                                                 //23    Is s-out a cross name match?
                                                 ja_log("BC 23", 2);
@@ -613,15 +629,15 @@ function run_ja() {
                                                     //24    Is any SN a cross name match?
                                                     ja_log("BC 24", 2);
                                                     if(ja_cross_name_match(street_in, street_n)) {
-                                                        return "junction_keep";
+                                                        return ja_routing_type.KEEP;
                                                     } else {
-                                                        return "junction_none";
+                                                        return ja_routing_type.BC;
                                                     }
                                                 } else {
                                                     //25    Is any SN a cross name match?
                                                     ja_log("BC 25", 2);
                                                     if(ja_cross_name_match(street_in, street_n)) {
-                                                        return "junction_keep";
+                                                        return ja_routing_type.KEEP;
                                                     } else {
                                                         //26    Does s-in have a primary name?
                                                         ja_log("BC 26", 2);
@@ -632,15 +648,15 @@ function run_ja() {
                                                                 //28    Is any SN an aleternate name match?
                                                                 ja_log("BC 28", 2);
                                                                 if(ja_alt_name_match(street_in, street_n)) {
-                                                                    return "junction_keep";
+                                                                    return ja_routing_type.KEEP;
                                                                 } else {
-                                                                    return "junction_none";
+                                                                    return ja_routing_type.BC;
                                                                 }
                                                             } else {
-                                                                return "junction_keep";
+                                                                return ja_routing_type.KEEP;
                                                             }
                                                         } else {
-                                                            return "junction_keep";
+                                                            return ja_routing_type.KEEP;
                                                         }
                                                     }
                                                 }
@@ -653,17 +669,17 @@ function run_ja() {
                     }
                 }
                 ja_log("\"straight\": no instruction", 2);
-                return "junction_none";
+                return ja_routing_type.BC;
             } else if(Math.abs(angle) <= 46) {
                 ja_log("Angle is in gray zone 44-46", 2);
-                return "junction_problem";
+                return ja_routing_type.PROBLEM;
             } else {
                 ja_log("Normal turn", 2);
-                return "junction"; //Normal turn (left|right)
+                return ja_routing_type.TURN; //Normal turn (left|right)
             }
         }
         ja_log("No matching turn instruction logic", 2);
-        return "junction"; //default
+        return ja_routing_type.TURN; //default
     }
 
     function ja_is_turn_allowed(s_from, via_node, s_to) {
@@ -822,17 +838,21 @@ function run_ja() {
             if (ja_selected_segments_count == 2) {
                 ja_extra_space_multiplier = 1;
 
-                a = ((ja_selected_angles[1][0] - ja_selected_angles[0][0]) + 360) % 360;
-                ha = (360 + (ja_selected_angles[0][0] + ja_selected_angles[1][0]) / 2) % 360;
+                var a = 180 + (ja_selected_angles[1][0] - ja_selected_angles[0][0]);
+                var ha = (360 + (ja_selected_angles[0][0] + ja_selected_angles[1][0]) / 2) % 360;
 
                 ja_log(a, 3);
+                if(a > 180) a -= 360;
+                ja_log(a, 3);
+                if(a < -180) a+= 360;
+                ja_log(a, 2);
 
                 if (a < 60) {
                     ja_log("Sharp angle", 2);
                     ja_extra_space_multiplier = 2;
                 }
 
-                if (a > 180) {
+                if (a < 0) {
                     ha = (ha + 180) % 360;
                 }
 
@@ -843,7 +863,7 @@ function run_ja() {
                 ja_log("Angle between " + ja_selected_angles[0][1] + " and " + ja_selected_angles[1][1] + " is " + a + " and position for label should be at " + ha, 2);
 
                 //Guess some routing instructions based on segment types, angles etc
-                var ja_junction_type = "junction";
+                var ja_junction_type = ja_routing_type.TURN; //Default to old behavior
                 if(ja_getOption("guess")) {
                     ja_log(ja_selected_angles, 2);
                     ja_log(angles, 2);
@@ -856,7 +876,7 @@ function run_ja() {
                         node.geometry.x + (ja_extra_space_multiplier * ja_label_distance * Math.cos((ha * Math.PI) / 180)),
                         node.geometry.y + (ja_extra_space_multiplier * ja_label_distance * Math.sin((ha * Math.PI) / 180))
                     )
-                    , { angle: ja_round(Math.abs(180 - a)) + "°", ja_type: ja_junction_type }
+                    , { angle: (a>0?"<":"") + ja_round(Math.abs(a)) + "°" + (a<0?">":""), ja_type: ja_junction_type }
                 ));
             }
             else {
@@ -962,7 +982,7 @@ function run_ja() {
     var ja_options = {};
 
     function ja_getOption(name, defaultValue) {
-        if(!(name in ja_options)) {
+        if(!ja_options.hasOwnProperty(name) || typeof ja_options[name] === 'undefined') {
             ja_options[name] = defaultValue;
         }
         return ja_options[name];
@@ -976,20 +996,27 @@ function run_ja() {
         ja_log(ja_options,3);
     }
 
-    ja_load = function loadJAOptions() {
+    var ja_load = function loadJAOptions() {
         ja_log("Should load settings now.", 2);
         if(localStorage != null) {
             ja_log("We have local storage! =)",2);
-            ja_options = JSON.parse(localStorage.getItem("wme_ja_options"));
+            try {
+                ja_options = JSON.parse(localStorage.getItem("wme_ja_options"));
+            } catch (e){
+                ja_log("Loading settings failed.. " + e.message, 2);
+                ja_options = null;
+            }
         }
-        ja_log(ja_options, 2);
         if(ja_options == null) {
-            ja_options = { };
+            ja_reset();
         } else {
+            ja_log(ja_options, 2);
+            setTimeout(ja_apply, 500);
         }
     };
 
     ja_save = function saveJAOptions() {
+        ja_log("Saving settings", 2);
         ja_setOption("guess", document.getElementById("_jaCbGuessRouting").checked);
         ja_setOption("noInstructionColor", document.getElementById("_jaTbNoInstructionColor").value);
         ja_setOption("keepInstructionColor", document.getElementById("_jaTbKeepInstructionColor").value);
@@ -997,11 +1024,18 @@ function run_ja() {
         ja_setOption("turnInstructionColor", document.getElementById("_jaTbTurnInstructionColor").value);
         ja_setOption("problemColor", document.getElementById("_jaTbProblemColor").value);
         ja_setOption("decimals", -document.getElementById("_jaTbDecimals").value);
+        ja_setOption("pointSize", document.getElementById("_jaTbPointSize").value);
         ja_apply();
         return false;
     };
 
-    ja_apply = function applyJAOptions() {
+    var ja_apply = function applyJAOptions() {
+        ja_log("Applying stored (or default) settings", 2);
+        if(typeof window.Waze.map.getLayersBy("uniqueName","junction_angles")[0] === 'undefined') {
+            ja_log("WME not ready yet, trying again in 400 ms", 2);
+            setTimeout(ja_apply, 400);
+            return;
+        }
         if(document.getElementById("_jaCbGuessRouting") != null) {
             document.getElementById("_jaCbGuessRouting").checked = ja_getOption("guess", false);
             document.getElementById("_jaTbNoInstructionColor").value = ja_getOption("noInstructionColor", "#ffffff");
@@ -1010,12 +1044,18 @@ function run_ja() {
             document.getElementById("_jaTbTurnInstructionColor").value = ja_getOption("turnInstructionColor", "#4cc600");
             document.getElementById("_jaTbProblemColor").value = ja_getOption("problemColor", "#a0a0a0");
             document.getElementById("_jaTbDecimals").value = -ja_getOption("decimals", 0);
+            document.getElementById("_jaTbPointSize").value = ja_getOption("pointSize", 12);
+        } else {
+            ja_log("WME not ready (no settings tab)", 2);
         }
         ja_rounding = ja_getOption("decimals", 0);
         window.Waze.map.getLayersBy("uniqueName","junction_angles")[0].styleMap = ja_style();
+
+        ja_log(ja_options, 2);
     };
 
     ja_reset = function resetJAOptions() {
+        ja_log("Resetting settings", 2);
         if(localStorage != null) {
             localStorage.setItem("wme_ja_options","");
         }
