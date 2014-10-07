@@ -256,6 +256,103 @@ function run_ja() {
         ja_apply();
     }
 
+    function ja_get_streets(segmentId) {
+        ja_log(window.Waze, 1);
+        var primary = window.Waze.model.streets.objects[window.Waze.model.segments.objects[segmentId].attributes.primaryStreetID];
+        var secondary = new Array();
+        window.Waze.model.segments.objects[segmentId].attributes.streetIDs.forEach(function asd(element, index, array) {
+            secondary.push(window.Waze.model.streets.objects[element]);
+        });
+        ja_log(primary, 2);
+        ja_log(secondary, 2);
+        return { primary: primary, secondary: secondary };
+    }
+
+    function ja_primary_name_and_type_match(street_in, streets) {
+        return Object.getOwnPropertyNames(streets).some(function (id, index, array) {
+            ja_log("PNT Checking element " + index, 2);
+            ja_log(id, 2);
+            return (streets[id].primary.name == street_in.primary.name
+                && streets[id].primary.type == street_in.primary.type);
+        });
+    }
+
+    function ja_primary_name_match(street_in, streets) {
+        return Object.getOwnPropertyNames(streets).some(function (id, index, array) {
+            ja_log("PN Checking element " + index + " of " + array.length, 2);
+            ja_log(element, 2);
+            return (element.primary.name == street_in.primary.name);
+        });
+    }
+
+    /**
+     * From wiki:
+     * A Cross-match is when the primary name of one segment is identical to the alternate name of an adjacent segment. It had the same priory as a Primary name match.
+     * In order for a Cross match to work there must be at least one alt name on both involved segments (even though they don't necessarily match each other).
+     * It will work even if the are no Primary names on those segments.
+     * It will not work if all three segments at a split have a matching Primary name or a matching Alternate name.
+     * @param street_in
+     * @param streets
+     * @returns {boolean}
+     */
+    //TODO: test!
+    function ja_cross_name_match(street_in, streets) {
+        ja_log("CN: init", 2);
+        ja_log(street_in, 2);
+        ja_log(streets, 2);
+        return Object.getOwnPropertyNames(streets).some(function (street_n_id, index, array) {
+            street_n_element = streets[street_n_id];
+            ja_log("CN: Checking element " + index, 2);
+            ja_log(street_n_element, 2);
+            return (street_in.secondary.some(function (street_in_secondary, index2, array2){
+                ja_log("CN2a: checking n.p: " + street_n_element.primary.name + " vs in.s: " + street_in_secondary.name, 2);
+                return street_n_element.primary.name == street_in_secondary.name;
+            }) || street_n_element.secondary.some(function (street_n_secondary, index2, array2) {
+                ja_log("CN2b: checking in.p: " + street_in.primary.name + " vs n.s: " + street_n_secondary.name, 2);
+            }));
+        });
+    }
+
+    //TODO: TEST
+    function ja_alt_name_match(street_in, streets) {
+        return Object.getOwnPropertyNames(streets).some(function (street_n_id, index, array) {
+            street_n_element = streets[street_n_id];
+            ja_log("AN alt name check: Checking element " + index, 2);
+            ja_log(street_n_element, 2);
+            return street_in.secondary.some(function (street_in_secondary, index2, array2) {
+                ja_log("AN2 checking element " + index2, 2);
+                ja_log(street_in_secondary, 2);
+                return street_n_secondary.some(function (street_n_secondary_element, index3,  array3) {
+                    ja_log("AN3 Checking in.s: " + street_in_secondary.name + " vs n.s." + index3 + ": " + street_n_secondary_element.name, 2);
+                    return street_in_secondary.name == street_n_secondary_element.name;
+                });
+            });
+        });
+    }
+
+    /**
+     * Check if segment in type matches any other segments
+     * @param segment_in
+     * @param segments
+     * @returns {boolean}
+     */
+    function ja_segment_type_match(segment_in, segments) {
+        ja_log("AAAAAAAA", 2);
+        ja_log(segment_in, 2);
+        ja_log(segments, 2);
+        //ja_log(window.Waze.model.segments, 2);
+
+        //        return Object.getOwnPropertyNames(segments_ids).some(function (segment_n_id, index, array) {
+        return segments.some(function (segment_n, index, array) {
+            ja_log("PT Checking element " + index, 2);
+            ja_log(segment_n, 2);
+            if(segment_n.attributes.id == segment_in.attributes.id) return false;
+            ja_log("PT checking sn.rt " + segment_n.attributes.roadType +
+                " vs i.pt: " + segment_in.attributes.roadType, 2);
+            return (segment_n.attributes.roadType == segment_in.attributes.roadType);
+        });
+    }
+
     /**
      *
      * @param node Junction node
