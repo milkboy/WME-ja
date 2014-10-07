@@ -60,7 +60,7 @@ function run_ja() {
      * Make some style settings
      */
     function ja_style() {
-        var ja_style = new window.OpenLayers.Style({
+        return new window.OpenLayers.Style({
             fillColor: "#ffcc88",
             strokeColor: "#ff9966",
             strokeWidth: 2,
@@ -142,7 +142,6 @@ function run_ja() {
 
             ]
         });
-        return ja_style;
     }
 
     function junctionangle_init() {
@@ -207,7 +206,7 @@ function run_ja() {
             tabContent.appendChild(ja_settings);
 
         jatab = document.createElement('li');
-        jatab.innerHTML = '<a href="#sidepanel-ja" data-toggle="tab">JAI</a>';
+        jatab.innerHTML = '<!--suppress HtmlUnknownAnchorTarget --><a href="#sidepanel-ja" data-toggle="tab">JAI</a>';
         if(navTabs != null)
             navTabs.appendChild(jatab);
 
@@ -225,7 +224,7 @@ function run_ja() {
                 break;
         }
 
-        ja_layername = I18n.translate("layers.name.junction_angles","bar");
+        var ja_layername = I18n.translate("layers.name.junction_angles", "bar");
 
         //try to see if we already have a layer
         if (window.Waze.map.getLayersBy("uniqueName","junction_angles").length == 0) {
@@ -257,14 +256,13 @@ function run_ja() {
     }
 
     function ja_get_streets(segmentId) {
-        ja_log(window.Waze, 1);
         var primary = window.Waze.model.streets.objects[window.Waze.model.segments.objects[segmentId].attributes.primaryStreetID];
-        var secondary = new Array();
+        var secondary = [];
         window.Waze.model.segments.objects[segmentId].attributes.streetIDs.forEach(function asd(element, index, array) {
             secondary.push(window.Waze.model.streets.objects[element]);
         });
-        ja_log(primary, 2);
-        ja_log(secondary, 2);
+        ja_log(primary, 3);
+        ja_log(secondary, 3);
         return { primary: primary, secondary: secondary };
     }
 
@@ -278,7 +276,11 @@ function run_ja() {
     }
 
     function ja_primary_name_match(street_in, streets) {
+        ja_log("PN", 2);
+        ja_log(street_in, 2);
+        ja_log(streets, 2);
         return Object.getOwnPropertyNames(streets).some(function (id, index, array) {
+            element = streets[id];
             ja_log("PN Checking element " + index + " of " + array.length, 2);
             ja_log(element, 2);
             return (element.primary.name == street_in.primary.name);
@@ -342,8 +344,8 @@ function run_ja() {
         ja_log(segments, 2);
         //ja_log(window.Waze.model.segments, 2);
 
-        //        return Object.getOwnPropertyNames(segments_ids).some(function (segment_n_id, index, array) {
-        return segments.some(function (segment_n, index, array) {
+        return Object.getOwnPropertyNames(segments).some(function (segment_n_id, index, array) {
+            var segment_n = segments[segment_n_id];
             ja_log("PT Checking element " + index, 2);
             ja_log(segment_n, 2);
             if(segment_n.attributes.id == segment_in.attributes.id) return false;
@@ -362,8 +364,8 @@ function run_ja() {
      * @returns {string}
      */
     function ja_guess_routing_instruction(node, s_in_a, s_out_a, angles) {
-        ja_log("Guessing instructions",2);
-        ja_log(node, 2);
+        ja_log("Guessing routing instructions",2);
+        ja_log(node, 3);
         ja_log(s_in_a, 3);
         ja_log(s_out_a, 3);
         ja_log(angles, 3);
@@ -385,7 +387,7 @@ function run_ja() {
             }
         }
 
-        var s_n = {}, s_in, s_out, street_n = {}, street_in;
+        var s_n = {}, s_in, s_out = {}, street_n = {}, street_in;
         for(k=0; k<node.attributes.segIDs.length; k++) {
             if (node.attributes.segIDs[k] == s_in_id) {
                 s_in = node.model.segments.objects[node.attributes.segIDs[k]];
@@ -393,7 +395,7 @@ function run_ja() {
             } else {
                 if(node.attributes.segIDs[k] == s_out_id) {
                     //store for later use
-                    s_out = node.model.segments.objects[node.attributes.segIDs[k]];
+                    s_out[node.attributes.segIDs[k]] = node.model.segments.objects[node.attributes.segIDs[k]];
                 }
                 s_n[node.attributes.segIDs[k]] = node.model.segments.objects[node.attributes.segIDs[k]];
                 street_n[node.attributes.segIDs[k]] = ja_get_streets(node.attributes.segIDs[k]);
@@ -402,7 +404,10 @@ function run_ja() {
 
         ja_log(s_in_a, 3);
         ja_log(s_out_a, 3);
-        ja_log(s_n, 2);
+        ja_log(s_n, 3);
+        ja_log(street_n,3);
+        ja_log(s_in,3);
+        ja_log(street_in,2);
 
         var angle = (s_out_a[0] - s_in_a[0]) - 180;
         if(angle > 180)
@@ -428,21 +433,21 @@ function run_ja() {
             ja_log("Roundabout logic", 2);
             //FIXME
         } else {
-            ja_log(s_n,2);
-            ja_log("Altnames:",2);
-            ja_log(street_n,2);
-
             if(Math.abs(angle) <= 44) {
                 ja_log("Turn is <= 44", 2);
 
                 //FIXME: Need to have logic for multiple <45 matches?...
-                //other unrestricted <45 turns?
+                //Check for other unrestricted <45 turns?
                 for(k=0; k< angles.length; k++) {
                     ja_log("Checking angle " + k, 2);
                     ja_log(angles[k],2);
                     if(angles[k][1] != s_in_id && angles[k][1] != s_out_id) {
+                        ja_log("in: " + s_in_a[0] + ", " + (s_in_a[0] + 180), 3);
+                        ja_log("a_n: " + angles[k][0], 3);
                         var tmp_angle = (180 + (angles[k][0] - s_in_a[0]));
+                        ja_log(tmp_angle, 3);
                         if(tmp_angle > 180) tmp_angle -= 360;
+                        ja_log(tmp_angle, 3);
                         if(tmp_angle < -180) tmp_angle += 360;
                         ja_log(tmp_angle, 2);
                         if(
@@ -456,17 +461,16 @@ function run_ja() {
                              * Begin "best continuation" logic
                              */
                             //2 Is there any alt on both s-in & s-out?
-                            ja_log("BC 2: FIXME: is this actually correct? Should be able to work without alts also (might need some fixing though)?", 2);
+                            ja_log("BC 2: FIXME: is this actually correct? Should be able to work without alts also (might need some fixing though)?", 1);
                             var tmp_street_out = {};
                             tmp_street_out[s_out_id] = street_n[s_out_id];
                             if(street_in.secondary.length > 0 && street_n[s_out_id].secondary.length > 0) {
                                 //3 Is s-out a type match?
                                 ja_log("BC 3", 2);
-                                ja_log("Both in and out have alts", 2);
                                 //Road types match?
                                 ja_log("BC3: checking i.pt: " + street_in.primary.type + " vs o.pt: " + street_n[s_out_id].primary.type, 2);
-                                ja_log(street_in.primary, 2);
-                                if(ja_segment_type_match(s_in, new Array(s_out))) {
+                                ja_log(street_in.primary, 3);
+                                if(ja_segment_type_match(s_in, s_out)) {
                                     //4 Does s-in have a primary name?
                                     ja_log("BC 4", 2);
                                     if(street_in.primary.name) {
@@ -478,7 +482,7 @@ function run_ja() {
                                             //FIXME: Does this mean match to s_in?
                                             ja_log("BC 6", 2);
                                             if(ja_primary_name_and_type_match(street_in, street_n)) {
-                                                ja_log("Found a name+type match");
+                                                ja_log("Found a name+type match", 2);
                                                 return "junction_keep";
                                             } else {
                                                 return "junction_none";
@@ -489,31 +493,46 @@ function run_ja() {
                                             if(ja_primary_name_and_type_match(street_in, street_n)) {
                                                 return "junction_keep";
                                             } else {
-                                                //11
+                                                //11    Is s-out an alternate name match?
                                                 ja_log("BC 11", 2);
-                                                if(new Array(street_n[s_out_id]).some(ja_alt_name_match)) {
+                                                if(!ja_alt_name_match(street_in, tmp_street_out)) {
+                                                    //12    Is any SN a primary OR cross OR alternate name match?
                                                     ja_log("BC 12", 2);
+                                                    if(ja_primary_name_match(street_in, street_n)
+                                                        || ja_cross_name_match(street_in, street_n)
+                                                        || ja_alt_name_match(street_in, street_n)) {
+                                                        return "junction_keep";
+                                                    } else {
+                                                        return "junction_none";
+                                                    }
                                                 } else {
+                                                    //13    Is any SN an alternate name AND type match?
                                                     ja_log("BC 13", 2);
+                                                    if(ja_alt_name_match(street_in, street_n)
+                                                        && ja_segment_type_match(s_in, s_out)) {
+                                                        return "junction_keep";
+                                                    } else {
+                                                        return "junction_none";
+                                                    }
                                                 }
                                             }
                                         }
                                     } else {
                                         //7 Is any SN a primary OR cross match name?
                                         ja_log("BC 7", 2);
-                                        //FIXME: name cross match logic?
-                                        if(street_n.some(ja_cross_name_match)) {
+                                        if(ja_primary_name_match(street_in, street_n)
+                                            || ja_cross_name_match(street_in, street_n)) {
                                             return "junction_keep";
                                         } else {
                                             //8 Is s-out a primary OR cross name match?
                                             ja_log("BC 8", 2);
-                                            //FIXME: cross name match
-                                            if(street_n[s_out_id].primary.name == street_n[s_in_id].primary.name) {
+                                            if(ja_primary_name_match(street_in, tmp_street_out)
+                                                || ja_cross_name_match(street_in, tmp_street_out)) {
                                                 return "junction_none";
                                             } else {
                                                 //9 Is any SN a type match?
                                                 ja_log("BC 9", 2);
-                                                if(street_n.some(ja_segment_type_match)) {
+                                                if(ja_segment_type_match(s_in, s_n)) {
                                                     return "junction_keep";
                                                 } else {
                                                     return "junction_none";
@@ -522,12 +541,12 @@ function run_ja() {
                                         }
                                     }
                                 } else {
-                                    //14 Is SN a type match?
+                                    //14 Is (FIXME: any?)SN a type match?
                                     ja_log("BC 14", 2);
                                     if(ja_segment_type_match(s_in, s_n)) {
                                         //15    Is SN a primary OR cross name match?
                                         ja_log("BC 15", 2);
-                                        if(ja_cross_name_match(street_in, street_n || ja_alt_name_match(street_in, street_n))) {
+                                        if(ja_cross_name_match(street_in, street_n || ja_cross_name_match(street_in, street_n))) {
                                             //Keep
                                             return "junction_keep";
                                         } else {
@@ -536,12 +555,13 @@ function run_ja() {
                                             if(street_in.primary.name) {
                                                 //17    Is s-out a primary OR cross match?
                                                 ja_log("BC 17", 2);
-                                                if(ja_primary_name_match(street_in, new Array(tmp_street_out))) {
+                                                if(ja_primary_name_match(street_in, tmp_street_out)
+                                                    || ja_cross_name_match(street_in, tmp_street_out)) {
                                                     return "junction_none";
                                                 } else {
                                                     //18    Is s-out an alternate name match?
                                                     ja_log("BC 18", 2);
-                                                    if(ja_alt_name_match(street_in, new Array(tmp_street_out))) {
+                                                    if(ja_alt_name_match(street_in, tmp_street_out)) {
                                                         //19    Is any SN an alternate name match?
                                                         if(ja_alt_name_match(street_in, street_n)) {
                                                             return "junction_keep";
@@ -560,7 +580,7 @@ function run_ja() {
                                     } else {
                                         //20    Is s-out a primary name match?
                                         ja_log("BC 20", 2);
-                                        if(ja_primary_name_match(street_in, new Array(tmp_street_out))) {
+                                        if(ja_primary_name_match(street_in, tmp_street_out)) {
                                             //21    Is any SN a primary or cross name match?
                                             ja_log("BC 21", 2);
                                             if(ja_primary_name_match(street_in, street_n) || ja_cross_name_match(street_in, street_n)) {
@@ -576,7 +596,7 @@ function run_ja() {
                                             } else {
                                                 //23    Is s-out a cross name match?
                                                 ja_log("BC 23", 2);
-                                                if(ja_cross_name_match(street_in, new Array(tmp_street_out))) {
+                                                if(ja_cross_name_match(street_in, tmp_street_out)) {
                                                     //24    Is any SN a cross name match?
                                                     ja_log("BC 24", 2);
                                                     if(ja_cross_name_match(street_in, street_n)) {
@@ -595,8 +615,8 @@ function run_ja() {
                                                         if(street_in.primary.name) {
                                                             //27    Is s-out an alternate name match?
                                                             ja_log("BC 27", 2);
-                                                            if(ja_alt_name_match(street_in, new Array(tmp_street_out))) {
-                                                                //28
+                                                            if(ja_alt_name_match(street_in, tmp_street_out)) {
+                                                                //28    Is any SN an aleternate name match?
                                                                 ja_log("BC 28", 2);
                                                                 if(ja_alt_name_match(street_in, street_n)) {
                                                                     return "junction_keep";
@@ -617,8 +637,6 @@ function run_ja() {
                                 }
                             }
                         }
-                    } else {
-                        ja_log("Found no other <= 44 turns", 2);
                     }
                 }
                 ja_log("\"straight\": no instruction", 2);
@@ -694,22 +712,23 @@ function run_ja() {
                 continue;
             }
             //check connected segments
-            segments = node.attributes.segIDs;
+            var ja_current_node_segments = node.attributes.segIDs;
             ja_log(node, 2);
 
             //ignore of we have less than 2 segments
-            if (segments.length <= 1) {
-                ja_log("Found only " + segments.length + " connected segments at " + ja_nodes[i] + ", not calculating anything...", 2);
+            if (ja_current_node_segments.length <= 1) {
+                ja_log("Found only " + ja_current_node_segments.length + " connected segments at " + ja_nodes[i] + ", not calculating anything...", 2);
                 continue;
             }
 
-            ja_log("Calculating angles for " + segments.length + " segments", 2);
+            ja_log("Calculating angles for " + ja_current_node_segments.length + " segments", 2);
 
-            angles = [];
-            selected_segments = 0;
+            var angles = [];
+            var ja_selected_segments_count = 0;
+            var ja_selected_angles = [];
 
-            for (j = 0; j < segments.length; j++) {
-                s = window.Waze.model.segments.objects[segments[j]];
+            for (j = 0; j < ja_current_node_segments.length; j++) {
+                s = window.Waze.model.segments.objects[ja_current_node_segments[j]];
                 if(typeof s === 'undefined') {
                     //Meh. Something went wrong, and we lost track of the segment. This needs a proper fix, but for now
                     // it should be sufficient to just restart the calculation
@@ -721,10 +740,33 @@ function run_ja() {
                     return 4;
                 }
                 a = ja_getAngle(ja_nodes[i], s);
-                ja_log("j: " + j + "; Segment " + segments[j] + " angle is " + a, 2);
-                angles[j] = [a, segments[j], s != null ? s.isSelected() : false];
-                if (s != null ? s.isSelected() : false) selected_segments++;
+                ja_log("j: " + j + "; Segment " + ja_current_node_segments[j] + " angle is " + a, 2);
+                angles[j] = [a, ja_current_node_segments[j], s != null ? s.isSelected() : false];
+                if (s != null ? s.isSelected() : false) {
+                    ja_selected_segments_count++;
+                }
+
             }
+
+            //make sure we have the selected angles in correct order
+            ja_log(ja_current_node_segments, 3);
+            window.Waze.selectionManager.selectedItems.forEach(function (selectedSegment, selectedIndex, selectedItems) {
+                var selectedSegmentId = selectedSegment.model.attributes.id;
+                ja_log("Checking if " + selectedSegmentId + " is in current node", 3);
+                if(ja_current_node_segments.indexOf(selectedSegmentId) >= 0) {
+                    ja_log("It is!", 3);
+                    //find the angle
+                    for(j=0; j < angles.length; j++) {
+                        if(angles[j][1] == selectedSegmentId) {
+                            ja_selected_angles.push(angles[j]);
+                            break;
+                        }
+                    }
+                } else {
+                    ja_log("It's not..", 3);
+                }
+            });
+
 
             ja_log(angles, 3);
 
@@ -764,19 +806,11 @@ function run_ja() {
             ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
 
             //if we have two connected segments selected, do some magic to get the turn angle only =)
-            if (selected_segments == 2) {
-                ja_selected = [];
+            if (ja_selected_segments_count == 2) {
                 ja_extra_space_multiplier = 1;
 
-                for (j = 0; j < angles.length; j++) {
-                    if (angles[j][2]) {
-                        ja_selected.push(angles[j]);
-                    }
-                }
-                //ja_selected.reverse();
-
-                a = ((ja_selected[1][0] - ja_selected[0][0]) + 360) % 360;
-                ha = (360 + (ja_selected[0][0] + ja_selected[1][0]) / 2) % 360;
+                a = ((ja_selected_angles[1][0] - ja_selected_angles[0][0]) + 360) % 360;
+                ha = (360 + (ja_selected_angles[0][0] + ja_selected_angles[1][0]) / 2) % 360;
 
                 ja_log(a, 3);
 
@@ -793,14 +827,15 @@ function run_ja() {
                 if(ha > 40 && ha < 120) ja_extra_space_multiplier = 2;
 
 
-                ja_log("Angle between " + ja_selected[0][1] + " and " + ja_selected[1][1] + " is " + a + " and position for label should be at " + ha, 2);
+                ja_log("Angle between " + ja_selected_angles[0][1] + " and " + ja_selected_angles[1][1] + " is " + a + " and position for label should be at " + ha, 2);
 
                 //Guess some routing instructions based on segment types, angles etc
                 var ja_junction_type = "junction";
                 if(ja_getOption("guess")) {
-                    ja_log(ja_selected, 1);
-                    ja_junction_type = ja_guess_routing_instruction(node, ja_selected[0][1], ja_selected[1][1], angles);
-                    ja_log("Type is: " + ja_junction_type, 3);
+                    ja_log(ja_selected_angles, 2);
+                    ja_log(angles, 2);
+                    ja_junction_type = ja_guess_routing_instruction(node, ja_selected_angles[0][1], ja_selected_angles[1][1], angles);
+                    ja_log("Type is: " + ja_junction_type, 2);
                 }
                 //put the angle point
                 ja_features.push(new window.OpenLayers.Feature.Vector(
@@ -817,7 +852,7 @@ function run_ja() {
                     return a[0] - b[0]
                 });
                 ja_log(angles, 3);
-                ja_log(selected_segments, 3);
+                ja_log(ja_selected_segments_count, 3);
 
                 //get all segment angles
                 for (j = 0; j < angles.length; j++) {
