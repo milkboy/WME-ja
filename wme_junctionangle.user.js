@@ -392,15 +392,28 @@ function run_ja() {
             if (node.attributes.segIDs[k] == s_in_id) {
                 s_in = node.model.segments.objects[node.attributes.segIDs[k]];
                 street_in = ja_get_streets(node.attributes.segIDs[k]);
+                //Set empty name for streets if not defined
+                if(typeof street_in.primary.name === 'undefined') {
+                    street_in.primary['name'] = "";
+                }
             } else {
                 if(node.attributes.segIDs[k] == s_out_id) {
                     //store for later use
                     s_out[node.attributes.segIDs[k]] = node.model.segments.objects[node.attributes.segIDs[k]];
+                    //Set empty name for streets if not defined
+                    if(typeof s_out[node.attributes.segIDs[k]].primary === 'undefined') {
+                        s_out[node.attributes.segIDs[k]]['primary'] = { name: "" };
+                    }
                 }
                 s_n[node.attributes.segIDs[k]] = node.model.segments.objects[node.attributes.segIDs[k]];
                 street_n[node.attributes.segIDs[k]] = ja_get_streets(node.attributes.segIDs[k]);
+                if(typeof street_n[node.attributes.segIDs[k]].primary === 'undefined') {
+                    street_n[node.attributes.segIDs[k]]['primary'] = { name: ""};
+                }
             }
         }
+
+
 
         ja_log(s_in_a, 3);
         ja_log(s_out_a, 3);
@@ -461,15 +474,15 @@ function run_ja() {
                              * Begin "best continuation" logic
                              */
                             //2 Is there any alt on both s-in & s-out?
-                            ja_log("BC 2: FIXME: is this actually correct? Should be able to work without alts also (might need some fixing though)?", 1);
                             var tmp_street_out = {};
                             tmp_street_out[s_out_id] = street_n[s_out_id];
-                            if(street_in.secondary.length > 0 && street_n[s_out_id].secondary.length > 0) {
+                            ja_log("BC 2: Actually forcing BC logic even without alt names.. Might be incorrect, but seems to work as expected", 1);
+                            if(true) { //street_in.secondary.length > 0 && street_n[s_out_id].secondary.length > 0) {
                                 //3 Is s-out a type match?
                                 ja_log("BC 3", 2);
                                 //Road types match?
-                                ja_log("BC3: checking i.pt: " + street_in.primary.type + " vs o.pt: " + street_n[s_out_id].primary.type, 2);
-                                ja_log(street_in.primary, 3);
+                                //ja_log("BC3: checking i.pt: " + street_in.primary.type + " vs o.pt: " + street_n[s_out_id].primary.type, 2);
+                                //ja_log(street_in.primary, 3);
                                 if(ja_segment_type_match(s_in, s_out)) {
                                     //4 Does s-in have a primary name?
                                     ja_log("BC 4", 2);
