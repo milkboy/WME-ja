@@ -385,6 +385,26 @@ function run_ja() {
     }
 
     /**
+     * get absolute (or turn) angle between 2 inputs.
+     * 0,90,true  -> 90     0,90,false -> -90
+     * 0,170,true -> 170    0,170,false -> -10
+     * @param aIn absolute s_in angle (from node)
+     * @param aOut absolute s_out angle (from node)
+     * @param absolute return absolute or turn angle?
+     * @returns {number}
+     */
+    function ja_angle_diff(aIn, aOut, absolute) {
+        var a = parseFloat(aOut) - parseFloat(aIn);
+        if(a > 180) a -= 360;
+        if(a < -180) a+= 360;
+        if(absolute) {
+            return a;
+        } else {
+
+            return a > 0 ? a - 180 : a + 180;
+        }
+    }
+    /**
      *
      * @param node Junction node
      * @param s_in_a "In" segment id
@@ -451,12 +471,7 @@ function run_ja() {
         ja_log(s_in,3);
         ja_log(street_in,2);
 
-        var angle = (s_out_a[0] - s_in_a[0]) - 180;
-        if(angle > 180)
-            angle = angle - 360;
-        else if(angle < -180)
-            angle = angle + 360;
-
+        var angle = ja_angle_diff(s_in_a[0], (s_out_a[0]), false);
         ja_log("turn angle is: " + angle, 2);
         //No other possible turns
         if(node.attributes.segIDs.length <= 2) {
@@ -486,16 +501,12 @@ function run_ja() {
                     if(angles[k][1] != s_in_id && angles[k][1] != s_out_id) {
                         ja_log("in: " + s_in_a[0] + ", " + (s_in_a[0] + 180), 3);
                         ja_log("a_n: " + angles[k][0], 3);
-                        var tmp_angle = (180 + (angles[k][0] - s_in_a[0]));
-                        ja_log(tmp_angle, 3);
-                        if(tmp_angle > 180) tmp_angle -= 360;
-                        ja_log(tmp_angle, 3);
-                        if(tmp_angle < -180) tmp_angle += 360;
+                        var tmp_angle = ja_angle_diff(s_in_a[0], angles[k][0], false);
                         ja_log(tmp_angle, 2);
                         if(
                             Math.abs(tmp_angle < 45) &&  //Angle is < 45
                             ja_is_turn_allowed(s_in, node, s_n[angles[k][1]]) && //Direction is allowed FIXME: Need to check for disallowed turns somehow!
-                            Math.abs(angles[k][0] - s_out_a[0]) > 1 //Arbitrarily chosen angle for "overlapping" segments.
+                            Math.abs(ja_angle_diff(angles[k][0],s_out_a[0], true)) > 1 //Arbitrarily chosen angle for "overlapping" segments.
                             ){
                             ja_log("Found other allowed turn <= 44", 2);
 
@@ -847,17 +858,14 @@ function run_ja() {
 
             ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
 
+            var a, ha;
             //if we have two connected segments selected, do some magic to get the turn angle only =)
             if (ja_selected_segments_count == 2) {
                 ja_extra_space_multiplier = 1;
 
-                var a = 180 + (ja_selected_angles[1][0] - ja_selected_angles[0][0]);
-                var ha = (360 + (ja_selected_angles[0][0] + ja_selected_angles[1][0]) / 2) % 360;
+                a = ja_angle_diff(ja_selected_angles[0][0], ja_selected_angles[1][0], false);
+                ha = (360 + (ja_selected_angles[0][0] + ja_selected_angles[1][0]) / 2) % 360;
 
-                ja_log(a, 3);
-                if(a > 180) a -= 360;
-                ja_log(a, 3);
-                if(a < -180) a+= 360;
                 ja_log(a, 2);
 
                 if (Math.abs(a) > 120) {
