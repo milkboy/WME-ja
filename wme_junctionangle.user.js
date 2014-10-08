@@ -581,10 +581,10 @@ function run_ja() {
                                         }
                                     }
                                 } else {
-                                    //14 Is (FIXME: any?)SN a type match?
+                                    //14 Is any SN a type match?
                                     ja_log("BC 14", 2);
                                     if(ja_segment_type_match(s_in, s_n)) {
-                                        //15    Is SN a primary OR cross name match?
+                                        //15    Is any SN a primary OR cross name match?
                                         ja_log("BC 15", 2);
                                         if(ja_cross_name_match(street_in, street_n || ja_cross_name_match(street_in, street_n))) {
                                             //Keep
