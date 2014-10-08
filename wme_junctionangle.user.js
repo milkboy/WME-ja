@@ -75,6 +75,22 @@ function run_ja() {
         }
     }
 
+    function ja_get_style_rule(routingType, fillColorOption) {
+        return new window.OpenLayers.Rule(
+        	{
+                filter: new window.OpenLayers.Filter.Comparison({
+                    type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                    property: "ja_type",
+                    value: routingType
+                }),
+                symbolizer: {
+                    pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
+                    fontSize: "12px",
+                    fillColor: ja_getOption(fillColorOption),
+                    strokeColor: "#183800"
+                }
+            })
+    }
     /**
      * Make some style settings
      */
@@ -94,88 +110,16 @@ function run_ja() {
                     symbolizer: {
                     }
                 }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: ja_routing_type.TURN
-                    }),
-                    symbolizer: {
-                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
-                        fontSize: "12px",
-                        fillColor: ja_getOption("turnInstructionColor"),
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: ja_routing_type.BC
-                    }),
-                    symbolizer: {
-                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
-                        fontSize: "12px",
-                        fillColor: ja_getOption("noInstructionColor"),
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: ja_routing_type.KEEP
-                    }),
-                    symbolizer: {
-                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
-                        fontSize: "12px",
-                        fillColor: ja_getOption("keepInstructionColor"),
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: ja_routing_type.EXIT
-                    }),
-                    symbolizer: {
-                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
-                        fontSize: "12px",
-                        fillColor: ja_getOption("exitInstructionColor"),
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: ja_routing_type.PROBLEM
-                    }),
-                    symbolizer: {
-                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
-                        fontSize: "12px",
-                        fillColor: ja_getOption("problemColor"),
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: ja_routing_type.ERROR
-                    }),
-                    symbolizer: {
-                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
-                        fontSize: "12px",
-                        fillColor: ja_getOption("problemColor"),
-                        strokeColor: "#ff0000"
-                    }
-                })
-
+                ja_get_style_rule(ja_routing_type.TURN, "turnInstructionColor", "#183800"),
+                ja_get_style_rule(ja_routing_type.BC, "noInstructionColor", "#183800"),
+                ja_get_style_rule(ja_routing_type.KEEP, "keepInstructionColor", "#183800"),
+                ja_get_style_rule(ja_routing_type.EXIT, "exitInstructionColor", "#183800"),
+                ja_get_style_rule(ja_routing_type.PROBLEM, "problemColor", "#183800"),
+                ja_get_style_rule(ja_routing_type.ERROR, "problemColor", "#ff0000")
             ]
         });
     }
+
 
     function junctionangle_init() {
         //Load saved settings (if any)
