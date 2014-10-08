@@ -523,8 +523,9 @@ function run_ja() {
                 ja_log(s_n, 2);
                 ja_log("Filtered angles and street_n:", 2);
                 angles = angles.filter(function (a,b,c) {
-                    if(Math.abs(a[0]) <=45
-                        && s_n.hasOwnProperty(s_n[a[1]])
+                    ja_log("Filtering angle: " + ja_angle_diff(s_in_a,a[0],false), 2);
+                    if(Math.abs(ja_angle_diff(s_in_a,a[0],false)) <=45
+                        && typeof s_n[a[1]] !== 'undefined'
                         && ja_is_turn_allowed(s_in, node, s_n[a[1]])) {
                         return true;
                     } else {
@@ -911,18 +912,18 @@ function run_ja() {
                 ja_extra_space_multiplier = 1;
 
                 a = ja_angle_diff(ja_selected_angles[0][0], ja_selected_angles[1][0], false);
-                ha = (360 + (ja_selected_angles[0][0] + ja_selected_angles[1][0]) / 2) % 360;
 
-                ja_log(a, 2);
+                ha = (parseFloat(ja_selected_angles[0][0]) + parseFloat(ja_selected_angles[1][0]))/2;
+                if(Math.abs(ja_selected_angles[0][0]) > 90 && Math.abs(ja_selected_angles[1][0]) > 90) ha += 180;
 
                 if (Math.abs(a) > 120) {
                     ja_log("Sharp angle", 2);
                     ja_extra_space_multiplier = 2;
                 }
 
-                if (a > 0) {
-                    ha = (ha + 180) % 360;
-                }
+                //if (Math.abs(a) > 90) {
+                //    ha = (ha + 180) % 360;
+                //}
 
                 //Move point a bit if it's on the top (Bridge icon will obscure it otherwise)
                 if(ha > 40 && ha < 120) ja_extra_space_multiplier = 2;
