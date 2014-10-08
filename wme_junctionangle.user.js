@@ -905,14 +905,25 @@ function run_ja() {
                     a = (360 + (angles[(j + 1) % angles.length][0] - angles[j][0])) % 360;
                     ha = (360 + ((a / 2) + angles[j][0])) % 360;
 
-                    ja_log("Angle between " + angles[j][1] + " and " + angles[(j + 1) % angles.length][1] + " is " + a + " and position for label should be at " + ha, 3);
-                    //push the angle point
-                    ja_features.push(new window.OpenLayers.Feature.Vector(
-                        new window.OpenLayers.Geometry.Point(
-                            node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
-                        )
-                        , { angle: ja_round(a) + "°", ja_type: "generic" }
-                    ));
+                    //Show only one angle for nodes with only 2 connected segments and a single selected segment
+                    // (not on both sides). Skipping the one > 180
+                    if (ja_selected_segments_count == 1
+                        && angles.length == 2
+                        && (Math.abs(a) > 180
+                            || (Math.abs(a)%180 == 0 && j == 0 )
+                            )
+                        ) {
+                        ja_log("Skipping marker, as we need only one of them", 2);
+                    } else {
+                        ja_log("Angle between " + angles[j][1] + " and " + angles[(j + 1) % angles.length][1] + " is " + a + " and position for label should be at " + ha, 3);
+                        //push the angle point
+                        ja_features.push(new window.OpenLayers.Feature.Vector(
+                            new window.OpenLayers.Geometry.Point(
+                                    node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
+                            )
+                            , { angle: ja_round(a) + "°", ja_type: "generic" }
+                        ));
+                    }
                 }
             }
         }
