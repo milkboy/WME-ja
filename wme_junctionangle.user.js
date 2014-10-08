@@ -511,10 +511,31 @@ function run_ja() {
                             ja_log("Found other allowed turn <= 44", 2);
 
                             /*
-                             * Begin "best continuation" logic
+                            Need to filter out turns that have no useful meaning for BC. Hope this won't break anything...
                              */
                             var tmp_street_out = {};
                             tmp_street_out[s_out_id] = street_n[s_out_id];
+
+                            ja_log("Original angles and street_n:", 2);
+                            ja_log(angles, 2);
+                            ja_log(street_n, 2);
+                            ja_log("Filtered angles and street_n:", 2);
+                            angles = angles.filter(function (a,b,c) {
+                                if(Math.abs(a[0]) <=45) {
+                                    return true;
+                                } else {
+                                    if(street_n[a[1]]) {
+                                        delete street_n[a[1]];
+                                    }
+                                    return false;
+                                }
+                            });
+                            ja_log(angles, 2);
+                            ja_log(street_n, 2);
+
+                            /*
+                             * Begin "best continuation" logic
+                             */
                             ja_log("BC 2", 1);
                             //2 Is there any alt on both s-in & any s-n?
                             if(ja_has_alt_name(street_in) && ja_has_alt_name(street_n)) {
@@ -527,7 +548,7 @@ function run_ja() {
                                     if(street_in.primary.name) {
                                         //5 Is s-out a primary OR cross name match?
                                         ja_log("BC 5", 2);
-                                        if(street_in.primary.name == street_n[s_out_id].primary.name ||
+                                        if(ja_primary_name_match(street_in, tmp_street_out) ||
                                             ja_cross_name_match(street_in,  tmp_street_out)) {
                                             //6 Is any SN a primary name AND type match?
                                             //FIXME: Does this mean match to s_in?
@@ -667,7 +688,7 @@ function run_ja() {
                                                             //27    Is s-out an alternate name match?
                                                             ja_log("BC 27", 2);
                                                             if(ja_alt_name_match(street_in, tmp_street_out)) {
-                                                                //28    Is any SN an aleternate name match?
+                                                                //28    Is any SN an alternate name match?
                                                                 ja_log("BC 28", 2);
                                                                 if(ja_alt_name_match(street_in, street_n)) {
                                                                     return ja_routing_type.KEEP;
