@@ -280,9 +280,11 @@ function run_ja() {
     }
 
     function ja_primary_name_and_type_match(street_in, streets) {
+        ja_log("PNT", 2);
+        ja_log(street_in, 2);
         return Object.getOwnPropertyNames(streets).some(function (id, index, array) {
             ja_log("PNT Checking element " + index, 2);
-            ja_log(id, 2);
+            ja_log(streets[id], 2);
             return (streets[id].primary.name == street_in.primary.name
                 && streets[id].primary.type == street_in.primary.type);
         });
@@ -369,6 +371,17 @@ function run_ja() {
                 " vs i.pt: " + segment_in.attributes.roadType, 2);
             return (segment_n.attributes.roadType == segment_in.attributes.roadType);
         });
+    }
+
+    function ja_has_alt_name(seg) {
+        //Single segment?
+        if(seg.hasOwnProperty('primary')) {
+            return seg.secondary.length > 0;
+        } else {
+            return Object.getOwnPropertyNames(seg).some(function (s,i,a) {
+                return seg[s].secondary.length > 0;
+            });
+        }
     }
 
     /**
@@ -489,16 +502,14 @@ function run_ja() {
                             /*
                              * Begin "best continuation" logic
                              */
-                            //2 Is there any alt on both s-in & s-out?
                             var tmp_street_out = {};
                             tmp_street_out[s_out_id] = street_n[s_out_id];
-                            ja_log("BC 2: Actually forcing BC logic even without alt names.. Might be incorrect, but seems to work as expected", 1);
-                            if(true) { //street_in.secondary.length > 0 && street_n[s_out_id].secondary.length > 0) {
+                            ja_log("BC 2", 1);
+                            //2 Is there any alt on both s-in & any s-n?
+                            if(ja_has_alt_name(street_in) && ja_has_alt_name(street_n)) {
                                 //3 Is s-out a type match?
                                 ja_log("BC 3", 2);
                                 //Road types match?
-                                //ja_log("BC3: checking i.pt: " + street_in.primary.type + " vs o.pt: " + street_n[s_out_id].primary.type, 2);
-                                //ja_log(street_in.primary, 3);
                                 if(ja_segment_type_match(s_in, s_out)) {
                                     //4 Does s-in have a primary name?
                                     ja_log("BC 4", 2);
@@ -664,6 +675,8 @@ function run_ja() {
                                         }
                                     }
                                 }
+                            } else {
+                                return ja_routing_type.KEEP;
                             }
                         }
                     }
@@ -847,12 +860,12 @@ function run_ja() {
                 if(a < -180) a+= 360;
                 ja_log(a, 2);
 
-                if (a < 60) {
+                if (Math.abs(a) > 120) {
                     ja_log("Sharp angle", 2);
                     ja_extra_space_multiplier = 2;
                 }
 
-                if (a < 0) {
+                if (a > 0) {
                     ha = (ha + 180) % 360;
                 }
 
