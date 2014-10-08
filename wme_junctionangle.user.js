@@ -36,7 +36,8 @@ function run_ja() {
         KEEP: "junction_keep",
         TURN: "junction",
         EXIT: "junction_exit", //not actually used (yet)
-        PROBLEM: "junction_problem"
+        PROBLEM: "junction_problem",
+        ERROR: "junction_error"
     };
 
     function ja_bootstrap() {
@@ -146,6 +147,19 @@ function run_ja() {
                         fontSize: "12px",
                         fillColor: ja_getOption("problemColor"),
                         strokeColor: "#183800"
+                    }
+                }),
+                new window.OpenLayers.Rule({
+                    filter: new window.OpenLayers.Filter.Comparison({
+                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                        property: "ja_type",
+                        value: ja_routing_type.ERROR
+                    }),
+                    symbolizer: {
+                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
+                        fontSize: "12px",
+                        fillColor: ja_getOption("problemColor"),
+                        strokeColor: "#ff0000"
                     }
                 })
 
@@ -485,6 +499,10 @@ function run_ja() {
          *
          */
 
+        if(!ja_is_turn_allowed(s_in, node, s_out[s_out_id])) {
+            //Turn is disallowed!
+            return ja_routing_type.ERROR;
+        }
         //Is it a roundabout?
         if(false) {
             ja_log("Roundabout logic", 2);
