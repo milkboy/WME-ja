@@ -521,7 +521,8 @@ function run_ja() {
                             ja_log(street_n, 2);
                             ja_log("Filtered angles and street_n:", 2);
                             angles = angles.filter(function (a,b,c) {
-                                if(Math.abs(a[0]) <=45) {
+                                if(Math.abs(a[0]) <=45
+                                    && ja_is_turn_allowed(s_in, node, s_n[a[1]])) {
                                     return true;
                                 } else {
                                     if(street_n[a[1]]) {
