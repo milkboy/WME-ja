@@ -167,10 +167,8 @@ function run_ja() {
         });
     }
 
-    function junctionangle_init() {
-        //Load saved settings (if any)
-        ja_load();
 
+    function junctionangle_init() {
 
         //Listen for selected nodes change event
         window.Waze.selectionManager.events.register("selectionchanged", null, ja_calculate);
@@ -914,16 +912,17 @@ function run_ja() {
                 a = ja_angle_diff(ja_selected_angles[0][0], ja_selected_angles[1][0], false);
 
                 ha = (parseFloat(ja_selected_angles[0][0]) + parseFloat(ja_selected_angles[1][0]))/2;
-                if(Math.abs(ja_selected_angles[0][0]) > 90 && Math.abs(ja_selected_angles[1][0]) > 90) ha += 180;
+                if(
+                    (Math.abs(ja_selected_angles[0][0]) + Math.abs(ja_selected_angles[1][0])) > 180
+                && (
+                        (ja_selected_angles[0][0] < 0 && ja_selected_angles[1][0] > 0)
+                        || (ja_selected_angles[0][0] > 0 && ja_selected_angles[1][0] < 0))
+                    ) ha += 180;
 
                 if (Math.abs(a) > 120) {
                     ja_log("Sharp angle", 2);
                     ja_extra_space_multiplier = 2;
                 }
-
-                //if (Math.abs(a) > 90) {
-                //    ha = (ha + 180) % 360;
-                //}
 
                 //Move point a bit if it's on the top (Bridge icon will obscure it otherwise)
                 if(ha > 40 && ha < 120) ja_extra_space_multiplier = 2;
@@ -1137,7 +1136,7 @@ function run_ja() {
     ja_reset = function resetJAOptions() {
         ja_log("Resetting settings", 2);
         if(localStorage != null) {
-            localStorage.setItem("wme_ja_options","");
+            localStorage.removeItem("wme_ja_options");
         }
         ja_options = {};
         ja_apply();
