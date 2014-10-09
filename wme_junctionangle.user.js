@@ -32,13 +32,23 @@ function run_ja() {
     var ja_last_restart = 0;
 
     var ja_routing_type = {
-        BC: "junction__none",
+        BC: "junction_none",
         KEEP: "junction_keep",
         TURN: "junction",
         EXIT: "junction_exit", //not actually used (yet)
         PROBLEM: "junction_problem",
         ERROR: "junction_error"
     };
+    
+    var ja_road_type = {
+    	PRIMARY_STREET: 1,
+    	STREET: 2,
+    	RAMP: 4,
+    	H1: 3,
+    	H2: 4,
+    	H3: 6,
+    	H4: 7
+    }
 
     function ja_bootstrap() {
         try {
@@ -65,6 +75,22 @@ function run_ja() {
         }
     }
 
+    function ja_get_style_rule(routingType, fillColorOption) {
+        return new window.OpenLayers.Rule(
+        	{
+                filter: new window.OpenLayers.Filter.Comparison({
+                    type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+                    property: "ja_type",
+                    value: routingType
+                }),
+                symbolizer: {
+                    pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
+                    fontSize: "12px",
+                    fillColor: ja_getOption(fillColorOption),
+                    strokeColor: "#183800"
+                }
+            })
+    }
     /**
      * Make some style settings
      */
@@ -84,85 +110,12 @@ function run_ja() {
                     symbolizer: {
                     }
                 }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: ja_routing_type.TURN
-                    }),
-                    symbolizer: {
-                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
-                        fontSize: "12px",
-                        fillColor: ja_getOption("turnInstructionColor"),
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: ja_routing_type.BC
-                    }),
-                    symbolizer: {
-                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
-                        fontSize: "12px",
-                        fillColor: ja_getOption("noInstructionColor"),
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: ja_routing_type.KEEP
-                    }),
-                    symbolizer: {
-                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
-                        fontSize: "12px",
-                        fillColor: ja_getOption("keepInstructionColor"),
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: ja_routing_type.EXIT
-                    }),
-                    symbolizer: {
-                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
-                        fontSize: "12px",
-                        fillColor: ja_getOption("exitInstructionColor"),
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: ja_routing_type.PROBLEM
-                    }),
-                    symbolizer: {
-                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
-                        fontSize: "12px",
-                        fillColor: ja_getOption("problemColor"),
-                        strokeColor: "#183800"
-                    }
-                }),
-                new window.OpenLayers.Rule({
-                    filter: new window.OpenLayers.Filter.Comparison({
-                        type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-                        property: "ja_type",
-                        value: ja_routing_type.ERROR
-                    }),
-                    symbolizer: {
-                        pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
-                        fontSize: "12px",
-                        fillColor: ja_getOption("problemColor"),
-                        strokeColor: "#ff0000"
-                    }
-                })
-
+                ja_get_style_rule(ja_routing_type.TURN, "turnInstructionColor", "#183800"),
+                ja_get_style_rule(ja_routing_type.BC, "noInstructionColor", "#183800"),
+                ja_get_style_rule(ja_routing_type.KEEP, "keepInstructionColor", "#183800"),
+                ja_get_style_rule(ja_routing_type.EXIT, "exitInstructionColor", "#183800"),
+                ja_get_style_rule(ja_routing_type.PROBLEM, "problemColor", "#183800"),
+                ja_get_style_rule(ja_routing_type.ERROR, "problemColor", "#ff0000")
             ]
         });
     }
@@ -416,6 +369,18 @@ function run_ja() {
         }
     }
 
+    //segment or segment array
+    function ja_all_ramps(seg) {
+        //Single segment?
+        if(seg.hasOwnProperty('type')) {
+            return seg.isRoutable();
+        } else {
+            return Object.getOwnPropertyNames(seg).some(function (s,i,a) {
+                return !seg[s].isRoutable();
+            });
+        }
+    }
+
     /**
      * get absolute (or turn) angle between 2 inputs.
      * 0,90,true  -> 90     0,90,false -> -90
@@ -539,7 +504,6 @@ function run_ja() {
                 ja_log(angles, 2);
                 ja_log(street_n, 2);
                 ja_log(s_n, 2);
-                ja_log("Filtered angles and street_n:", 2);
                 angles = angles.filter(function (a,b,c) {
                     ja_log("Filtering angle: " + ja_angle_diff(s_in_a,a[0],false), 2);
                     if(Math.abs(ja_angle_diff(s_in_a,a[0],false)) <=45
@@ -554,6 +518,7 @@ function run_ja() {
                         return false;
                     }
                 });
+                ja_log("Filtered angles and street_n:", 2);
                 ja_log(angles, 2);
                 ja_log(street_n, 2);
                 ja_log(s_n, 2);
@@ -569,9 +534,13 @@ function run_ja() {
                     ja_log("a_n: " + angles[k][0], 3);
                     var tmp_angle = ja_angle_diff(s_in_a[0], angles[k][0], false);
                     ja_log(tmp_angle, 2);
+                    
+                    //tmp test
                     ja_log("Node getDirectionBetweenSegments", 2);
                     ja_log(node.getAngleToSegment(s_in, s_out[s_out_id]), 2);
                     ja_log(node.allConnectionKeys(s_out[s_out_id]), 2);
+                    //end
+                    
                     if(
                         Math.abs(tmp_angle < 45) &&  //Angle is < 45
                         ja_is_turn_allowed(s_in, node, s_n[angles[k][1]]) && //Direction is allowed FIXME: Need to check for disallowed turns somehow!
@@ -754,6 +723,27 @@ function run_ja() {
                                 }
                             }
                         } else {
+                            ja_log(".............................", 2);
+                            ja_log(s_in,2);
+                            ja_log(s_in.isHighway(), 2);
+                            ja_log(s_out[s_out_id].isHighway(), 2);
+                            ja_log(s_out[s_out_id].isRoutable(), 2);
+                            ja_log(s_in.model.isLeftHand, 2);
+                            //Highway ends, 2(+?) ramps continuing
+                            if(s_in.isHighway() && ja_all_ramps(s_out)) {
+                                return ja_routing_type.KEEP;
+                            }
+                            //Continue straight on highway
+                            if(s_in.isHighway() && s_out[s_out_id].isHighway() && !s_n[angles[k][1]].isRoutable()) {
+                            	return ja_routing_type.BC;
+                            }
+                            //Highway -> ramp
+                            if(s_in.isHighway() && !s_out[s_out_id].isRoutable()) {
+                                //Exit right on RHD, left on LHD
+                                if(s_in.model.isLeftHand ? (angle > 0 ) : (angle < 0)) {
+                                    return ja_routing_type.EXIT;
+                                }
+                            }
                             return ja_routing_type.KEEP;
                         }
                     }
