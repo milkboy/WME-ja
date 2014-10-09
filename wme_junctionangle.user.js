@@ -167,6 +167,16 @@ function run_ja() {
         });
     }
 
+    var ja_settings = {
+        guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false, description: "Guess routing instructions" },
+        noInstructionColor: { elementType: "text", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff", description: "Color for best continuation" },
+        keepInstructionColor: { elementType: "text", elementId: "_jaTbKeepInstructionColor", defaultValue: "#aeff3b", description: "Color for keep prompt" },
+        exitInstructionColor: { elementType: "text", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff", description: "Color for exit prompt" },
+        turnInstructionColor: { elementType: "text", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600", description: "Color for turn prompt" },
+        problemColor: { elementType: "text", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0", description: "Color for angles to avoid" },
+        decimals: { elementType: "text", elementId: "_jaTbDecimals", defaultValue: 0, size: 2, max: 2, description: "Number of decimals" },
+        pointSize: { elementType: "text", elementId: "_jaTbPointSize", defaultValue: 12, size: 2, max: 2, description: "Base point size" }
+    };
 
     function junctionangle_init() {
 
@@ -197,35 +207,45 @@ function run_ja() {
         /**
          * Add config setting
          */
-        var ja_settings = document.createElement("section");
-        ja_settings.innerHTML = "Junction Angle settings (please be careful, as no validation is performed yet)";
+        var ja_settings_dom = document.createElement("section");
+        ja_settings_dom.innerHTML = "Junction Angle settings (please be careful, as no validation is performed yet)";
 
         var section = document.createElement('p');
         section.style.paddingTop = "8px";
         section.style.textIndent = "16px";
         section.id = "jaOptions";
-        section.innerHTML  = '<hr />'
-            + '<input type="text" size="2" maxlength="2" id="_jaTbDecimals" /> Number of decimals<br>'
-            + '<input type="text" size="2" maxlength="2" id="_jaTbPointSize" /> Base point size<br>'
-            + '<input type="checkbox" id="_jaCbGuessRouting" /> Guess navigation prompts<br>'
-            + '<input type="text" size="8" maxlength="7" id="_jaTbNoInstructionColor" /> Color for no instruction<br>'
-            + '<input type="text" size="8" maxlength="7" id="_jaTbKeepInstructionColor" /> Color for keep instruction<br>'
-            + '<input type="text" size="8" maxlength="7" id="_jaTbExitInstructionColor" disabled="disabled"/> Color for exit instruction<br>'
-            + '<input type="text" size="8" maxlength="7" id="_jaTbTurnInstructionColor" /> Color for normal turn<br>'
-            + '<input type="text" size="8" maxlength="7" id="_jaTbProblemColor" /> Color for angles to avoid<br>'
-            + '<br /><input type="submit" value="Apply" onclick="return ja_save();"> </input>'
-            + '<input type="submit" value="Reset to default" onclick="return ja_reset();"> </input>'
-        ;
-        ja_settings.appendChild(section);
+        section.innerHTML  = '<hr />';
+        ja_log("---------- Creating settings HTML ----------", 2);
+        Object.getOwnPropertyNames(ja_settings).forEach(function (a,b,c) {
+            var setting = ja_settings[a];
+            ja_log("---------- " + a + " ----------", 2);
+            ja_log(section.innerHTML, 2);
+            switch (setting['elementType']) {
+                case 'text':
+                    section.innerHTML  = section.innerHTML + '<input type="text" size="' + setting['max'] ? setting['max'] : 8
+                        + '" maxlength="' + (setting['max'] ? setting['max'] : "7") + '" id="' + setting['elementId']
+                        + '" /> ' + setting['description'] + '<br>';
+                    break;
+                case 'checkbox':
+                    section.innerHTML  = section.innerHTML + '<input type="checkbox" id="' + setting['elementId'] + '" /> '
+                        + setting['description'] + ' <br>';
+                    break;
+            }
+            ja_log(section.innerHTML, 2);
+        });
+        section.innerHTML  = section.innerHTML + '<br /><input type="submit" value="Apply" onclick="return ja_save();"> </input>'
+            + '<input type="submit" value="Reset to default" onclick="return ja_reset();"> </input>';
+        ja_log(section.innerHTML, 2);
+        ja_settings_dom.appendChild(section);
 
         var userTabs = document.getElementById('user-info');
         var navTabs = document.getElementsByClassName('nav-tabs', userTabs)[0];
         var tabContent = document.getElementsByClassName('tab-content', userTabs)[0];
 
-        ja_settings.id = "sidepanel-ja";
-        ja_settings.className = "tab-pane";
+        ja_settings_dom.id = "sidepanel-ja";
+        ja_settings_dom.className = "tab-pane";
         if(tabContent != null) {
-            tabContent.appendChild(ja_settings);
+            tabContent.appendChild(ja_settings_dom);
         } else {
             ja_log("Could not append setting to tabContent!?!", 1);
         }
@@ -1060,10 +1080,12 @@ function run_ja() {
 
     var ja_options = {};
 
-    function ja_getOption(name, defaultValue) {
+    function ja_getOption(name) {
+        ja_log("Loading option: " + name, 2);
         if(!ja_options.hasOwnProperty(name) || typeof ja_options[name] === 'undefined') {
-            ja_options[name] = defaultValue;
+            ja_options[name] = ja_settings[name]['defaultValue'];
         }
+        ja_log("Got value: " + ja_options[name], 2);
         return ja_options[name];
     }
 
@@ -1096,14 +1118,18 @@ function run_ja() {
 
     ja_save = function saveJAOptions() {
         ja_log("Saving settings", 2);
-        ja_setOption("guess", document.getElementById("_jaCbGuessRouting").checked);
-        ja_setOption("noInstructionColor", document.getElementById("_jaTbNoInstructionColor").value);
-        ja_setOption("keepInstructionColor", document.getElementById("_jaTbKeepInstructionColor").value);
-        ja_setOption("exitInstructionColor", document.getElementById("_jaTbExitInstructionColor").value);
-        ja_setOption("turnInstructionColor", document.getElementById("_jaTbTurnInstructionColor").value);
-        ja_setOption("problemColor", document.getElementById("_jaTbProblemColor").value);
-        ja_setOption("decimals", -document.getElementById("_jaTbDecimals").value);
-        ja_setOption("pointSize", document.getElementById("_jaTbPointSize").value);
+        Object.getOwnPropertyNames(ja_settings).forEach(function (a,b,c) {
+            var setting = ja_settings[a];
+            ja_log(setting, 2);
+            switch (setting['elementType']) {
+                case "checkbox":
+                    ja_setOption(a, document.getElementById(setting['elementId']).checked);
+                    break;
+                case "text":
+                    ja_setOption(a, document.getElementById(setting['elementId']).value);
+                    break;
+            }
+        });
         ja_apply();
         return false;
     };
@@ -1115,19 +1141,26 @@ function run_ja() {
             setTimeout(ja_apply, 400);
             return;
         }
-        if(document.getElementById("_jaCbGuessRouting") != null) {
-            document.getElementById("_jaCbGuessRouting").checked = ja_getOption("guess", false);
-            document.getElementById("_jaTbNoInstructionColor").value = ja_getOption("noInstructionColor", "#ffffff");
-            document.getElementById("_jaTbKeepInstructionColor").value = ja_getOption("keepInstructionColor", "#aeff3b");
-            document.getElementById("_jaTbExitInstructionColor").value = ja_getOption("exitInstructionColor", "#6cb5ff");
-            document.getElementById("_jaTbTurnInstructionColor").value = ja_getOption("turnInstructionColor", "#4cc600");
-            document.getElementById("_jaTbProblemColor").value = ja_getOption("problemColor", "#a0a0a0");
-            document.getElementById("_jaTbDecimals").value = -ja_getOption("decimals", 0);
-            document.getElementById("_jaTbPointSize").value = ja_getOption("pointSize", 12);
+        if(document.getElementById("sidepanel-ja") != null) {
+            ja_log(Object.getOwnPropertyNames(ja_settings), 2);
+            Object.getOwnPropertyNames(ja_settings).forEach(function (a,b,c) {
+                var setting = ja_settings[a];
+                ja_log(a, 2);
+                ja_log(setting, 2);
+                ja_log(document.getElementById(setting['elementId']), 2);
+                switch (setting['elementType']) {
+                    case "checkbox":
+                        document.getElementById(setting['elementId']).checked = ja_getOption(a);
+                        break;
+                    case "text":
+                        document.getElementById(setting['elementId']).value = ja_getOption(a);
+                        break;
+                }
+            });
         } else {
             ja_log("WME not ready (no settings tab)", 2);
         }
-        ja_rounding = ja_getOption("decimals", 0);
+        ja_rounding = ja_getOption("decimals");
         window.Waze.map.getLayersBy("uniqueName","junction_angles")[0].styleMap = ja_style();
 
         ja_log(ja_options, 2);
