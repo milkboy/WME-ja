@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "WME-JunctionAngle",
+	"description": ""
+  },
+  "extDesc": {
+    "message": "This extension adds junction angle information the the Waze map editor.",
+	"description": ""
+  }
+}

@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name                WME Junction Angle info
-// @namespace           http://userscripts.org/users/508112
+// @namespace           https://github.com/milkboy/WME-ja
 // @description         Show the angle between two selected (and connected) segments
 // @include             /^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
-// @updateURL           https://userscripts.org/scripts/source/160864.user.js
 // @version             1.6
+// @updateURL           https://github.com/milkboy/WME-ja/raw/master/wme_junctionangle.user.js
 // @grant               none
-// @copyright           2013 Michael Wikberg <michael@wikberg.fi>
+// @copyright           2014 Michael Wikberg <waze@wikberg.fi>
 // @license             CC-BY-NC-SA
 // ==/UserScript==
 
@@ -27,7 +27,6 @@ function run_ja() {
     var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
     var $;
     var ja_features = [];
-    var ja_rounding = 0; //number of digits to round: -2 -> xx.yy, 0-> xx, 2->x00
 
     var ja_last_restart = 0;
 
@@ -48,7 +47,7 @@ function run_ja() {
     	H2: 4,
     	H3: 6,
     	H4: 7
-    }
+    };
 
     function ja_bootstrap() {
         try {
@@ -67,10 +66,10 @@ function run_ja() {
     function ja_log(ja_log_msg, ja_log_level) {
         if (ja_log_level <= junctionangle_debug) {
             if (typeof ja_log_msg == "object") {
-                console.log(ja_log_msg);
+                console.debug(ja_log_msg);
             }
             else {
-                console.log("WME Junction Angle: " + ja_log_msg);
+                console.debug("WME Junction Angle: " + ja_log_msg);
             }
         }
     }
@@ -84,7 +83,7 @@ function run_ja() {
                     value: routingType
                 }),
                 symbolizer: {
-                    pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
+                    pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 6 * parseInt(ja_getOption("decimals")) : 0),
                     fontSize: "12px",
                     fillColor: ja_getOption(fillColorOption),
                     strokeColor: "#183800"
@@ -95,14 +94,14 @@ function run_ja() {
      * Make some style settings
      */
     function ja_style() {
-        ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0)), 2);
+        ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10)) + (parseInt(ja_getOption("decimals") > 0 ? 6 * parseInt(ja_getOption("decimals")) : 0)));
         return new window.OpenLayers.Style({
             fillColor: "#ffcc88",
             strokeColor: "#ff9966",
             strokeWidth: 2,
             label: "${angle}",
             fontWeight: "bold",
-            pointRadius: parseInt(ja_getOption("pointSize"), 10) + parseInt(ja_rounding < 0 ? 6 * -ja_rounding : 0),
+            pointRadius: parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 6 * parseInt(ja_getOption("decimals")) : 0),
             fontSize: "10px"
         }, {
             rules: [
@@ -121,14 +120,14 @@ function run_ja() {
     }
 
     var ja_settings = {
-        guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false, description: "Guess routing instructions" },
-        noInstructionColor: { elementType: "text", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff", description: "Color for best continuation" },
-        keepInstructionColor: { elementType: "text", elementId: "_jaTbKeepInstructionColor", defaultValue: "#aeff3b", description: "Color for keep prompt" },
-        exitInstructionColor: { elementType: "text", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff", description: "Color for exit prompt" },
-        turnInstructionColor: { elementType: "text", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600", description: "Color for turn prompt" },
-        problemColor: { elementType: "text", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0", description: "Color for angles to avoid" },
-        decimals: { elementType: "text", elementId: "_jaTbDecimals", defaultValue: 0, size: 2, max: 2, description: "Number of decimals" },
-        pointSize: { elementType: "text", elementId: "_jaTbPointSize", defaultValue: 12, size: 2, max: 2, description: "Base point size" }
+        guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false},
+        noInstructionColor: { elementType: "text", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff"},
+        keepInstructionColor: { elementType: "text", elementId: "_jaTbKeepInstructionColor", defaultValue: "#aeff3b"},
+        exitInstructionColor: { elementType: "text", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
+        turnInstructionColor: { elementType: "text", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
+        problemColor: { elementType: "text", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
+        decimals: { elementType: "text", elementId: "_jaTbDecimals", defaultValue: 0, size: 2, max: 2},
+        pointSize: { elementType: "text", elementId: "_jaTbPointSize", defaultValue: 12, size: 2, max: 2}
     };
 
     function junctionangle_init() {
@@ -145,23 +144,19 @@ function run_ja() {
             "objectsremoved": ja_calculate
         });
 
-        /*
-        //Testing
-        window.Waze.map.events.on({
-            "zoomend": ja_calculate
-        });
-        */
 
         //HTML changes after login, even though the page is not reloaded. Better do init again.
         window.Waze.loginManager.events.register("afterloginchanged", null, junctionangle_init);
 
         //Skipping for now, as changes must be saved manually anyway //window.addEventListener("beforeunload", ja_save, false);
 
+		ja_load();
+		ja_loadTranslations();
         /**
          * Add config setting
          */
         var ja_settings_dom = document.createElement("section");
-        ja_settings_dom.innerHTML = "Junction Angle settings (please be careful, as no validation is performed yet)";
+        ja_settings_dom.innerHTML = ja_getMessage("settingsTitle");
 
         var section = document.createElement('p');
         section.style.paddingTop = "8px";
@@ -175,19 +170,19 @@ function run_ja() {
             ja_log(section.innerHTML, 2);
             switch (setting['elementType']) {
                 case 'text':
-                    section.innerHTML  = section.innerHTML + '<input type="text" size="' + setting['max'] ? setting['max'] : 8
+                    section.innerHTML  = section.innerHTML + '<input type="text" size="' + (setting['max'] ? setting['max'] : 8)
                         + '" maxlength="' + (setting['max'] ? setting['max'] : "7") + '" id="' + setting['elementId']
-                        + '" /> ' + setting['description'] + '<br>';
+                        + '" /> ' + ja_getMessage(a) + '<br>';
                     break;
                 case 'checkbox':
                     section.innerHTML  = section.innerHTML + '<input type="checkbox" id="' + setting['elementId'] + '" /> '
-                        + setting['description'] + ' <br>';
+                        + ja_getMessage(a) + ' <br>';
                     break;
             }
             ja_log(section.innerHTML, 2);
         });
-        section.innerHTML  = section.innerHTML + '<br /><input type="submit" value="Apply" onclick="return ja_save();"> </input>'
-            + '<input type="submit" value="Reset to default" onclick="return ja_reset();"> </input>';
+        section.innerHTML  = section.innerHTML + '<br /><input type="submit" value="' + ja_getMessage("apply") + '" onclick="return ja_save();"> </input>'
+            + '<input type="submit" value="' + ja_getMessage('resetToDefault') + '" onclick="return ja_reset();"> </input>';
         ja_log(section.innerHTML, 2);
         ja_settings_dom.appendChild(section);
 
@@ -211,28 +206,17 @@ function run_ja() {
         //Add support for translations. Default (and fallback) is "en".
         //Note, don't make typos in "acceleratorName", as it has to match the layer name (with whitespace removed
         // to actually work. Took me a while to figure that out...
-        I18n.translations.en.layers.name["junction_angles"] = "Junction Angles";
-
-        switch(window.I18n.locale) {
-            case 'sv':
-                I18n.translations.sv.layers.name["junction_angles"] = "Korsningsvinklar";
-                break;
-            case 'fi':
-                I18n.translations.fi.layers.name["junction_angles"] = "Risteyskulmat";
-                break;
-        }
-
-        var ja_layername = I18n.translate("layers.name.junction_angles", "bar");
+		I18n.translations[window.I18n.locale].layers.name["junction_angles"] = ja_getMessage("name");
 
         //try to see if we already have a layer
         if (window.Waze.map.getLayersBy("uniqueName","junction_angles").length == 0) {
 
             // Create a vector layer and give it your style map.
-            ja_mapLayer = new window.OpenLayers.Layer.Vector(ja_layername, {
+            ja_mapLayer = new window.OpenLayers.Layer.Vector(ja_getMessage("name"), {
                 displayInLayerSwitcher: true,
                 uniqueName: "junction_angles",
                 shortcutKey: "S+j",
-                accelerator: "toggle" + ja_layername.replace(/\s+/g,''),
+                accelerator: "toggle" + ja_getMessage("name").replace(/\s+/g,''),
                 className: "junction-angles",
                 styleMap: new window.OpenLayers.StyleMap(ja_style())
             });
@@ -910,7 +894,7 @@ function run_ja() {
                     break;
             }
 
-            ja_label_distance = ja_label_distance * (1+(ja_rounding < 0 ? 0.2*-ja_rounding : 0));
+            ja_label_distance = ja_label_distance * (1+(ja_getOption("decimals") > 0 ? 0.2*ja_getOption("decimals") : 0));
 
             ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
 
@@ -1051,11 +1035,11 @@ function run_ja() {
      */
     function ja_round(value) {
         // If the exp is undefined or zero...
+		var ja_rounding = -parseInt(ja_getOption("decimals"));
         if (typeof ja_rounding === 'undefined' || +ja_rounding === 0) {
             return Math.round(value);
         }
         value = +value;
-        ja_rounding = +ja_rounding;
         // If the value is not a number or the exp is not an integer...
         if (isNaN(value) || !(typeof ja_rounding === 'number' && ja_rounding % 1 === 0)) {
             return NaN;
@@ -1150,7 +1134,6 @@ function run_ja() {
         } else {
             ja_log("WME not ready (no settings tab)", 2);
         }
-        ja_rounding = ja_getOption("decimals");
         window.Waze.map.getLayersBy("uniqueName","junction_angles")[0].styleMap = ja_style();
 
         ja_log(ja_options, 2);
@@ -1164,6 +1147,69 @@ function run_ja() {
         ja_options = {};
         ja_apply();
     };
+	
+	function ja_getMessage(key) {
+		//console.log(I18n);
+		return I18n.translate('ja.' + key);
+	}
+	
+	function ja_loadTranslations() {
+		I18n.translations[window.I18n.defaultLocale].ja = {};
+		def = I18n.translations[window.I18n.defaultLocale].ja;
+		sv = {};
+		fi = {};
+		//Default language (English)
+		def["name"] = "Junction Angles";
+		def["settingsTitle"] = "Junction Angle settings (please be careful, as no validation is performed yet)";
+		def["apply"] = "Apply";
+		def["resetToDefault"] = "Reset to default";
+        def["guess"] = "Estimate routing instructions";
+        def["noInstructionColor"] = "Color for best continuation";
+        def["keepInstructionColor"] = "Color for keep prompt";
+        def["exitInstructionColor"] = "Color for exit prompt";
+        def["turnInstructionColor"] = "Color for turn prompt";
+        def["problemColor"] = "Color for angles to avoid";
+        def["decimals"] = "Number of decimals";
+        def["pointSize"] = "Base point size";
+
+		//Finnish (Suomi)
+		fi["name"] = "Risteyskulmat";
+		fi["settingsTitle"] = "Rysteyskulmien asetukset (syötettyjä arvoja ei validoida; olethan varovainen)";
+		fi["apply"] = "Aseta";
+		fi["resetToDefault"] = "Palauta";
+        fi["guess"] = "Arvioi reititysohjeet";
+        fi["noInstructionColor"] = "ohjeeton \"Suora\"-väri";
+        fi["keepInstructionColor"] = "\"Poistu\"-ohjeen väri";
+        fi["exitInstructionColor"] = "\"poistu\"-ohjeen väri";
+        fi["turnInstructionColor"] = "\"Käänny\"-ohjeen väri";
+        fi["problemColor"] = "Vältettävien kulmien väri";
+        fi["decimals"] = "Desimaalien määrä";
+        fi["pointSize"] = "Ympyrän peruskoko";
+
+		//Swedish (Svenska)
+		sv["name"] = "Korsningsvinklar";
+		sv["settingsTitle"] = "Inställningar för korsningsvinklar (ingen validering utförs, var försiktig)";
+		sv["apply"] = "Godkänn";
+		sv["resetToDefault"] = "Återställ";
+        sv["guess"] = "Gissa navigeringsinstruktioner";
+        sv["noInstructionColor"] = "Färg för \"ingen instruktion\"";
+        sv["keepInstructionColor"] = "Färg för\"håll höger/vänster\"-instruktion";
+        sv["exitInstructionColor"] = "Färg för \"ta av\"-instruktion";
+        sv["turnInstructionColor"] = "Färg för \"sväng\"-instruktion";
+        sv["problemColor"] = "Färg för vinklar att undvika";
+        sv["decimals"] = "Decimaler";
+        sv["pointSize"] = "Cirkelns basstorlek";
+		
+		//Apply
+		switch (I18n.locale) {
+			case 'sv':
+				I18n.translations['sv'].ja = sv;
+				break;
+			case 'fi':
+				I18n.translations['fi'].ja = fi;
+				break;
+		}
+	}
 
     ja_bootstrap();
 

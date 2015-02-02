@@ -1,9 +1,11 @@
 {
-  "name": "WME-JunctionAngle",
   "version": "1.6",
+  "name": "__MSG_extName__",
+  "short_name": "WME-JA",
   "manifest_version": 2,
+  "default_locale": "en",
 
-  "description": "This extension adds junction angle information the the Waze map editor.",
+  "description": "__MSG_extDesc__",
   "icons": { "16": "ja16.png",
              "48": "ja48.png",
              "128": "ja128.png"
