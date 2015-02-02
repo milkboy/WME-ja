@@ -64,6 +64,7 @@ function run_ja() {
     }
 
     function ja_log(ja_log_msg, ja_log_level) {
+
         if (ja_log_level <= junctionangle_debug) {
             if (typeof ja_log_msg == "object") {
                 console.debug(ja_log_msg);
@@ -1059,6 +1060,7 @@ function run_ja() {
         if(!ja_options.hasOwnProperty(name) || typeof ja_options[name] === 'undefined') {
             ja_options[name] = ja_settings[name]['defaultValue'];
         }
+		
         ja_log("Got value: " + ja_options[name], 2);
         return ja_options[name];
     }
@@ -1149,7 +1151,6 @@ function run_ja() {
     };
 	
 	function ja_getMessage(key) {
-		//console.log(I18n);
 		return I18n.translate('ja.' + key);
 	}
 	
