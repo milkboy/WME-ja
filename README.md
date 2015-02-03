@@ -20,6 +20,9 @@ Also available at http://userscripts.org/scripts/show/160864
 ![Screenshot](http://wikberg.fi/grfx/wme_ja.png)
 
 ###Changelog
+####1.6.2
+- Fixed 3 issues with permalink to selected nodes
+
 ####1.6.1
 - Added more translated strings
 - Fix settings to actually load properly with Chrome extension
