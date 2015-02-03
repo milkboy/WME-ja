@@ -157,13 +157,20 @@ function run_ja() {
          * Add config setting
          */
         var ja_settings_dom = document.createElement("div");
-        ja_settings_dom.innerHTML = ja_getMessage("settingsTitle");
+        var ja_settings_dom_panel = document.createElement("div");
+        var ja_settings_dom_content = document.createElement("div");
+		ja_settings_dom_panel.className = "side-panel-section";
+		ja_settings_dom_content.className = "tab-content";
+        ja_settings_dom_content.innerHTML = "<h4>" + ja_getMessage("settingsTitle") + "</h4>";
 
-        var section = document.createElement('p');
-        section.style.paddingTop = "8px";
-        section.style.textIndent = "16px";
+        var form = document.createElement('form');
+        var section = document.createElement('div');
+		section.className = "form-group";
+		form.className = "attributes-form side-panel-section";
+        //section.style.paddingTop = "8px";
+        //section.style.textIndent = "16px";
         section.id = "jaOptions";
-        section.innerHTML  = '<hr />';
+        section.innerHTML  = '';
         ja_log("---------- Creating settings HTML ----------", 2);
         Object.getOwnPropertyNames(ja_settings).forEach(function (a,b,c) {
             var setting = ja_settings[a];
@@ -171,25 +178,30 @@ function run_ja() {
             ja_log(section.innerHTML, 2);
             switch (setting['elementType']) {
                 case 'color':
-                    section.innerHTML  = section.innerHTML + '<input type="color" id="' + setting['elementId']
-                        + '" /> ' + ja_getMessage(a) + '<br>';
+                    section.innerHTML  = section.innerHTML + '<div class="controls-container"><input type="color" id="' + setting['elementId']
+                        + '" /> ' +'<label for="' + setting['elementId'] + '">' + ja_getMessage(a) + '</label></div>';
+                    break;
+                case 'number':
+                    section.innerHTML  = section.innerHTML + '<div class="controls-container"><input type="number" id="' + setting['elementId']
+                        + '" min="'+setting['min']+'" max="'+setting['max']+'" required="" /> ' +'<label for="' + setting['elementId'] + '">' + ja_getMessage(a) + '</label></div>';
                     break;
                 case 'text':
-                    section.innerHTML  = section.innerHTML + '<input type="text" size="' + (setting['max'] ? setting['max'] : 8)
+                    section.innerHTML  = section.innerHTML + '<div class="controls-container"><input type="text" size="' + (setting['max'] ? setting['max'] : 8)
                         + '" maxlength="' + (setting['max'] ? setting['max'] : "7") + '" id="' + setting['elementId']
-                        + '" /> ' + ja_getMessage(a) + '<br>';
+                        + '" /> ' +'<label for="' + setting['elementId'] + '">' + ja_getMessage(a) + '</label></div>';
                     break;
                 case 'checkbox':
-                    section.innerHTML  = section.innerHTML + '<input type="checkbox" id="' + setting['elementId'] + '" /> '
-                        + ja_getMessage(a) + ' <br>';
+                    section.innerHTML  = section.innerHTML + '<div class="controls-container"><input type="checkbox" name="' + setting['elementId'] + '" id="' + setting['elementId'] + '" /> '
+                        +'<label for="' + setting['elementId'] + '">' + ja_getMessage(a) + '</label></div>';
                     break;
             }
             ja_log(section.innerHTML, 3);
         });
-        section.innerHTML  = section.innerHTML + '<br /><input type="submit" value="' + ja_getMessage("apply") + '" onclick="return ja_save();"> </input>'
-            + '<input type="submit" value="' + ja_getMessage('resetToDefault') + '" onclick="return ja_reset();"> </input>';
+        section.innerHTML  = section.innerHTML + '<br/><button class="btn btn-default" onclick="return ja_save() && false;">' + ja_getMessage("apply") + '</button> '
+            + '<button class="btn btn-default" onclick="return ja_reset() && false;">' + ja_getMessage('resetToDefault') + '</button>';
         ja_log(section.innerHTML, 2);
-        ja_settings_dom.appendChild(section);
+		form.appendChild(section);
+        ja_settings_dom_content.appendChild(form);
 
         var userTabs = document.getElementById('user-info');
         var navTabs = userTabs.getElementsByClassName('nav-tabs', userTabs)[0];
@@ -197,6 +209,11 @@ function run_ja() {
 
         ja_settings_dom.id = "sidepanel-ja";
         ja_settings_dom.className = "tab-pane";
+
+		ja_settings_dom_content.style.paddingTop = "0";
+		ja_settings_dom_panel.appendChild(ja_settings_dom_content);
+		ja_settings_dom.appendChild(ja_settings_dom_panel);
+
         if(tabContent != null) {
             tabContent.appendChild(ja_settings_dom);
         } else {
