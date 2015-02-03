@@ -156,7 +156,7 @@ function run_ja() {
         /**
          * Add config setting
          */
-        var ja_settings_dom = document.createElement("section");
+        var ja_settings_dom = document.createElement("div");
         ja_settings_dom.innerHTML = ja_getMessage("settingsTitle");
 
         var section = document.createElement('p');
