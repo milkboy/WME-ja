@@ -149,7 +149,8 @@ function run_ja() {
         //HTML changes after login, even though the page is not reloaded. Better do init again.
         window.Waze.loginManager.events.register("afterloginchanged", null, junctionangle_init);
 
-        //Skipping for now, as changes must be saved manually anyway //window.addEventListener("beforeunload", ja_save, false);
+        //Skipping for now, as changes must be saved manually anyway
+		//window.addEventListener("beforeunload", ja_save, false);
 
 		ja_load();
 		ja_loadTranslations();
@@ -161,45 +162,71 @@ function run_ja() {
         var ja_settings_dom_content = document.createElement("div");
 		ja_settings_dom_panel.className = "side-panel-section";
 		ja_settings_dom_content.className = "tab-content";
-        ja_settings_dom_content.innerHTML = "<h4>" + ja_getMessage("settingsTitle") + "</h4>";
+		var ja_settings_header = document.createElement('h4');
+		ja_settings_header.appendChild(document.createTextNode(ja_getMessage("settingsTitle")));
+        ja_settings_dom_content.appendChild(ja_settings_header);
 
         var form = document.createElement('form');
         var section = document.createElement('div');
 		section.className = "form-group";
 		form.className = "attributes-form side-panel-section";
-        //section.style.paddingTop = "8px";
-        //section.style.textIndent = "16px";
+		//form.addEventListener("submit", function(f) { return function(evt) { alert('FSCK!!!' + f + evt); evt.preventDefault(); return false;}} (form),true);
         section.id = "jaOptions";
-        section.innerHTML  = '';
         ja_log("---------- Creating settings HTML ----------", 2);
         Object.getOwnPropertyNames(ja_settings).forEach(function (a,b,c) {
             var setting = ja_settings[a];
-            ja_log("---------- " + a + " ----------", 2);
-            ja_log(section.innerHTML, 2);
+			var ja_controls_container = document.createElement('div');
+			var ja_input = document.createElement('input');
+			var ja_label = document.createElement('label');
+			ja_controls_container.className = "controls-container";
+			ja_input.type = setting['elementType'];
             switch (setting['elementType']) {
                 case 'color':
-                    section.innerHTML  = section.innerHTML + '<div class="controls-container"><input type="color" id="' + setting['elementId']
-                        + '" /> ' +'<label for="' + setting['elementId'] + '">' + ja_getMessage(a) + '</label></div>';
+					ja_input.id = setting['elementId'];
+					ja_controls_container.appendChild(ja_input);
                     break;
                 case 'number':
-                    section.innerHTML  = section.innerHTML + '<div class="controls-container"><input type="number" id="' + setting['elementId']
-                        + '" min="'+setting['min']+'" max="'+setting['max']+'" required="" /> ' +'<label for="' + setting['elementId'] + '">' + ja_getMessage(a) + '</label></div>';
+					ja_input.id = setting['elementId'];
+					ja_input.setAttribute("min", setting['min']);
+					ja_input.setAttribute("max", setting['max']);
+					ja_controls_container.appendChild(ja_input);
                     break;
                 case 'text':
-                    section.innerHTML  = section.innerHTML + '<div class="controls-container"><input type="text" size="' + (setting['max'] ? setting['max'] : 8)
-                        + '" maxlength="' + (setting['max'] ? setting['max'] : "7") + '" id="' + setting['elementId']
-                        + '" /> ' +'<label for="' + setting['elementId'] + '">' + ja_getMessage(a) + '</label></div>';
+					ja_input.id = setting['elementId'];
+					ja_input.size = (setting['max'] ? setting['max'] : 8);
+					ja_input.maxlength = (setting['max'] ? setting['max'] : 7);
+					ja_controls_container.appendChild(ja_input);
                     break;
                 case 'checkbox':
-                    section.innerHTML  = section.innerHTML + '<div class="controls-container"><input type="checkbox" name="' + setting['elementId'] + '" id="' + setting['elementId'] + '" /> '
-                        +'<label for="' + setting['elementId'] + '">' + ja_getMessage(a) + '</label></div>';
+					ja_input.id = setting['elementId'];
+					ja_controls_container.appendChild(ja_input);
                     break;
             }
-            ja_log(section.innerHTML, 3);
-        });
-        section.innerHTML  = section.innerHTML + '<br/><button class="btn btn-default" onclick="return ja_save();">' + ja_getMessage("apply") + '</button> '
-            + '<button class="btn btn-default" onclick="return ja_reset();">' + ja_getMessage('resetToDefault') + '</button>';
-        ja_log(section.innerHTML, 2);
+
+			ja_label.setAttribute("for", setting['elementId']);
+			ja_label.appendChild(document.createTextNode(ja_getMessage(a)));
+			ja_controls_container.appendChild(ja_label);
+
+			section.appendChild(ja_controls_container);
+		});
+		section.appendChild(document.createElement('br'));
+		
+		var ja_apply_button = document.createElement('button');
+		ja_apply_button.type = "button";
+		ja_apply_button.className = "btn btn-default";
+		ja_apply_button.addEventListener("click", ja_save, true);
+		ja_apply_button.appendChild(document.createTextNode(ja_getMessage("apply")));
+		
+		var ja_reset_button = document.createElement('button');
+		ja_reset_button.type = "button";
+		ja_reset_button.className = "btn btn-default";
+		ja_reset_button.addEventListener("click", ja_reset, true);
+		ja_reset_button.appendChild(document.createTextNode(ja_getMessage("resetToDefault")));
+		
+		section.appendChild(ja_apply_button);
+		section.appendChild(document.createTextNode(" "));
+		section.appendChild(ja_reset_button);
+
 		form.appendChild(section);
         ja_settings_dom_content.appendChild(form);
 
@@ -218,7 +245,10 @@ function run_ja() {
 		var ja_info = document.createElement('ul');
 		ja_info.className = "additional-attributes list-unstyled -side-panel-section";
 		ja_info.style.fontSize = "11px";
-		ja_info.innerHTML = "<li>" + ja_getMessage("name") + ": " + junctionangle_version + "</li>";
+		
+		var ja_version_elem = document.createElement('li');
+		ja_version_elem.appendChild(document.createTextNode(ja_getMessage("name")));
+		ja_info.appendChild(ja_version_elem);
 
 		ja_settings_dom.appendChild(ja_info);
 
