@@ -180,7 +180,7 @@ function run_ja() {
                         + ja_getMessage(a) + ' <br>';
                     break;
             }
-            ja_log(section.innerHTML, 2);
+            ja_log(section.innerHTML, 3);
         });
         section.innerHTML  = section.innerHTML + '<br /><input type="submit" value="' + ja_getMessage("apply") + '" onclick="return ja_save();"> </input>'
             + '<input type="submit" value="' + ja_getMessage('resetToDefault') + '" onclick="return ja_reset();"> </input>';
@@ -236,6 +236,11 @@ function run_ja() {
         }
 
         ja_apply();
+		
+		//Do a calculation if we have segments selected (permalink etc)
+		if(window.Waze.selectionManager.selectedItems.length > 0) {
+			ja_calculate();
+		}
     }
 
     function ja_get_streets(segmentId) {
@@ -1155,6 +1160,7 @@ function run_ja() {
 	}
 	
 	function ja_loadTranslations() {
+		ja_log("Loading translations",2);
 		I18n.translations[window.I18n.defaultLocale].ja = {};
 		def = I18n.translations[window.I18n.defaultLocale].ja;
 		sv = {};
