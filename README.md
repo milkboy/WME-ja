@@ -19,6 +19,9 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 ![Screenshot](https://github.com/milkboy/WME-ja/raw/master/screenshot1.png)
 
 ###Changelog
+####1.6.3
+- Add basic input validation and the WME look&feel
+
 ####1.6.2
 - Fixed 3 issues with permalink to selected nodes
 
