@@ -13,11 +13,10 @@ but anything might break at any given time anyway :stuck_out_tongue_closed_eyes:
 *WME Junction Angle Info extension* by *Michael Wikberg*
 is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-nc-sa/3.0/deed.en_US).
 
-Based on a work at https://github.com/milkboy/WME-ja
+Source code and issue tracker at https://github.com/milkboy/WME-ja
 
-Also available at http://userscripts.org/scripts/show/160864
 
-![Screenshot](http://wikberg.fi/grfx/wme_ja.png)
+![Screenshot](https://github.com/milkboy/WME-ja/raw/master/screenshot1.png)
 
 ###Changelog
 ####1.6.2
