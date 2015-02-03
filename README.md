@@ -6,8 +6,7 @@ If two connected segments are selected, it shows the turn angle, otherwise the t
 I try to test with both Chrome (with Tampermonkey, as the userscript functionality changed) and Firefox (Greasemonkey), 
 but anything might break at any given time anyway :stuck_out_tongue_closed_eyes:
 
-- Update 2013-06-05: Chrome extension published in [chrome web store](https://chrome.google.com/webstore/detail/wme-junctionangle/cfcpfikgmfoghjfpfepmklballeagadf)
-- Update 2013-06-06: Firefox add-on available at [Mozilla addons](https://addons.mozilla.org/en-US/firefox/addon/wme-ja/)
+See [Waze wiki pages](https://wiki.waze.com/wiki/Community_Plugins,_Extensions_and_Tools#WME_Junction_Angle_info) for more information on map editing addons
 
 [![Creative Commons License](http://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png)](http://creativecommons.org/licenses/by-nc-sa/3.0/deed.en_US)
 *WME Junction Angle Info extension* by *Michael Wikberg*
