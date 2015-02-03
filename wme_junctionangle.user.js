@@ -122,11 +122,11 @@ function run_ja() {
 
     var ja_settings = {
         guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false},
-        noInstructionColor: { elementType: "text", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff"},
-        keepInstructionColor: { elementType: "text", elementId: "_jaTbKeepInstructionColor", defaultValue: "#aeff3b"},
-        exitInstructionColor: { elementType: "text", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
-        turnInstructionColor: { elementType: "text", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
-        problemColor: { elementType: "text", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
+        noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff"},
+        keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#aeff3b"},
+        exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
+        turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
+        problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
         decimals: { elementType: "text", elementId: "_jaTbDecimals", defaultValue: 0, size: 2, max: 2},
         pointSize: { elementType: "text", elementId: "_jaTbPointSize", defaultValue: 12, size: 2, max: 2}
     };
@@ -170,6 +170,10 @@ function run_ja() {
             ja_log("---------- " + a + " ----------", 2);
             ja_log(section.innerHTML, 2);
             switch (setting['elementType']) {
+                case 'color':
+                    section.innerHTML  = section.innerHTML + '<input type="color" id="' + setting['elementId']
+                        + '" /> ' + ja_getMessage(a) + '<br>';
+                    break;
                 case 'text':
                     section.innerHTML  = section.innerHTML + '<input type="text" size="' + (setting['max'] ? setting['max'] : 8)
                         + '" maxlength="' + (setting['max'] ? setting['max'] : "7") + '" id="' + setting['elementId']
@@ -1107,6 +1111,7 @@ function run_ja() {
                     ja_setOption(a, document.getElementById(setting['elementId']).checked);
                     break;
                 case "text":
+                case "color":
                     ja_setOption(a, document.getElementById(setting['elementId']).value);
                     break;
             }
@@ -1134,6 +1139,7 @@ function run_ja() {
                         document.getElementById(setting['elementId']).checked = ja_getOption(a);
                         break;
                     case "text":
+                    case "color":
                         document.getElementById(setting['elementId']).value = ja_getOption(a);
                         break;
                 }
