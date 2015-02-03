@@ -84,7 +84,7 @@ function run_ja() {
                     value: routingType
                 }),
                 symbolizer: {
-                    pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 6 * parseInt(ja_getOption("decimals")) : 0),
+                    pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
                     fontSize: "12px",
                     fillColor: ja_getOption(fillColorOption),
                     strokeColor: "#183800"
@@ -95,14 +95,14 @@ function run_ja() {
      * Make some style settings
      */
     function ja_style() {
-        ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10)) + (parseInt(ja_getOption("decimals") > 0 ? 6 * parseInt(ja_getOption("decimals")) : 0)));
+        ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10)) + (parseInt(ja_getOption("decimals") > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0)));
         return new window.OpenLayers.Style({
             fillColor: "#ffcc88",
             strokeColor: "#ff9966",
             strokeWidth: 2,
             label: "${angle}",
             fontWeight: "bold",
-            pointRadius: parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 6 * parseInt(ja_getOption("decimals")) : 0),
+            pointRadius: parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
             fontSize: "10px"
         }, {
             rules: [
@@ -127,8 +127,8 @@ function run_ja() {
         exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
         turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
         problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
-        decimals: { elementType: "text", elementId: "_jaTbDecimals", defaultValue: 0, size: 2, max: 2},
-        pointSize: { elementType: "text", elementId: "_jaTbPointSize", defaultValue: 12, size: 2, max: 2}
+        decimals: { elementType: "number", elementId: "_jaTbDecimals", defaultValue: 0, min: 0, max: 2},
+        pointSize: { elementType: "number", elementId: "_jaTbPointSize", defaultValue: 12, min: 6, max: 20}
     };
 
     function junctionangle_init() {
@@ -1110,9 +1110,24 @@ function run_ja() {
                 case "checkbox":
                     ja_setOption(a, document.getElementById(setting['elementId']).checked);
                     break;
-                case "text":
                 case "color":
-                    ja_setOption(a, document.getElementById(setting['elementId']).value);
+					var re = /^#[0-9a-f]{6}$/;
+					if(re.test(document.getElementById(setting['elementId']).value)) {
+						ja_setOption(a, document.getElementById(setting['elementId']).value);
+					} else {
+						ja_setOption(a, ja_settings[a]['default']);
+					}
+					break;
+                case "number":
+					var val = document.getElementById(setting['elementId']).value;
+					if(!isNaN(val) && val == parseInt(val) && val >= setting['min'] && val <= setting['max']) {
+						ja_setOption(a, document.getElementById(setting['elementId']).value);
+					} else {
+						ja_setOption(a, ja_settings[a]['default']);
+					}
+					break;
+                case "text":
+					ja_setOption(a, document.getElementById(setting['elementId']).value);
                     break;
             }
         });
@@ -1138,8 +1153,9 @@ function run_ja() {
                     case "checkbox":
                         document.getElementById(setting['elementId']).checked = ja_getOption(a);
                         break;
-                    case "text":
                     case "color":
+                    case "number":
+                    case "text":
                         document.getElementById(setting['elementId']).value = ja_getOption(a);
                         break;
                 }
@@ -1173,7 +1189,7 @@ function run_ja() {
 		fi = {};
 		//Default language (English)
 		def["name"] = "Junction Angles";
-		def["settingsTitle"] = "Junction Angle settings (please be careful, as no validation is performed yet)";
+		def["settingsTitle"] = "Junction Angle settings";
 		def["apply"] = "Apply";
 		def["resetToDefault"] = "Reset to default";
         def["guess"] = "Estimate routing instructions";
@@ -1187,7 +1203,7 @@ function run_ja() {
 
 		//Finnish (Suomi)
 		fi["name"] = "Risteyskulmat";
-		fi["settingsTitle"] = "Rysteyskulmien asetukset (syötettyjä arvoja ei validoida; olethan varovainen)";
+		fi["settingsTitle"] = "Rysteyskulmien asetukset";
 		fi["apply"] = "Aseta";
 		fi["resetToDefault"] = "Palauta";
         fi["guess"] = "Arvioi reititysohjeet";
@@ -1201,7 +1217,7 @@ function run_ja() {
 
 		//Swedish (Svenska)
 		sv["name"] = "Korsningsvinklar";
-		sv["settingsTitle"] = "Inställningar för korsningsvinklar (ingen validering utförs, var försiktig)";
+		sv["settingsTitle"] = "Inställningar för korsningsvinklar";
 		sv["apply"] = "Godkänn";
 		sv["resetToDefault"] = "Återställ";
         sv["guess"] = "Gissa navigeringsinstruktioner";
