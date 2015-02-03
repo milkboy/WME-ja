@@ -188,8 +188,8 @@ function run_ja() {
         ja_settings_dom.appendChild(section);
 
         var userTabs = document.getElementById('user-info');
-        var navTabs = document.getElementsByClassName('nav-tabs', userTabs)[0];
-        var tabContent = document.getElementsByClassName('tab-content', userTabs)[0];
+        var navTabs = userTabs.getElementsByClassName('nav-tabs', userTabs)[0];
+        var tabContent = userTabs.getElementsByClassName('tab-content', userTabs)[0];
 
         ja_settings_dom.id = "sidepanel-ja";
         ja_settings_dom.className = "tab-pane";
