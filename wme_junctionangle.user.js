@@ -123,7 +123,7 @@ function run_ja() {
     var ja_settings = {
         guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false},
         noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff"},
-        keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#aeff3b"},
+        keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84"},
         exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
         turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
         problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
@@ -213,6 +213,14 @@ function run_ja() {
 		ja_settings_dom_content.style.paddingTop = "0";
 		ja_settings_dom_panel.appendChild(ja_settings_dom_content);
 		ja_settings_dom.appendChild(ja_settings_dom_panel);
+		
+		//Add some version info etc
+		var ja_info = document.createElement('ul');
+		ja_info.className = "additional-attributes list-unstyled -side-panel-section";
+		ja_info.style.fontSize = "11px";
+		ja_info.innerHTML = "<li>" + ja_getMessage("name") + ": " + junctionangle_version + "</li>";
+
+		ja_settings_dom.appendChild(ja_info);
 
         if(tabContent != null) {
             tabContent.appendChild(ja_settings_dom);
