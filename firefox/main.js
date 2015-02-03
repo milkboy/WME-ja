@@ -4,6 +4,7 @@ var self = require("sdk/self");
 
 pageMod.PageMod({
 	include: url,
+	contentScriptWhen: 'end',
 	//contentScript: "alert('Script loaded =)');"
 	contentScriptFile: self.data.url("wme_junctionangle.user.js")
 });

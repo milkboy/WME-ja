@@ -17,7 +17,7 @@
     {
       "matches": [
         "https://www.waze.com/*",
-          "https://editor-beta.waze.com/*"
+        "https://editor-beta.waze.com/*"
       ],
       "include_globs": [
         "*/editor/*"

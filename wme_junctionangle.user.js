@@ -197,8 +197,8 @@ function run_ja() {
             }
             ja_log(section.innerHTML, 3);
         });
-        section.innerHTML  = section.innerHTML + '<br/><button class="btn btn-default" onclick="return ja_save() && false;">' + ja_getMessage("apply") + '</button> '
-            + '<button class="btn btn-default" onclick="return ja_reset() && false;">' + ja_getMessage('resetToDefault') + '</button>';
+        section.innerHTML  = section.innerHTML + '<br/><button class="btn btn-default" onclick="return ja_save();">' + ja_getMessage("apply") + '</button> '
+            + '<button class="btn btn-default" onclick="return ja_reset();">' + ja_getMessage('resetToDefault') + '</button>';
         ja_log(section.innerHTML, 2);
 		form.appendChild(section);
         ja_settings_dom_content.appendChild(form);
@@ -1200,6 +1200,7 @@ function run_ja() {
         }
         ja_options = {};
         ja_apply();
+		return false;
     };
 	
 	function ja_getMessage(key) {
