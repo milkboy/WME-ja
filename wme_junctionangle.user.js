@@ -247,7 +247,7 @@ function run_ja() {
 		ja_info.style.fontSize = "11px";
 		
 		var ja_version_elem = document.createElement('li');
-		ja_version_elem.appendChild(document.createTextNode(ja_getMessage("name")));
+		ja_version_elem.appendChild(document.createTextNode(ja_getMessage("name") + ": v" + junctionangle_version));
 		ja_info.appendChild(ja_version_elem);
 
 		ja_settings_dom.appendChild(ja_info);
