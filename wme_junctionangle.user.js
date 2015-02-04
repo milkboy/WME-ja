@@ -54,12 +54,12 @@ function run_ja() {
             if ((typeof window.Waze.map !== 'undefined') && ('undefined' !== typeof window.Waze.map.events.register) &&
                 ('undefined' !== typeof window.Waze.selectionManager.events.register ) &&
                 ('undefined' !== typeof window.Waze.loginManager.events.register)) {
-                setTimeout(junctionangle_init, 500);
+                setTimeout(function(){junctionangle_init();}, 500);
             } else {
-                setTimeout(ja_bootstrap, 1000);
+                setTimeout(function(){ja_bootstrap();}, 1000);
             }
         } catch (err) {
-            setTimeout(ja_bootstrap, 1000);
+            setTimeout(function(){ja_bootstrap();}, 1000);
         }
     }
 
@@ -893,7 +893,7 @@ function run_ja() {
                     ja_log("Failed to read segment data from model. Restarting calculations.", 1);
                     if(ja_last_restart == 0) {
                         ja_last_restart = new Date().getTime();
-                        setTimeout(ja_calculate, 500);
+                        setTimeout(function(){ja_calculate();}, 500);
                     }
                     return 4;
                 }
@@ -1152,7 +1152,7 @@ function run_ja() {
             ja_reset();
         } else {
             ja_log(ja_options, 2);
-            setTimeout(ja_apply, 500);
+            setTimeout(function(){ja_apply();}, 500);
         }
     };
 
@@ -1194,7 +1194,7 @@ function run_ja() {
         ja_log("Applying stored (or default) settings", 2);
         if(typeof window.Waze.map.getLayersBy("uniqueName","junction_angles")[0] === 'undefined') {
             ja_log("WME not ready yet, trying again in 400 ms", 2);
-            setTimeout(ja_apply, 400);
+            setTimeout(function(){ja_apply();}, 400);
             return;
         }
         if(document.getElementById("sidepanel-ja") != null) {
@@ -1300,7 +1300,7 @@ function run_ja() {
 
 }
 
-//Dynamically create, add and run the script in the real page context
+//Dynamically create, add and run the script in the real page context. We really do need access to many of the objects...
 var DLscript = document.createElement("script");
 DLscript.textContent = '' +
     run_ja.toString() + ' \n' +
