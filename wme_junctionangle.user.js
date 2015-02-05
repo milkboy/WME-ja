@@ -4,7 +4,7 @@
 // @description         Show the angle between two selected (and connected) segments
 // @include             /^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
 // @updateURL           https://github.com/milkboy/WME-ja/raw/master/wme_junctionangle.user.js
-// @version             1.6.4
+// @version             1.6.4.1
 // @grant               none
 // @copyright           2015 Michael Wikberg <waze@wikberg.fi>
 // @license             CC-BY-NC-SA
