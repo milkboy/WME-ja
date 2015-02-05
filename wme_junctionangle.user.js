@@ -49,17 +49,24 @@ function run_ja() {
     	H4: 7
     };
 
-    function ja_bootstrap() {
+    function ja_bootstrap(retries) {
+		retries = retries || 0;
+		//If Waze has not been defined in 10 seconds, it probably won't work anyway.
+		if(retries >= 10) {
+			ja_log("Failed to bootstrap 10 times. Giving up.", 0);
+			return;
+		}
+
         try {
             if ((typeof window.Waze.map !== 'undefined') && ('undefined' !== typeof window.Waze.map.events.register) &&
                 ('undefined' !== typeof window.Waze.selectionManager.events.register ) &&
                 ('undefined' !== typeof window.Waze.loginManager.events.register)) {
                 setTimeout(function(){junctionangle_init();}, 500);
             } else {
-                setTimeout(function(){ja_bootstrap();}, 1000);
+                setTimeout(function(){ja_bootstrap(retries++);}, 1000);
             }
         } catch (err) {
-            setTimeout(function(){ja_bootstrap();}, 1000);
+            setTimeout(function(){ja_bootstrap(retries++);}, 1000);
         }
     }
 
