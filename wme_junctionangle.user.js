@@ -11,7 +11,7 @@
 // ==/UserScript==
 
 /**
- * Copyright 2014 Michael Wikberg <waze@wikberg.fi>
+ * Copyright 2015 Michael Wikberg <waze@wikberg.fi>
  * WME Junction Angle Info extension is licensed under a Creative Commons
  * Attribution-NonCommercial-ShareAlike 3.0 Unported License.
  *
