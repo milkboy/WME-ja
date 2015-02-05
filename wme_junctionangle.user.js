@@ -785,7 +785,7 @@ function run_ja() {
                                 }
                             }
                         } else {
-                            ja_log(".............................", 2);
+                            ja_log("No BC logic.............................", 2);
                             ja_log(s_in,2);
                             ja_log(s_in.isHighway(), 2);
                             ja_log(s_out[s_out_id].isHighway(), 2);
@@ -793,19 +793,27 @@ function run_ja() {
                             ja_log(s_in.model.isLeftHand, 2);
                             //Highway ends, 2(+?) ramps continuing
                             if(s_in.isHighway() && ja_all_ramps(s_out)) {
+								ja_log("HW ends, all outs are ramps == keep", 2);
                                 return ja_routing_type.KEEP;
                             }
                             //Continue straight on highway
                             if(s_in.isHighway() && s_out[s_out_id].isHighway() && !s_n[angles[k][1]].isRoutable()) {
+								ja_log("HW->HW (FIXME. not sure if this is correct at all) == no instruction", 2);
                             	return ja_routing_type.BC;
                             }
                             //Highway -> ramp
                             if(s_in.isHighway() && !s_out[s_out_id].isRoutable()) {
+								ja_log("HW->ramp == exit", 2);
                                 //Exit right on RHD, left on LHD
                                 if(s_in.model.isLeftHand ? (angle > 0 ) : (angle < 0)) {
                                     return ja_routing_type.EXIT;
                                 }
                             }
+							//TESTING....
+							if(s_in.model.isLeftHand ? (angle < 0 ) : (angle > 0)) {
+								return ja_routing_type.BC;
+							}
+							ja_log("DEFAULT: keep", 2);
                             return ja_routing_type.KEEP;
                         }
                     }
