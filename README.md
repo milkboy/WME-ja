@@ -18,6 +18,10 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 ![Screenshot](https://github.com/milkboy/WME-ja/raw/master/screenshot1.png)
 
 ###Changelog
+####1.6.5
+- Fixed (one of the) best continuation detection bugs
+- Added detection of "private vehicle" + "all day" + "every day", restriction
+
 ####1.6.4
 - Add version number display in settings tab
 
