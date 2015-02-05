@@ -322,13 +322,17 @@ function run_ja() {
         return { primary: primary, secondary: secondary };
     }
 
-    function ja_primary_name_and_type_match(street_in, streets) {
+    function ja_primary_name_and_type_match(street_in, streets, exceptStreet) {
         ja_log("PNT", 2);
         ja_log(street_in, 2);
         return Object.getOwnPropertyNames(streets).some(function (id, index, array) {
             ja_log("PNT Checking element " + index, 2);
             ja_log(streets[id], 2);
-            return (streets[id].primary.name == street_in.primary.name
+			ja_log("Checking exception", 2);
+			ja_log(exceptStreet, 2);
+			var exempt = exceptStreet[id] != null && exceptStreet[id] != id;
+			ja_log(exempt, 2);
+            return (!exempt && streets[id].primary.name == street_in.primary.name
                 && streets[id].primary.type == street_in.primary.type);
         });
     }
@@ -626,7 +630,7 @@ function run_ja() {
                                         //6 Is any SN a primary name AND type match?
                                         //FIXME: Does this mean match to s_in?
                                         ja_log("BC 6", 2);
-                                        if(ja_primary_name_and_type_match(street_in, street_n)) {
+                                        if(ja_primary_name_and_type_match(street_in, street_n, tmp_street_out)) {
                                             ja_log("Found a name+type match", 2);
                                             return ja_routing_type.KEEP;
                                         } else {
