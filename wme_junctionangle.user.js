@@ -72,6 +72,7 @@ function run_ja() {
 
     function ja_log(ja_log_msg, ja_log_level) {
 
+		//##NO_FF_START##
         if (ja_log_level <= junctionangle_debug) {
             if (typeof ja_log_msg == "object") {
                 console.debug(ja_log_msg);
@@ -80,6 +81,7 @@ function run_ja() {
                 console.debug("WME Junction Angle: " + ja_log_msg);
             }
         }
+		//##NO_FF_END##
     }
 
     function ja_get_style_rule(routingType, fillColorOption) {
