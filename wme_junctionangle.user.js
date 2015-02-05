@@ -48,6 +48,20 @@ function run_ja() {
     	H3: 6,
     	H4: 7
     };
+	
+	var ja_vehicle_types = {
+		TRUCK: 1,
+		PUBLIC: 2,
+		TAXI: 4,
+		BUS: 8,
+		HOV2: 16,
+		HOV3: 32,
+		RV: 64,
+		TOWING: 128,
+		MOTORBIKE: 256,
+		PRIVATE: 512,
+		HAZ: 1024
+	}
 
     function ja_bootstrap(retries) {
 		retries = retries || 0;
@@ -833,11 +847,41 @@ function run_ja() {
     }
 
     function ja_is_turn_allowed(s_from, via_node, s_to) {
-        ja_log("Allow from " + s_from.attributes.id + " to " + s_to.attributes.id + " via " + via_node.attributes.id + "?"
+        ja_log("Allow from " + s_from.attributes.id + " to " + s_to.attributes.id + " via " + via_node.attributes.id + "? "
             + via_node.isTurnAllowedBySegDirections(s_from, s_to), 2);
 
-        return via_node.isTurnAllowedBySegDirections(s_from, s_to);
+		//Is there a driving direction restriction?
+		if(!via_node.isTurnAllowedBySegDirections(s_from, s_to)) return false;
+
+		ja_log("Checking restrictions", 2);
+		ja_log(s_to, 3);
+		
+		if(s_to.attributes.fromNodeID == via_node.attributes.id) {
+			ja_log("FWD direction",3);
+			return ja_is_car_allowed_by_restrictions(s_to.attributes.fwdRestrictions);
+		} else {
+			ja_log("REV direction",3);
+			return ja_is_car_allowed_by_restrictions(s_to.attributes.revRestrictions);
+		}
     }
+	
+	function ja_is_car_allowed_by_restrictions(restrictions) {
+		ja_log("Checking restrictions for cars", 2);
+		ja_log(restrictions, 3);
+		for(var ja_ri = 0; ja_ri < restrictions.length; ja_ri++) {
+			ja_log("Checking restriction " + ja_ri, 3);
+			if( restrictions[ja_ri].allDay //All day restriction
+				&& restrictions[ja_ri].days == 127	//Every week day
+				&& ( restrictions[ja_ri].vehicleTypes == -1 //All vehicle types
+					|| restrictions[ja_ri].vehicleTypes & ja_vehicle_types.PRIVATE //or at least private cars
+				)
+			) {
+				return false;
+			}
+		}
+		ja_log("No restriction found", 2);
+		return true;
+	}
 
     function ja_calculate() {
         ja_log(window.Waze.map, 3);
