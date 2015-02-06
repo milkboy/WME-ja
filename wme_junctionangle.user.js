@@ -997,6 +997,9 @@ function run_ja() {
 
             var ja_label_distance;
             switch (window.Waze.map.zoom) {
+                case 10:
+                    ja_label_distance = 2.8;
+                    break;
                 case 9:
                     ja_label_distance = 4;
                     break;
@@ -1026,7 +1029,7 @@ function run_ja() {
                     break;
             }
 
-            ja_label_distance = ja_label_distance * (1+(ja_getOption("decimals") > 0 ? 0.2*ja_getOption("decimals") : 0));
+            ja_label_distance = ja_label_distance * (1+(0.2*parseInt(ja_getOption("decimals"))));
 
             ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
 
