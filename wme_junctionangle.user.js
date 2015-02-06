@@ -172,6 +172,8 @@ function run_ja() {
         //HTML changes after login, even though the page is not reloaded. Better do init again.
         window.Waze.loginManager.events.register("afterloginchanged", null, junctionangle_init);
 
+		//Recalculate on zoom end also
+		window.Waze.map.events.register("zoomend", null, ja_calculate);
         //Skipping for now, as changes must be saved manually anyway
 		//window.addEventListener("beforeunload", ja_save, false);
 
