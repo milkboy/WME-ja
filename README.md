@@ -18,6 +18,10 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 ![Screenshot](https://github.com/milkboy/WME-ja/raw/master/screenshot1.png)
 
 ###Changelog
+####1.6.6
+- Always redraw points on zoom, since distance should be changed
+- Show angles on zoom level 10 also
+
 ####1.6.5
 - Fixed (one of the) best continuation detection bugs
 - Added detection of "private vehicle" + "all day" + "every day", restriction
