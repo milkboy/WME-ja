@@ -908,6 +908,7 @@ function run_ja() {
 		}
 		
 	}
+
 	function ja_calculate() {
 		ja_calculation_timer.start();
 	}
@@ -1146,7 +1147,7 @@ function run_ja() {
 		ja_mapLayer.addFeatures(ja_features);
 		ja_last_restart = 0;
 		var ja_end_time = Date.now();
-		ja_log("Calculation took " + String(ja_end_time - ja_start_time) + " ms", 1);
+		ja_log("Calculation took " + String(ja_end_time - ja_start_time) + " ms", 2);
 	}
 
 	function ja_points_equal(point1, point2) {
