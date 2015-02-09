@@ -885,7 +885,36 @@ function run_ja() {
 		return true;
 	}
 
+	var ja_calculation_timer = {
+		start: function() {
+			ja_log("Starting timer", 2);
+			this.cancel();
+			self = this;
+			this.timeoutID = window.setTimeout(function(){self.calculate();}, 200);
+		},
+
+		calculate: function() {
+			ja_calculate_real();
+			delete this.timeoutID;
+		},
+		
+		cancel: function() {
+			if(typeof this.timeoutID == "number") {
+				window.clearTimeout(this.timeoutID);
+				ja_log("Cleared timeout ID" + this.timeoutID, 2);
+				delete this.timeoutID;
+				
+			}
+		}
+		
+	}
 	function ja_calculate() {
+		ja_calculation_timer.start();
+	}
+
+	function ja_calculate_real() {
+		ja_log("Actually calculating now", 2);
+		var ja_start_time = Date.now();
 		ja_log(window.Waze.map, 3);
 		if(typeof ja_mapLayer === 'undefined') { return 1;}
 		//clear old info
@@ -1116,6 +1145,8 @@ function run_ja() {
 		//Update the displayed angles
 		ja_mapLayer.addFeatures(ja_features);
 		ja_last_restart = 0;
+		var ja_end_time = Date.now();
+		ja_log("Calculation took " + String(ja_end_time - ja_start_time) + " ms", 1);
 	}
 
 	function ja_points_equal(point1, point2) {
