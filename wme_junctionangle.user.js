@@ -268,7 +268,7 @@ function run_ja() {
 		
 		//Add some version info etc
 		var ja_info = document.createElement('ul');
-		ja_info.className = "additional-attributes list-unstyled -side-panel-section";
+		ja_info.className = "list-unstyled -side-panel-section";
 		ja_info.style.fontSize = "11px";
 		
 		var ja_version_elem = document.createElement('li');
