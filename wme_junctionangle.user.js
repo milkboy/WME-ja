@@ -24,7 +24,7 @@
 function run_ja() {
 
 	var junctionangle_version = "1.6.7";
-	var junctionangle_debug = 3;	//0: no output, 1: basic info, 2: debug 3: crazy debug
+	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
 	var $;
 	var ja_features = [];
 
@@ -157,6 +157,15 @@ function run_ja() {
 		pointSize: { elementType: "number", elementId: "_jaTbPointSize", defaultValue: 12, min: 6, max: 20}
 	};
 
+	function ja_helplink(url, text) {
+		var elem = document.createElement('li');
+		var l = document.createElement('a');
+		l.href = url;
+		l.appendChild(document.createTextNode(ja_getMessage(text)));
+		elem.appendChild(l);
+		return elem;
+	}
+	
 	function junctionangle_init() {
 
 		//Listen for selected nodes change event
@@ -277,6 +286,8 @@ function run_ja() {
 		var ja_version_elem = document.createElement('li');
 		ja_version_elem.appendChild(document.createTextNode(ja_getMessage("name") + ": v" + junctionangle_version));
 		ja_info.appendChild(ja_version_elem);
+		
+		ja_info.appendChild(ja_helplink('https://wiki.waze.com/wiki/Roundabouts/USA#Understanding_navigation_instructions', 'roundaboutnav'));
 
 		ja_settings_dom.appendChild(ja_info);
 
@@ -968,7 +979,7 @@ function run_ja() {
 				}
 			}
 		}
-		//FIXME: Compare all other to mod(90) +/- 15..
+
 		var is_normal = true;
 		ja_log(n_in, 3);
 		ja_log(junction, 3);
@@ -994,6 +1005,7 @@ function run_ja() {
 				} else {
 					ja_log("turn is NOT normal", 3);
 					is_normal = false;
+					//Push a marker on the node to show which exit is "not normal"
 					ja_features.push(
 						new window.OpenLayers.Feature.Vector(
 							window.Waze.model.nodes.get(n).geometry,
@@ -1526,10 +1538,12 @@ function run_ja() {
 		def["exitInstructionColor"] = "Color for exit prompt";
 		def["turnInstructionColor"] = "Color for turn prompt";
 		def["problemColor"] = "Color for angles to avoid";
-		def["roundaboutColor"] = "Color for roundabouts";
+		def["roundaboutColor"] = "Color for roundabouts (with non-straight exits)";
 		def["decimals"] = "Number of decimals";
 		def["pointSize"] = "Base point size";
 
+		def["roundaboutnav"] = "WIKI: Roundabouts";
+		
 		//Finnish (Suomi)
 		fi["name"] = "Risteyskulmat";
 		fi["settingsTitle"] = "Rysteyskulmien asetukset";
@@ -1541,7 +1555,7 @@ function run_ja() {
 		fi["exitInstructionColor"] = "\"poistu\"-ohjeen väri";
 		fi["turnInstructionColor"] = "\"Käänny\"-ohjeen väri";
 		fi["problemColor"] = "Vältettävien kulmien väri";
-		def["roundaboutColor"] = "Liikenneympyrän ohjeen väri";
+		def["roundaboutColor"] = "Liikenneympyrän (jolla ei-suoria kulmia) ohjeen väri";
 		fi["decimals"] = "Desimaalien määrä";
 		fi["pointSize"] = "Ympyrän peruskoko";
 
@@ -1556,7 +1570,7 @@ function run_ja() {
 		sv["exitInstructionColor"] = "Färg för \"ta av\"-instruktion";
 		sv["turnInstructionColor"] = "Färg för \"sväng\"-instruktion";
 		sv["problemColor"] = "Färg för vinklar att undvika";
-		def["roundaboutColor"] = "Färg för rondell";
+		def["roundaboutColor"] = "Färg för rondell (med icke-räta vinklar)";
 		sv["decimals"] = "Decimaler";
 		sv["pointSize"] = "Cirkelns basstorlek";
 		
