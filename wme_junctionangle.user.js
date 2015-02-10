@@ -24,7 +24,7 @@
 function run_ja() {
 
 	var junctionangle_version = "1.6.7";
-	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
+	var junctionangle_debug = 3;	//0: no output, 1: basic info, 2: debug 3: crazy debug
 	var $;
 	var ja_features = [];
 
@@ -930,6 +930,99 @@ function run_ja() {
 		ja_log("angle is " + angle,3);
 		return angle;
 	}
+	
+	function ja_is_roundabout_normal(junctionID, n_in) {
+		ja_log("Check normal roundabout", 3);
+		var junction = window.Waze.model.junctions.get(junctionID);
+		var nodes = {};
+		for(var i = 0; i < junction.segIDs.length; i++) {
+			var s = window.Waze.model.segments.get(junction.segIDs[i]);
+			ja_log("i: " + i, 3);
+			//ja_log(s, 3);
+			if(!nodes.hasOwnProperty(s.attributes.toNodeID)) {
+				ja_log("Adding node id: " + s.attributes.toNodeID, 3);
+				//Check if node has valid exits
+				var valid = false;
+				var currNode = window.Waze.model.nodes.get(s.attributes.toNodeID);
+				ja_log(currNode, 3);
+				for(var s_exit_i = 0; s_exit_i < currNode.attributes.segIDs.length; s_exit_i++) {
+					ja_log("s_exit_i: " + s_exit_i, 3);
+					var s_exit = window.Waze.model.segments.get(currNode.attributes.segIDs[s_exit_i]);
+					ja_log(s_exit, 3);
+					if(s_exit.attributes.junctionID !== null) {
+						//part of the junction.. Ignoring
+						ja_log(s_exit.attributes.id + " is in the roundabout. ignoring", 3);
+					} else {
+						ja_log("Checking: " +s_exit.attributes.id, 3);
+						if(currNode.isTurnAllowedBySegDirections(s, s_exit)) {
+							//Exit possibly allowed
+							ja_log("YAY", 3);
+							valid = true;
+						} else {
+							ja_log("NAY", 3);
+						}
+					}
+				}
+				if(valid) {
+					nodes[s.attributes.toNodeID] = window.Waze.model.nodes.get(s.attributes.toNodeID);
+				}
+			}
+		}
+		//FIXME: Compare all other to mod(90) +/- 15..
+		var is_normal = true;
+		ja_log(n_in, 3);
+		ja_log(junction, 3);
+		ja_log(nodes, 3);
+		for(var n in nodes) {
+			ja_log("Checking " + n, 3);
+			if(n == n_in) {
+				ja_log("Not comparing to n_in ;)", 3);
+			} else {
+				var angle = ja_angle_between_points(
+					window.Waze.model.nodes.get(n_in).geometry,
+					ja_coordinates_to_point(junction.geometry.coordinates),
+					window.Waze.model.nodes.get(n).geometry
+				);
+				ja_log("Angle is: " + angle, 3);
+				ja_log("Normalized angle is: " + (angle%90), 3);
+				//angle = Math.abs((angle%90 - 90))
+				angle = Math.abs((angle%90))
+				ja_log("Angle is: " + angle, 3);
+				// 90 +/- 15 is considered "normal"
+				if(angle <= 15 || 90-angle <= 15) {
+					ja_log("turn is normal", 3);
+				} else {
+					ja_log("turn is NOT normal", 3);
+					is_normal = false;
+					ja_features.push(
+						new window.OpenLayers.Feature.Vector(
+							window.Waze.model.nodes.get(n).geometry,
+							{ 
+								angle: ja_round(Math.min(angle, 90-angle)),
+								ja_type: ja_routing_type.ROUNDABOUT
+							}
+						)
+					);
+				}
+			}
+		}
+		return is_normal;
+	}
+	
+	/**
+	 * Helper to get get correct projections for roundabout center point
+	 */
+	function ja_coordinates_to_point(coordinates) {
+		return window.OpenLayers.Projection.transform(
+			new window.OpenLayers.Geometry.Point(
+				coordinates[0],
+				coordinates[1]
+				),
+			"EPSG:4326",
+			ja_mapLayer.projection.projCode
+		);
+	}
+	
 	function ja_calculate_real() {
 		ja_log("Actually calculating now", 2);
 		var ja_start_time = Date.now();
@@ -974,79 +1067,62 @@ function run_ja() {
 		//Figure out if we have a roundabout and do some magic
 		var ja_roundabouts = window.Waze.model.junctions.getObjectArray();
 		var ja_selected_roundabouts = {};
-		console.log(ja_roundabouts);
+		ja_log(ja_roundabouts, 3);
 		for (var i = 0; i < ja_nodes.length; i++) {
-			console.log("i " + i);
-			console.log(window.Waze.model.nodes.get(ja_nodes[i]));
+			ja_log("i " + i, 3);
+			ja_log(window.Waze.model.nodes.get(ja_nodes[i]), 3);
 			
 			var tmp_s = null;
 			var tmp_junctionID = null;
 			for(var j = 0; j < window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs.length; j++) {
-				console.log("j " + j);
-				console.log(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]);
+				ja_log("j " + j, 3);
+				ja_log(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j], 3);
 				
 				if(window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID) {
-						console.log("WE ARE IN OR AROUND A ROUNDABOUT: " + window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID);
+						ja_log("WE ARE IN OR AROUND A ROUNDABOUT: " + window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID, 3);
 						tmp_junctionID = window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID;
 				} else {
 					tmp_s = window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j];
+					tmp_n = ja_nodes[i];
 				}
-				console.log("tmp_s: " + (tmp_s === null ? 'null' : tmp_s));
+				ja_log("tmp_s: " + (tmp_s === null ? 'null' : tmp_s), 3);
 			}
-			console.log("final tmp_s: " + (tmp_s === null ? 'null' : tmp_s));
+			ja_log("final tmp_s: " + (tmp_s === null ? 'null' : tmp_s), 3);
 			if(tmp_junctionID === null) continue;
 			if(!ja_selected_roundabouts.hasOwnProperty(tmp_junctionID)) {
-				ja_selected_roundabouts[tmp_junctionID] = { 'in': tmp_s, 'out': null, 'p': window.Waze.model.junctions.get(tmp_junctionID).geometry };
+				ja_selected_roundabouts[tmp_junctionID] = { 'in_s': tmp_s, 'in_n': tmp_n, 'out_s': null, 'out_n': null, 'p': window.Waze.model.junctions.get(tmp_junctionID).geometry };
 			} else {
-				ja_selected_roundabouts[tmp_junctionID].out = tmp_s;
+				ja_selected_roundabouts[tmp_junctionID].out_s = tmp_s;
+				ja_selected_roundabouts[tmp_junctionID].out_n = ja_nodes[i];
 			}
 		}
 
-		console.log(ja_mapLayer);
-		console.log("ACTIVE ROUNDABOUTS");
 		//Do some fancy painting for the roundabouts...
 		for(var tmp_roundabout in ja_selected_roundabouts) {
-			console.log("WANTING TO PAINT ROUNDABOUT");
-			console.log(tmp_roundabout);
-			console.log(ja_selected_roundabouts[tmp_roundabout]);
-			console.log(window.Waze.model.junctions.get(tmp_roundabout));
-			console.log(ja_selected_roundabouts[tmp_roundabout].p.x);
-			console.log(ja_selected_roundabouts[tmp_roundabout].p.y);
-			console.log(ja_selected_roundabouts[tmp_roundabout].p.coordinates[0]);
-			console.log(ja_selected_roundabouts[tmp_roundabout].p.coordinates[1]);
+			ja_log(tmp_roundabout, 3);
+			ja_log(ja_selected_roundabouts[tmp_roundabout], 3);
 
-			console.log(ja_mapLayer.projection);
-			console.log(window.OpenLayers.Projection.transform(new window.OpenLayers.Geometry.Point(ja_selected_roundabouts[tmp_roundabout].p.coordinates[0],ja_selected_roundabouts[tmp_roundabout].p.coordinates[1]), "EPSG:4326", ja_mapLayer.projection.projCode));
+			ja_log(ja_coordinates_to_point(ja_selected_roundabouts[tmp_roundabout].p.coordinates), 3);
 
 			//Transform LonLat to actual layer projection
-			var tmp_roundabout_center = 
-				window.OpenLayers.Projection.transform(
-					new window.OpenLayers.Geometry.Point(
-						ja_selected_roundabouts[tmp_roundabout].p.coordinates[0],
-						ja_selected_roundabouts[tmp_roundabout].p.coordinates[1]
-					),
-					"EPSG:4326",
-					ja_mapLayer.projection.projCode
-				);
+			var tmp_roundabout_center = ja_coordinates_to_point(ja_selected_roundabouts[tmp_roundabout].p.coordinates);
+			var angle = ja_angle_between_points(
+				window.Waze.model.nodes.get(ja_selected_roundabouts[tmp_roundabout].in_n).geometry,
+				tmp_roundabout_center,
+				window.Waze.model.nodes.get(ja_selected_roundabouts[tmp_roundabout].out_n).geometry
+			);
 			ja_features.push(
 				new window.OpenLayers.Feature.Vector(
 					tmp_roundabout_center,
 					{ 
-						angle: 'XX',
-						ja_type: ja_routing_type.ROUNDABOUT 
+						angle: ja_round(angle),
+						ja_type: ja_is_roundabout_normal(tmp_roundabout, ja_selected_roundabouts[tmp_roundabout].in_n) ? ja_routing_type.TURN : ja_routing_type.ROUNDABOUT
 					}
 				)
 			);
 		}
-console.log(ja_features);
 
-/*
-ja_features.push(new window.OpenLayers.Feature.Vector(
-							new window.OpenLayers.Geometry.Point(
-									node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
-							)
-							, { angle: ja_round(a) + "°", ja_type: "generic" }
-						));*/
+		//Start looping through selected nodes
 		for (var i = 0; i < ja_nodes.length; i++) {
 			node = window.Waze.model.nodes.get(ja_nodes[i]);
 			if (node == null || !node.hasOwnProperty('attributes')) {
