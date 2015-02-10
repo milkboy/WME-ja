@@ -916,6 +916,20 @@ function run_ja() {
 		ja_calculation_timer.start();
 	}
 
+	/**
+	 * p2 being "center"
+	 */
+	function ja_angle_between_points(p0,p1,p2) {
+		ja_log("p0 " + p0,3);
+		ja_log("p1 " + p1,3);
+		ja_log("p2 " + p2,3);
+		var a = Math.pow(p1.x-p0.x,2) + Math.pow(p1.y-p0.y,2);
+        var b = Math.pow(p1.x-p2.x,2) + Math.pow(p1.y-p2.y,2);
+        var c = Math.pow(p2.x-p0.x,2) + Math.pow(p2.y-p0.y,2);
+		var angle = Math.acos((a+b-c) / Math.sqrt(4*a*b)) / (Math.PI / 180);
+		ja_log("angle is " + angle,3);
+		return angle;
+	}
 	function ja_calculate_real() {
 		ja_log("Actually calculating now", 2);
 		var ja_start_time = Date.now();
