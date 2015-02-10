@@ -36,7 +36,8 @@ function run_ja() {
 		TURN: "junction",
 		EXIT: "junction_exit", //not actually used (yet)
 		PROBLEM: "junction_problem",
-		ERROR: "junction_error"
+		ERROR: "junction_error",
+		ROUNDABOUT: "junction_roundabout"
 	};
 	
 	var ja_road_type = {
@@ -138,7 +139,8 @@ function run_ja() {
 				ja_get_style_rule(ja_routing_type.KEEP, "keepInstructionColor", "#183800"),
 				ja_get_style_rule(ja_routing_type.EXIT, "exitInstructionColor", "#183800"),
 				ja_get_style_rule(ja_routing_type.PROBLEM, "problemColor", "#183800"),
-				ja_get_style_rule(ja_routing_type.ERROR, "problemColor", "#ff0000")
+				ja_get_style_rule(ja_routing_type.ERROR, "problemColor", "#ff0000"),
+				ja_get_style_rule(ja_routing_type.ROUNDABOUT, "roundaboutColor", "#ff8000")
 			]
 		});
 	}
@@ -150,10 +152,20 @@ function run_ja() {
 		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
 		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
 		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
+		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000"},
 		decimals: { elementType: "number", elementId: "_jaTbDecimals", defaultValue: 0, min: 0, max: 2},
 		pointSize: { elementType: "number", elementId: "_jaTbPointSize", defaultValue: 12, min: 6, max: 20}
 	};
 
+	function ja_helplink(url, text) {
+		var elem = document.createElement('li');
+		var l = document.createElement('a');
+		l.href = url;
+		l.appendChild(document.createTextNode(ja_getMessage(text)));
+		elem.appendChild(l);
+		return elem;
+	}
+	
 	function junctionangle_init() {
 
 		//Listen for selected nodes change event
@@ -274,6 +286,8 @@ function run_ja() {
 		var ja_version_elem = document.createElement('li');
 		ja_version_elem.appendChild(document.createTextNode(ja_getMessage("name") + ": v" + junctionangle_version));
 		ja_info.appendChild(ja_version_elem);
+		
+		ja_info.appendChild(ja_helplink('https://wiki.waze.com/wiki/Roundabouts/USA#Understanding_navigation_instructions', 'roundaboutnav'));
 
 		ja_settings_dom.appendChild(ja_info);
 
@@ -913,6 +927,114 @@ function run_ja() {
 		ja_calculation_timer.start();
 	}
 
+	/**
+	 * p2 being "center"
+	 */
+	function ja_angle_between_points(p0,p1,p2) {
+		ja_log("p0 " + p0,3);
+		ja_log("p1 " + p1,3);
+		ja_log("p2 " + p2,3);
+		var a = Math.pow(p1.x-p0.x,2) + Math.pow(p1.y-p0.y,2);
+        var b = Math.pow(p1.x-p2.x,2) + Math.pow(p1.y-p2.y,2);
+        var c = Math.pow(p2.x-p0.x,2) + Math.pow(p2.y-p0.y,2);
+		var angle = Math.acos((a+b-c) / Math.sqrt(4*a*b)) / (Math.PI / 180);
+		ja_log("angle is " + angle,3);
+		return angle;
+	}
+	
+	function ja_is_roundabout_normal(junctionID, n_in) {
+		ja_log("Check normal roundabout", 3);
+		var junction = window.Waze.model.junctions.get(junctionID);
+		var nodes = {};
+		for(var i = 0; i < junction.segIDs.length; i++) {
+			var s = window.Waze.model.segments.get(junction.segIDs[i]);
+			ja_log("i: " + i, 3);
+			//ja_log(s, 3);
+			if(!nodes.hasOwnProperty(s.attributes.toNodeID)) {
+				ja_log("Adding node id: " + s.attributes.toNodeID, 3);
+				//Check if node has valid exits
+				var valid = false;
+				var currNode = window.Waze.model.nodes.get(s.attributes.toNodeID);
+				ja_log(currNode, 3);
+				for(var s_exit_i = 0; s_exit_i < currNode.attributes.segIDs.length; s_exit_i++) {
+					ja_log("s_exit_i: " + s_exit_i, 3);
+					var s_exit = window.Waze.model.segments.get(currNode.attributes.segIDs[s_exit_i]);
+					ja_log(s_exit, 3);
+					if(s_exit.attributes.junctionID !== null) {
+						//part of the junction.. Ignoring
+						ja_log(s_exit.attributes.id + " is in the roundabout. ignoring", 3);
+					} else {
+						ja_log("Checking: " +s_exit.attributes.id, 3);
+						if(currNode.isTurnAllowedBySegDirections(s, s_exit)) {
+							//Exit possibly allowed
+							ja_log("YAY", 3);
+							valid = true;
+						} else {
+							ja_log("NAY", 3);
+						}
+					}
+				}
+				if(valid) {
+					nodes[s.attributes.toNodeID] = window.Waze.model.nodes.get(s.attributes.toNodeID);
+				}
+			}
+		}
+
+		var is_normal = true;
+		ja_log(n_in, 3);
+		ja_log(junction, 3);
+		ja_log(nodes, 3);
+		for(var n in nodes) {
+			ja_log("Checking " + n, 3);
+			if(n == n_in) {
+				ja_log("Not comparing to n_in ;)", 3);
+			} else {
+				var angle = ja_angle_between_points(
+					window.Waze.model.nodes.get(n_in).geometry,
+					ja_coordinates_to_point(junction.geometry.coordinates),
+					window.Waze.model.nodes.get(n).geometry
+				);
+				ja_log("Angle is: " + angle, 3);
+				ja_log("Normalized angle is: " + (angle%90), 3);
+				//angle = Math.abs((angle%90 - 90))
+				angle = Math.abs((angle%90))
+				ja_log("Angle is: " + angle, 3);
+				// 90 +/- 15 is considered "normal"
+				if(angle <= 15 || 90-angle <= 15) {
+					ja_log("turn is normal", 3);
+				} else {
+					ja_log("turn is NOT normal", 3);
+					is_normal = false;
+					//Push a marker on the node to show which exit is "not normal"
+					ja_features.push(
+						new window.OpenLayers.Feature.Vector(
+							window.Waze.model.nodes.get(n).geometry,
+							{ 
+								angle: ja_round(Math.min(angle, 90-angle)),
+								ja_type: ja_routing_type.ROUNDABOUT
+							}
+						)
+					);
+				}
+			}
+		}
+		return is_normal;
+	}
+	
+	/**
+	 * Helper to get get correct projections for roundabout center point
+	 */
+	function ja_coordinates_to_point(coordinates) {
+		return window.OpenLayers.Projection.transform(
+			new window.OpenLayers.Geometry.Point(
+				coordinates[0],
+				coordinates[1]
+				),
+			"EPSG:4326",
+			ja_mapLayer.projection.projCode
+		);
+	}
+	
 	function ja_calculate_real() {
 		ja_log("Actually calculating now", 2);
 		var ja_start_time = Date.now();
@@ -953,8 +1075,67 @@ function run_ja() {
 		}
 
 		ja_features = [];
+		
+		//Figure out if we have a roundabout and do some magic
+		var ja_roundabouts = window.Waze.model.junctions.getObjectArray();
+		var ja_selected_roundabouts = {};
+		ja_log(ja_roundabouts, 3);
+		for (var i = 0; i < ja_nodes.length; i++) {
+			ja_log("i " + i, 3);
+			ja_log(window.Waze.model.nodes.get(ja_nodes[i]), 3);
+			
+			var tmp_s = null;
+			var tmp_junctionID = null;
+			for(var j = 0; j < window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs.length; j++) {
+				ja_log("j " + j, 3);
+				ja_log(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j], 3);
+				
+				if(window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID) {
+						ja_log("WE ARE IN OR AROUND A ROUNDABOUT: " + window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID, 3);
+						tmp_junctionID = window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID;
+				} else {
+					tmp_s = window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j];
+					tmp_n = ja_nodes[i];
+				}
+				ja_log("tmp_s: " + (tmp_s === null ? 'null' : tmp_s), 3);
+			}
+			ja_log("final tmp_s: " + (tmp_s === null ? 'null' : tmp_s), 3);
+			if(tmp_junctionID === null) continue;
+			if(!ja_selected_roundabouts.hasOwnProperty(tmp_junctionID)) {
+				ja_selected_roundabouts[tmp_junctionID] = { 'in_s': tmp_s, 'in_n': tmp_n, 'out_s': null, 'out_n': null, 'p': window.Waze.model.junctions.get(tmp_junctionID).geometry };
+			} else {
+				ja_selected_roundabouts[tmp_junctionID].out_s = tmp_s;
+				ja_selected_roundabouts[tmp_junctionID].out_n = ja_nodes[i];
+			}
+		}
 
-		for (i = 0; i < ja_nodes.length; i++) {
+		//Do some fancy painting for the roundabouts...
+		for(var tmp_roundabout in ja_selected_roundabouts) {
+			ja_log(tmp_roundabout, 3);
+			ja_log(ja_selected_roundabouts[tmp_roundabout], 3);
+
+			ja_log(ja_coordinates_to_point(ja_selected_roundabouts[tmp_roundabout].p.coordinates), 3);
+
+			//Transform LonLat to actual layer projection
+			var tmp_roundabout_center = ja_coordinates_to_point(ja_selected_roundabouts[tmp_roundabout].p.coordinates);
+			var angle = ja_angle_between_points(
+				window.Waze.model.nodes.get(ja_selected_roundabouts[tmp_roundabout].in_n).geometry,
+				tmp_roundabout_center,
+				window.Waze.model.nodes.get(ja_selected_roundabouts[tmp_roundabout].out_n).geometry
+			);
+			ja_features.push(
+				new window.OpenLayers.Feature.Vector(
+					tmp_roundabout_center,
+					{ 
+						angle: ja_round(angle),
+						ja_type: ja_is_roundabout_normal(tmp_roundabout, ja_selected_roundabouts[tmp_roundabout].in_n) ? ja_routing_type.TURN : ja_routing_type.ROUNDABOUT
+					}
+				)
+			);
+		}
+
+		//Start looping through selected nodes
+		for (var i = 0; i < ja_nodes.length; i++) {
 			node = window.Waze.model.nodes.get(ja_nodes[i]);
 			if (node == null || !node.hasOwnProperty('attributes')) {
 				//Oh oh.. should not happen? We want to use a node that does not exist
@@ -1091,6 +1272,7 @@ function run_ja() {
 
 				//Guess some routing instructions based on segment types, angles etc
 				var ja_junction_type = ja_routing_type.TURN; //Default to old behavior
+				
 				if(ja_getOption("guess")) {
 					ja_log(ja_selected_angles, 2);
 					ja_log(angles, 2);
@@ -1356,9 +1538,12 @@ function run_ja() {
 		def["exitInstructionColor"] = "Color for exit prompt";
 		def["turnInstructionColor"] = "Color for turn prompt";
 		def["problemColor"] = "Color for angles to avoid";
+		def["roundaboutColor"] = "Color for roundabouts (with non-straight exits)";
 		def["decimals"] = "Number of decimals";
 		def["pointSize"] = "Base point size";
 
+		def["roundaboutnav"] = "WIKI: Roundabouts";
+		
 		//Finnish (Suomi)
 		fi["name"] = "Risteyskulmat";
 		fi["settingsTitle"] = "Rysteyskulmien asetukset";
@@ -1370,6 +1555,7 @@ function run_ja() {
 		fi["exitInstructionColor"] = "\"poistu\"-ohjeen väri";
 		fi["turnInstructionColor"] = "\"Käänny\"-ohjeen väri";
 		fi["problemColor"] = "Vältettävien kulmien väri";
+		def["roundaboutColor"] = "Liikenneympyrän (jolla ei-suoria kulmia) ohjeen väri";
 		fi["decimals"] = "Desimaalien määrä";
 		fi["pointSize"] = "Ympyrän peruskoko";
 
@@ -1384,6 +1570,7 @@ function run_ja() {
 		sv["exitInstructionColor"] = "Färg för \"ta av\"-instruktion";
 		sv["turnInstructionColor"] = "Färg för \"sväng\"-instruktion";
 		sv["problemColor"] = "Färg för vinklar att undvika";
+		def["roundaboutColor"] = "Färg för rondell (med icke-räta vinklar)";
 		sv["decimals"] = "Decimaler";
 		sv["pointSize"] = "Cirkelns basstorlek";
 		
