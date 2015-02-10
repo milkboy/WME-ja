@@ -36,7 +36,8 @@ function run_ja() {
 		TURN: "junction",
 		EXIT: "junction_exit", //not actually used (yet)
 		PROBLEM: "junction_problem",
-		ERROR: "junction_error"
+		ERROR: "junction_error",
+		ROUNDABOUT: "junction_roundabout"
 	};
 	
 	var ja_road_type = {
@@ -138,7 +139,8 @@ function run_ja() {
 				ja_get_style_rule(ja_routing_type.KEEP, "keepInstructionColor", "#183800"),
 				ja_get_style_rule(ja_routing_type.EXIT, "exitInstructionColor", "#183800"),
 				ja_get_style_rule(ja_routing_type.PROBLEM, "problemColor", "#183800"),
-				ja_get_style_rule(ja_routing_type.ERROR, "problemColor", "#ff0000")
+				ja_get_style_rule(ja_routing_type.ERROR, "problemColor", "#ff0000"),
+				ja_get_style_rule(ja_routing_type.ROUNDABOUT, "roundaboutColor", "#ff8000")
 			]
 		});
 	}
@@ -150,6 +152,7 @@ function run_ja() {
 		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
 		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
 		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
+		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000"},
 		decimals: { elementType: "number", elementId: "_jaTbDecimals", defaultValue: 0, min: 0, max: 2},
 		pointSize: { elementType: "number", elementId: "_jaTbPointSize", defaultValue: 12, min: 6, max: 20}
 	};
@@ -953,8 +956,84 @@ function run_ja() {
 		}
 
 		ja_features = [];
+		
+		//Figure out if we have a roundabout and do some magic
+		var ja_roundabouts = window.Waze.model.junctions.getObjectArray();
+		var ja_selected_roundabouts = {};
+		console.log(ja_roundabouts);
+		for (var i = 0; i < ja_nodes.length; i++) {
+			console.log("i " + i);
+			console.log(window.Waze.model.nodes.get(ja_nodes[i]));
+			
+			var tmp_s = null;
+			var tmp_junctionID = null;
+			for(var j = 0; j < window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs.length; j++) {
+				console.log("j " + j);
+				console.log(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]);
+				
+				if(window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID) {
+						console.log("WE ARE IN OR AROUND A ROUNDABOUT: " + window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID);
+						tmp_junctionID = window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID;
+				} else {
+					tmp_s = window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j];
+				}
+				console.log("tmp_s: " + (tmp_s === null ? 'null' : tmp_s));
+			}
+			console.log("final tmp_s: " + (tmp_s === null ? 'null' : tmp_s));
+			if(tmp_junctionID === null) continue;
+			if(!ja_selected_roundabouts.hasOwnProperty(tmp_junctionID)) {
+				ja_selected_roundabouts[tmp_junctionID] = { 'in': tmp_s, 'out': null, 'p': window.Waze.model.junctions.get(tmp_junctionID).geometry };
+			} else {
+				ja_selected_roundabouts[tmp_junctionID].out = tmp_s;
+			}
+		}
 
-		for (i = 0; i < ja_nodes.length; i++) {
+		console.log(ja_mapLayer);
+		console.log("ACTIVE ROUNDABOUTS");
+		//Do some fancy painting for the roundabouts...
+		for(var tmp_roundabout in ja_selected_roundabouts) {
+			console.log("WANTING TO PAINT ROUNDABOUT");
+			console.log(tmp_roundabout);
+			console.log(ja_selected_roundabouts[tmp_roundabout]);
+			console.log(window.Waze.model.junctions.get(tmp_roundabout));
+			console.log(ja_selected_roundabouts[tmp_roundabout].p.x);
+			console.log(ja_selected_roundabouts[tmp_roundabout].p.y);
+			console.log(ja_selected_roundabouts[tmp_roundabout].p.coordinates[0]);
+			console.log(ja_selected_roundabouts[tmp_roundabout].p.coordinates[1]);
+
+			console.log(ja_mapLayer.projection);
+			console.log(window.OpenLayers.Projection.transform(new window.OpenLayers.Geometry.Point(ja_selected_roundabouts[tmp_roundabout].p.coordinates[0],ja_selected_roundabouts[tmp_roundabout].p.coordinates[1]), "EPSG:4326", ja_mapLayer.projection.projCode));
+
+			//Transform LonLat to actual layer projection
+			var tmp_roundabout_center = 
+				window.OpenLayers.Projection.transform(
+					new window.OpenLayers.Geometry.Point(
+						ja_selected_roundabouts[tmp_roundabout].p.coordinates[0],
+						ja_selected_roundabouts[tmp_roundabout].p.coordinates[1]
+					),
+					"EPSG:4326",
+					ja_mapLayer.projection.projCode
+				);
+			ja_features.push(
+				new window.OpenLayers.Feature.Vector(
+					tmp_roundabout_center,
+					{ 
+						angle: 'XX',
+						ja_type: ja_routing_type.ROUNDABOUT 
+					}
+				)
+			);
+		}
+console.log(ja_features);
+
+/*
+ja_features.push(new window.OpenLayers.Feature.Vector(
+							new window.OpenLayers.Geometry.Point(
+									node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
+							)
+							, { angle: ja_round(a) + "°", ja_type: "generic" }
+						));*/
+		for (var i = 0; i < ja_nodes.length; i++) {
 			node = window.Waze.model.nodes.get(ja_nodes[i]);
 			if (node == null || !node.hasOwnProperty('attributes')) {
 				//Oh oh.. should not happen? We want to use a node that does not exist
@@ -1091,6 +1170,7 @@ function run_ja() {
 
 				//Guess some routing instructions based on segment types, angles etc
 				var ja_junction_type = ja_routing_type.TURN; //Default to old behavior
+				
 				if(ja_getOption("guess")) {
 					ja_log(ja_selected_angles, 2);
 					ja_log(angles, 2);
@@ -1356,6 +1436,7 @@ function run_ja() {
 		def["exitInstructionColor"] = "Color for exit prompt";
 		def["turnInstructionColor"] = "Color for turn prompt";
 		def["problemColor"] = "Color for angles to avoid";
+		def["roundaboutColor"] = "Color for roundabouts";
 		def["decimals"] = "Number of decimals";
 		def["pointSize"] = "Base point size";
 
@@ -1370,6 +1451,7 @@ function run_ja() {
 		fi["exitInstructionColor"] = "\"poistu\"-ohjeen väri";
 		fi["turnInstructionColor"] = "\"Käänny\"-ohjeen väri";
 		fi["problemColor"] = "Vältettävien kulmien väri";
+		def["roundaboutColor"] = "Liikenneympyrän ohjeen väri";
 		fi["decimals"] = "Desimaalien määrä";
 		fi["pointSize"] = "Ympyrän peruskoko";
 
@@ -1384,6 +1466,7 @@ function run_ja() {
 		sv["exitInstructionColor"] = "Färg för \"ta av\"-instruktion";
 		sv["turnInstructionColor"] = "Färg för \"sväng\"-instruktion";
 		sv["problemColor"] = "Färg för vinklar att undvika";
+		def["roundaboutColor"] = "Färg för rondell";
 		sv["decimals"] = "Decimaler";
 		sv["pointSize"] = "Cirkelns basstorlek";
 		
