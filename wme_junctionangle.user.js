@@ -135,13 +135,13 @@ function run_ja() {
 					symbolizer: {
 					}
 				}),
-				ja_get_style_rule(ja_routing_type.TURN, "turnInstructionColor", "#183800"),
-				ja_get_style_rule(ja_routing_type.BC, "noInstructionColor", "#183800"),
-				ja_get_style_rule(ja_routing_type.KEEP, "keepInstructionColor", "#183800"),
-				ja_get_style_rule(ja_routing_type.EXIT, "exitInstructionColor", "#183800"),
-				ja_get_style_rule(ja_routing_type.PROBLEM, "problemColor", "#183800"),
-				ja_get_style_rule(ja_routing_type.ERROR, "problemColor", "#ff0000"),
-				ja_get_style_rule(ja_routing_type.ROUNDABOUT, "roundaboutColor", "#ff8000"),
+				ja_get_style_rule(ja_routing_type.TURN, "turnInstructionColor"),
+				ja_get_style_rule(ja_routing_type.BC, "noInstructionColor"),
+				ja_get_style_rule(ja_routing_type.KEEP, "keepInstructionColor"),
+				ja_get_style_rule(ja_routing_type.EXIT, "exitInstructionColor"),
+				ja_get_style_rule(ja_routing_type.PROBLEM, "problemColor"),
+				ja_get_style_rule(ja_routing_type.ERROR, "problemColor"),
+				ja_get_style_rule(ja_routing_type.ROUNDABOUT, "roundaboutColor"),
 
 				new window.OpenLayers.Rule(
 				{
@@ -207,13 +207,12 @@ function run_ja() {
 
 		//Recalculate on zoom end also
 		window.Waze.map.events.register("zoomend", null, ja_calculate);
-		//Skipping for now, as changes must be saved manually anyway
-		//window.addEventListener("beforeunload", ja_save, false);
 
 		ja_load();
 		ja_loadTranslations();
+
 		/**
-		 * Add config setting
+		 * Add JAI tab configuration options
 		 */
 		var ja_settings_dom = document.createElement("div");
 		var ja_settings_dom_panel = document.createElement("div");
@@ -228,7 +227,6 @@ function run_ja() {
 		var section = document.createElement('div');
 		section.className = "form-group";
 		form.className = "attributes-form side-panel-section";
-		//form.addEventListener("submit", function(f) { return function(evt) { alert('FSCK!!!' + f + evt); evt.preventDefault(); return false;}} (form),true);
 		section.id = "jaOptions";
 		ja_log("---------- Creating settings HTML ----------", 2);
 		Object.getOwnPropertyNames(ja_settings).forEach(function (a,b,c) {
@@ -366,17 +364,13 @@ function run_ja() {
 		}
 
 		ja_apply();
-		
-		//Do a calculation if we have segments selected (permalink etc)
-		//if(window.Waze.selectionManager.selectedItems.length > 0) {
-			ja_calculate();
-		//}
+		ja_calculate();
 	}
 
 	function ja_get_streets(segmentId) {
 		var primary = window.Waze.model.streets.objects[window.Waze.model.segments.objects[segmentId].attributes.primaryStreetID];
 		var secondary = [];
-		window.Waze.model.segments.objects[segmentId].attributes.streetIDs.forEach(function asd(element, index, array) {
+		window.Waze.model.segments.objects[segmentId].attributes.streetIDs.forEach(function (element, index, array) {
 			secondary.push(window.Waze.model.streets.objects[element]);
 		});
 		ja_log(primary, 3);
@@ -518,12 +512,7 @@ function run_ja() {
 		var a = parseFloat(aOut) - parseFloat(aIn);
 		if(a > 180) a -= 360;
 		if(a < -180) a+= 360;
-		if(absolute) {
-			return a;
-		} else {
-
-			return a > 0 ? a - 180 : a + 180;
-		}
+		return absolute ? a : (a > 0 ? a - 180 : a + 180);
 	}
 	
 	/**
@@ -952,7 +941,6 @@ function run_ja() {
 				window.clearTimeout(this.timeoutID);
 				ja_log("Cleared timeout ID" + this.timeoutID, 2);
 				delete this.timeoutID;
-				
 			}
 		}
 		
