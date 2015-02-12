@@ -1045,7 +1045,7 @@ function run_ja() {
 						new window.OpenLayers.Feature.Vector(
 							window.Waze.model.nodes.get(n).geometry,
 							{ 
-								angle: ja_round(Math.min(angle, 90-angle)),
+								angle: '±' + ja_round(Math.min(angle, 90-angle)),
 								ja_type: ja_routing_type.ROUNDABOUT
 							}
 						)
