@@ -955,6 +955,7 @@ function run_ja() {
 		ja_log("Check normal roundabout", 3);
 		var junction = window.Waze.model.junctions.get(junctionID);
 		var nodes = {};
+		var numValidExits = 0;
 		junction.segIDs.forEach(function(element, index, array){
 			var s = window.Waze.model.segments.get(element);
 			ja_log("index: " + index, 3);
@@ -983,6 +984,7 @@ function run_ja() {
 					}
 				});
 				if(allowed) {
+					numValidExits++;
 					nodes[s.attributes.toNodeID] = window.Waze.model.nodes.get(s.attributes.toNodeID);
 				}
 			}
@@ -992,6 +994,10 @@ function run_ja() {
 		ja_log(n_in, 3);
 		ja_log(junction, 3);
 		ja_log(nodes, 3);
+		
+		//If we have more than 4 possible exits, the roundabout is non-normal, and we don't want to paint the offending angles.
+		if(numValidExits > 4) return false;
+		
 		for(var n in nodes) {
 			ja_log("Checking " + n, 3);
 			if(n == n_in) {
