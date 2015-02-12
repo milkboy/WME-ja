@@ -29,6 +29,7 @@ function run_ja() {
 	var ja_features = [];
 
 	var ja_last_restart = 0;
+	var ja_roundabout_points = [];
 
 	var ja_routing_type = {
 		BC: "junction_none",
@@ -1104,6 +1105,7 @@ function run_ja() {
 				0
 			);
 			var roundaboutCircle = new window.OpenLayers.Feature.Vector(circle, {'ja_type': 'roundaboutoverlay'});
+			ja_roundabout_points.push(circle);
 			ja_mapLayer.addFeatures([roundaboutCircle]);
 		}
 	}
@@ -1111,6 +1113,7 @@ function run_ja() {
 	function ja_calculate_real() {
 		ja_log("Actually calculating now", 2);
 		var ja_start_time = Date.now();
+		ja_roundabout_points = [];
 		ja_log(window.Waze.map, 3);
 		if(typeof ja_mapLayer === 'undefined') { return 1;}
 		//clear old info
@@ -1394,11 +1397,22 @@ function run_ja() {
 						ja_log("Skipping marker, as we need only one of them", 2);
 					} else {
 						ja_log("Angle between " + angles[j][1] + " and " + angles[(j + 1) % angles.length][1] + " is " + a + " and position for label should be at " + ha, 3);
+						var point = new window.OpenLayers.Geometry.Point(
+									node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
+						);
+						//Don't paint points inside an overlaid roundabout
+						var skip_point = false;
+						for(var k = 0; k < ja_roundabout_points.length; k++) {
+							if(ja_roundabout_points[k].containsPoint(point)) {
+								skip_point = true;
+								break;
+							}
+						}
+						if(skip_point) continue;
+
 						//push the angle point
 						ja_features.push(new window.OpenLayers.Feature.Vector(
-							new window.OpenLayers.Geometry.Point(
-									node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
-							)
+							point
 							, { angle: ja_round(a) + "°", ja_type: "generic" }
 						));
 					}
