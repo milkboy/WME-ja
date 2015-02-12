@@ -1098,65 +1098,64 @@ function run_ja() {
 		ja_log("Checking junctions for " + window.Waze.selectionManager.selectedItems.length + " segments", 2);
 		var ja_nodes = [];
 
-		for (i = 0; i < window.Waze.selectionManager.selectedItems.length; i++) {
-			ja_log(window.Waze.selectionManager.selectedItems[i], 3);
-			switch (window.Waze.selectionManager.selectedItems[i].model.type) {
+		window.Waze.selectionManager.selectedItems.forEach(function(element, index, array) {
+			ja_log(element, 3);
+			switch (element.model.type) {
 				case "node":
-					ja_nodes.push(window.Waze.selectionManager.selectedItems[i].model.attributes.id);
+					ja_nodes.push(element.model.attributes.id);
 					break;
 				case "segment":
 					//segments selected?
-					if (window.Waze.selectionManager.selectedItems[i].model.attributes.fromNodeID != null &&
-						ja_nodes.indexOf(window.Waze.selectionManager.selectedItems[i].model.attributes.fromNodeID) == -1) {
-						ja_nodes.push(window.Waze.selectionManager.selectedItems[i].model.attributes.fromNodeID);
+					if (element.model.attributes.fromNodeID != null &&
+						ja_nodes.indexOf(element.model.attributes.fromNodeID) == -1) {
+						ja_nodes.push(element.model.attributes.fromNodeID);
 					}
-					if (ja_nodes.indexOf(window.Waze.selectionManager.selectedItems[i].model.attributes.toNodeID != null &&
-						ja_nodes.indexOf(window.Waze.selectionManager.selectedItems[i].model.attributes.toNodeID) == -1)) {
-						ja_nodes.push(window.Waze.selectionManager.selectedItems[i].model.attributes.toNodeID);
+					if (ja_nodes.indexOf(element.model.attributes.toNodeID != null &&
+						ja_nodes.indexOf(element.model.attributes.toNodeID) == -1)) {
+						ja_nodes.push(element.model.attributes.toNodeID);
 					}
 					break;
 				case "venue":
 					break;
 				default:
-					ja_log("Found unknown item type: " + window.Waze.selectionManager.selectedItems[i].model.type, 2);
+					ja_log("Found unknown item type: " + element.model.type, 2);
 					break;
 			}
 			ja_log(ja_nodes, 2);
-		}
+		});
 
 		ja_features = [];
 		
 		//Figure out if we have a selected roundabout and do some magic
 		var ja_selected_roundabouts = {};
 
-		for (var i = 0; i < ja_nodes.length; i++) {
-			ja_log("i " + i, 3);
-			ja_log(window.Waze.model.nodes.get(ja_nodes[i]), 3);
+		ja_nodes.forEach(function(node) {
+			ja_log(window.Waze.model.nodes.get(node), 3);
 			
 			var tmp_s = null;
 			var tmp_junctionID = null;
-			for(var j = 0; j < window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs.length; j++) {
-				ja_log("j " + j, 3);
-				ja_log(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j], 3);
+			if(window.Waze.model.nodes.get(node) == null || typeof window.Waze.model.nodes.get(node).attributes.segIDs === 'undefined') return;
+			window.Waze.model.nodes.get(node).attributes.segIDs.forEach(function(segment) {
+				ja_log(segment, 3);
 				
-				if(window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID) {
-						ja_log("WE ARE IN OR AROUND A ROUNDABOUT: " + window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID, 3);
-						tmp_junctionID = window.Waze.model.segments.get(window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j]).attributes.junctionID;
+				if(window.Waze.model.segments.get(segment).attributes.junctionID) {
+						ja_log("WE ARE IN OR AROUND A ROUNDABOUT: " + window.Waze.model.segments.get(segment).attributes.junctionID, 3);
+						tmp_junctionID = window.Waze.model.segments.get(segment).attributes.junctionID;
 				} else {
-					tmp_s = window.Waze.model.nodes.get(ja_nodes[i]).attributes.segIDs[j];
-					tmp_n = ja_nodes[i];
+					tmp_s = segment;
+					tmp_n = node;
 				}
 				ja_log("tmp_s: " + (tmp_s === null ? 'null' : tmp_s), 3);
-			}
+			});
 			ja_log("final tmp_s: " + (tmp_s === null ? 'null' : tmp_s), 3);
-			if(tmp_junctionID === null) continue;
+			if(tmp_junctionID === null) return;
 			if(!ja_selected_roundabouts.hasOwnProperty(tmp_junctionID)) {
 				ja_selected_roundabouts[tmp_junctionID] = { 'in_s': tmp_s, 'in_n': tmp_n, 'out_s': null, 'out_n': null, 'p': window.Waze.model.junctions.get(tmp_junctionID).geometry };
 			} else {
 				ja_selected_roundabouts[tmp_junctionID].out_s = tmp_s;
-				ja_selected_roundabouts[tmp_junctionID].out_n = ja_nodes[i];
+				ja_selected_roundabouts[tmp_junctionID].out_n = node;
 			}
-		}
+		});
 
 		//Do some fancy painting for the roundabouts...
 		for(var tmp_roundabout in ja_selected_roundabouts) {
@@ -1220,8 +1219,8 @@ function run_ja() {
 			var ja_selected_segments_count = 0;
 			var ja_selected_angles = [];
 
-			for (j = 0; j < ja_current_node_segments.length; j++) {
-				s = window.Waze.model.segments.objects[ja_current_node_segments[j]];
+			ja_current_node_segments.forEach(function (nodeSegment, j) {
+				s = window.Waze.model.segments.objects[nodeSegment];
 				if(typeof s === 'undefined') {
 					//Meh. Something went wrong, and we lost track of the segment. This needs a proper fix, but for now
 					// it should be sufficient to just restart the calculation
@@ -1233,13 +1232,12 @@ function run_ja() {
 					return 4;
 				}
 				a = ja_getAngle(ja_nodes[i], s);
-				ja_log("j: " + j + "; Segment " + ja_current_node_segments[j] + " angle is " + a, 2);
-				angles[j] = [a, ja_current_node_segments[j], s != null ? s.isSelected() : false];
+				ja_log("Segment " + nodeSegment + " angle is " + a, 2);
+				angles[j] = [a, nodeSegment, s != null ? s.isSelected() : false];
 				if (s != null ? s.isSelected() : false) {
 					ja_selected_segments_count++;
 				}
-
-			}
+			});
 
 			//make sure we have the selected angles in correct order
 			ja_log(ja_current_node_segments, 3);
@@ -1354,9 +1352,9 @@ function run_ja() {
 				ja_log(ja_selected_segments_count, 3);
 
 				//get all segment angles
-				for (j = 0; j < angles.length; j++) {
-					a = (360 + (angles[(j + 1) % angles.length][0] - angles[j][0])) % 360;
-					ha = (360 + ((a / 2) + angles[j][0])) % 360;
+				angles.forEach(function(angle, j) {
+					a = (360 + (angles[(j + 1) % angles.length][0] - angle[0])) % 360;
+					ha = (360 + ((a / 2) + angle[0])) % 360;
 
 					//Show only one angle for nodes with only 2 connected segments and a single selected segment
 					// (not on both sides). Skipping the one > 180
@@ -1368,14 +1366,14 @@ function run_ja() {
 						) {
 						ja_log("Skipping marker, as we need only one of them", 2);
 					} else {
-						ja_log("Angle between " + angles[j][1] + " and " + angles[(j + 1) % angles.length][1] + " is " + a + " and position for label should be at " + ha, 3);
+						ja_log("Angle between " + angle[1] + " and " + angles[(j + 1) % angles.length][1] + " is " + a + " and position for label should be at " + ha, 3);
 						var point = new window.OpenLayers.Geometry.Point(
 									node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
 						);
 						//Don't paint points inside an overlaid roundabout
-						if(ja_roundabout_points.some(function (element, index, array){
-							return element.containsPoint(point);
-						})) continue;
+						if(ja_roundabout_points.some(function (rondaboutPoint){
+							return rondaboutPoint.containsPoint(point);
+						})) return;
 						
 						//Draw a line to the point
 						ja_features.push(
@@ -1392,7 +1390,7 @@ function run_ja() {
 							, { angle: ja_round(a) + "°", ja_type: "generic" }
 						));
 					}
-				}
+				});
 			}
 		}
 
