@@ -532,49 +532,39 @@ function run_ja() {
 		var s_in_id = s_in_a;
 		var s_out_id = s_out_a;
 
-		for(k=0; k< angles.length; k++) {
-			ja_log(angles[k], 3);
-			if (angles[k][1] == s_in_a) {
-				s_in_a = angles[k];
-				break;
-			}
-		}
-		for(k=0; k< angles.length; k++) {
-			ja_log(angles[k], 3);
-			if(angles[k][1] == s_out_a) {
-				s_out_a = angles[k];
-				break;
-			}
-		}
+		s_in_a = window.$.grep(angles, function(element, index){
+			return element[1] == s_in_a;
+		});
+		s_out_a = window.$.grep(angles, function(element, index){
+			return element[1] == s_out_a;
+		});
 
 		var s_n = {}, s_in, s_out = {}, street_n = {}, street_in;
-		for(k=0; k<node.attributes.segIDs.length; k++) {
-			if (node.attributes.segIDs[k] == s_in_id) {
-				s_in = node.model.segments.objects[node.attributes.segIDs[k]];
-				street_in = ja_get_streets(node.attributes.segIDs[k]);
+		node.attributes.segIDs.forEach(function(element, index, array) {
+			if (element == s_in_id) {
+				s_in = node.model.segments.get(element);
+				street_in = ja_get_streets(element);
 				//Set empty name for streets if not defined
 				if(typeof street_in.primary === 'undefined') { street_in.primary = {}; }
 				if(typeof street_in.primary.name === 'undefined') {
 					street_in.primary['name'] = "";
 				}
 			} else {
-				if(node.attributes.segIDs[k] == s_out_id) {
+				if(element == s_out_id) {
 					//store for later use
-					s_out[node.attributes.segIDs[k]] = node.model.segments.objects[node.attributes.segIDs[k]];
+					s_out[element] = node.model.segments.get(element);
 					//Set empty name for streets if not defined
-					if(typeof s_out[node.attributes.segIDs[k]].primary === 'undefined') {
-						s_out[node.attributes.segIDs[k]]['primary'] = { name: "" };
+					if(typeof s_out[element].primary === 'undefined') {
+						s_out[element]['primary'] = { name: "" };
 					}
 				}
-				s_n[node.attributes.segIDs[k]] = node.model.segments.objects[node.attributes.segIDs[k]];
-				street_n[node.attributes.segIDs[k]] = ja_get_streets(node.attributes.segIDs[k]);
-				if(typeof street_n[node.attributes.segIDs[k]].primary === 'undefined') {
-					street_n[node.attributes.segIDs[k]]['primary'] = { name: ""};
+				s_n[element] = node.model.segments.get(element);
+				street_n[element] = ja_get_streets(element);
+				if(typeof street_n[element].primary === 'undefined') {
+					street_n[element]['primary'] = { name: ""};
 				}
 			}
-		}
-
-
+		});
 
 		ja_log(s_in_a, 3);
 		ja_log(s_out_a, 3);
@@ -908,19 +898,15 @@ function run_ja() {
 		if(restrictions == null || typeof restrictions === 'undefined') return true;
 		ja_log("Checking restrictions for cars", 2);
 		ja_log(restrictions, 3);
-		for(var ja_ri = 0; ja_ri < restrictions.length; ja_ri++) {
-			ja_log("Checking restriction " + ja_ri, 3);
-			if( restrictions[ja_ri].allDay //All day restriction
-				&& restrictions[ja_ri].days == 127	//Every week day
-				&& ( restrictions[ja_ri].vehicleTypes == -1 //All vehicle types
-					|| restrictions[ja_ri].vehicleTypes & ja_vehicle_types.PRIVATE //or at least private cars
-				)
-			) {
-				return false;
-			}
-		}
-		ja_log("No restriction found", 2);
-		return true;
+		
+		return !restrictions.some(function(element, index, array){
+			ja_log("Checking restriction " + element, 3);
+			return element.allDay //All day restriction
+				&& element.days == 127	//Every week day
+				&& ( element.vehicleTypes == -1 //All vehicle types
+					|| element.vehicleTypes & ja_vehicle_types.PRIVATE //or at least private cars
+				);
+		});
 	}
 
 	var ja_calculation_timer = {
@@ -969,19 +955,18 @@ function run_ja() {
 		ja_log("Check normal roundabout", 3);
 		var junction = window.Waze.model.junctions.get(junctionID);
 		var nodes = {};
-		for(var i = 0; i < junction.segIDs.length; i++) {
-			var s = window.Waze.model.segments.get(junction.segIDs[i]);
-			ja_log("i: " + i, 3);
+		junction.segIDs.forEach(function(element, index, array){
+			var s = window.Waze.model.segments.get(element);
+			ja_log("index: " + index, 3);
 			//ja_log(s, 3);
 			if(!nodes.hasOwnProperty(s.attributes.toNodeID)) {
 				ja_log("Adding node id: " + s.attributes.toNodeID, 3);
-				//Check if node has valid exits
-				var valid = false;
+				//Check if node has allowed exits
+				var allowed = false;
 				var currNode = window.Waze.model.nodes.get(s.attributes.toNodeID);
 				ja_log(currNode, 3);
-				for(var s_exit_i = 0; s_exit_i < currNode.attributes.segIDs.length; s_exit_i++) {
-					ja_log("s_exit_i: " + s_exit_i, 3);
-					var s_exit = window.Waze.model.segments.get(currNode.attributes.segIDs[s_exit_i]);
+				currNode.attributes.segIDs.forEach(function(element2, index2, array2){
+					var s_exit = window.Waze.model.segments.get(element2);
 					ja_log(s_exit, 3);
 					if(s_exit.attributes.junctionID !== null) {
 						//part of the junction.. Ignoring
@@ -991,17 +976,17 @@ function run_ja() {
 						if(currNode.isTurnAllowedBySegDirections(s, s_exit)) {
 							//Exit possibly allowed
 							ja_log("YAY", 3);
-							valid = true;
+							allowed = true;
 						} else {
 							ja_log("NAY", 3);
 						}
 					}
-				}
-				if(valid) {
+				});
+				if(allowed) {
 					nodes[s.attributes.toNodeID] = window.Waze.model.nodes.get(s.attributes.toNodeID);
 				}
 			}
-		}
+		});
 
 		var is_normal = true;
 		ja_log(n_in, 3);
@@ -1059,15 +1044,14 @@ function run_ja() {
 	}
 	
 	function ja_draw_roundabout_overlay(junctionId) {
-		for(var i = 0; i < window.Waze.model.junctions.getObjectArray().length; i++) {
-			var j = window.Waze.model.junctions.getObjectArray()[i];
-			ja_log(j, 3);
+		window.Waze.model.junctions.getObjectArray().forEach(function (element, index, array){
+			ja_log(element, 3);
 			//Check if we want a specific junction. FIXME: this should actually be done by a direct select, instead of looping through all..
-			if(typeof junctionId !== "undefined" && junctionId != j.id) {
-				continue;
+			if(typeof junctionId !== "undefined" && junctionId != element.id) {
+				return;
 			}
 			var nodes = {};
-			j.segIDs.forEach(function(s) { 
+			element.segIDs.forEach(function(s) { 
 				var seg = window.Waze.model.segments.get(s);
 				ja_log(seg, 3);
 				nodes[seg.attributes.fromNodeID] = window.Waze.model.nodes.get(seg.attributes.fromNodeID);
@@ -1075,7 +1059,7 @@ function run_ja() {
 			});
 
 			ja_log(nodes, 3);
-			var center = ja_coordinates_to_point(j.geometry.coordinates);
+			var center = ja_coordinates_to_point(element.geometry.coordinates);
 			ja_log(center, 3);
 			var distances = [];
 			Object.getOwnPropertyNames(nodes).forEach(function(name) {
@@ -1095,7 +1079,7 @@ function run_ja() {
 			var roundaboutCircle = new window.OpenLayers.Feature.Vector(circle, {'ja_type': 'roundaboutoverlay'});
 			ja_roundabout_points.push(circle);
 			ja_mapLayer.addFeatures([roundaboutCircle]);
-		}
+		});
 	}
 	
 	function ja_calculate_real() {
