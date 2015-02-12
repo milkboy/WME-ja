@@ -29,6 +29,7 @@ function run_ja() {
 	var ja_features = [];
 
 	var ja_last_restart = 0;
+	var ja_roundabout_points = [];
 
 	var ja_routing_type = {
 		BC: "junction_none",
@@ -140,7 +141,25 @@ function run_ja() {
 				ja_get_style_rule(ja_routing_type.EXIT, "exitInstructionColor", "#183800"),
 				ja_get_style_rule(ja_routing_type.PROBLEM, "problemColor", "#183800"),
 				ja_get_style_rule(ja_routing_type.ERROR, "problemColor", "#ff0000"),
-				ja_get_style_rule(ja_routing_type.ROUNDABOUT, "roundaboutColor", "#ff8000")
+				ja_get_style_rule(ja_routing_type.ROUNDABOUT, "roundaboutColor", "#ff8000"),
+
+				new window.OpenLayers.Rule(
+				{
+					filter: new window.OpenLayers.Filter.Comparison({
+						type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+						property: "ja_type",
+						value: "roundaboutoverlay"
+					}),
+					symbolizer: {
+						pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+						fontSize: "12px",
+						fillColor: ja_getOption("roundaboutOverlayColor"),
+						fillOpacity: 0.1,
+						strokeColor: ja_getOption("roundaboutOverlayColor"),
+						label: ""
+					}
+				})
+
 			]
 		});
 	}
@@ -153,6 +172,8 @@ function run_ja() {
 		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
 		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
 		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000"},
+		roundaboutOverlayColor: { elementType: "color", elementId: "_jaTbRoundaboutOverlayColor", defaultValue: "#aa0000"},
+		roundaboutOverlayDisplay: { elementType: "select", elementId: "_jaSelRoundaboutOverlayDisplay", defaultValue: "rOverNever", options: ["rOverNever","rOverSelected","rOverAlways"]},
 		decimals: { elementType: "number", elementId: "_jaTbDecimals", defaultValue: 0, min: 0, max: 2},
 		pointSize: { elementType: "number", elementId: "_jaTbPointSize", defaultValue: 12, min: 6, max: 20}
 	};
@@ -236,6 +257,17 @@ function run_ja() {
 					break;
 				case 'checkbox':
 					ja_input.id = setting['elementId'];
+					ja_controls_container.appendChild(ja_input);
+					break;
+				case 'select':
+					ja_input = document.createElement('select'); //Override <input> with <select>
+					ja_input.id = setting['elementId'];
+					for(var i = 0; i < setting["options"].length; i++) {
+						var ja_select_option = document.createElement('option');
+						ja_select_option.value = setting["options"][i];
+						ja_select_option.appendChild(document.createTextNode(ja_getMessage(setting["options"][i])));
+						ja_input.appendChild(ja_select_option);
+					}
 					ja_controls_container.appendChild(ja_input);
 					break;
 			}
@@ -336,9 +368,9 @@ function run_ja() {
 		ja_apply();
 		
 		//Do a calculation if we have segments selected (permalink etc)
-		if(window.Waze.selectionManager.selectedItems.length > 0) {
+		//if(window.Waze.selectionManager.selectedItems.length > 0) {
 			ja_calculate();
-		}
+		//}
 	}
 
 	function ja_get_streets(segmentId) {
@@ -493,6 +525,7 @@ function run_ja() {
 			return a > 0 ? a - 180 : a + 180;
 		}
 	}
+	
 	/**
 	 *
 	 * @param node Junction node
@@ -531,6 +564,7 @@ function run_ja() {
 				s_in = node.model.segments.objects[node.attributes.segIDs[k]];
 				street_in = ja_get_streets(node.attributes.segIDs[k]);
 				//Set empty name for streets if not defined
+				if(typeof street_in.primary === 'undefined') { street_in.primary = {}; }
 				if(typeof street_in.primary.name === 'undefined') {
 					street_in.primary['name'] = "";
 				}
@@ -882,6 +916,7 @@ function run_ja() {
 	}
 	
 	function ja_is_car_allowed_by_restrictions(restrictions) {
+		if(restrictions == null || typeof restrictions === 'undefined') return true;
 		ja_log("Checking restrictions for cars", 2);
 		ja_log(restrictions, 3);
 		for(var ja_ri = 0; ja_ri < restrictions.length; ja_ri++) {
@@ -903,8 +938,8 @@ function run_ja() {
 		start: function() {
 			ja_log("Starting timer", 2);
 			this.cancel();
-			self = this;
-			this.timeoutID = window.setTimeout(function(){self.calculate();}, 200);
+			ja_calculation_timer_self = this;
+			this.timeoutID = window.setTimeout(function(){ja_calculation_timer_self.calculate();}, 200);
 		},
 
 		calculate: function() {
@@ -928,7 +963,7 @@ function run_ja() {
 	}
 
 	/**
-	 * p2 being "center"
+	 * p1 being "center"
 	 */
 	function ja_angle_between_points(p0,p1,p2) {
 		ja_log("p0 " + p0,3);
@@ -1010,7 +1045,7 @@ function run_ja() {
 						new window.OpenLayers.Feature.Vector(
 							window.Waze.model.nodes.get(n).geometry,
 							{ 
-								angle: ja_round(Math.min(angle, 90-angle)),
+								angle: '±' + ja_round(Math.min(angle, 90-angle)),
 								ja_type: ja_routing_type.ROUNDABOUT
 							}
 						)
@@ -1035,13 +1070,56 @@ function run_ja() {
 		);
 	}
 	
+	function ja_draw_roundabout_overlay(junctionId) {
+		for(var i = 0; i < window.Waze.model.junctions.getObjectArray().length; i++) {
+			var j = window.Waze.model.junctions.getObjectArray()[i];
+			ja_log(j, 3);
+			//Check if we want a specific junction. FIXME: this should actually be done by a direct select, instead of looping through all..
+			if(typeof junctionId !== "undefined" && junctionId != j.id) {
+				continue;
+			}
+			var nodes = {};
+			j.segIDs.forEach(function(s) { 
+				var seg = window.Waze.model.segments.get(s);
+				ja_log(seg, 3);
+				nodes[seg.attributes.fromNodeID] = window.Waze.model.nodes.get(seg.attributes.fromNodeID);
+				nodes[seg.attributes.toNodeID] = window.Waze.model.nodes.get(seg.attributes.toNodeID);
+			});
+
+			ja_log(nodes, 3);
+			var center = ja_coordinates_to_point(j.geometry.coordinates);
+			ja_log(center, 3);
+			var distances = [];
+			Object.getOwnPropertyNames(nodes).forEach(function(name) {
+				ja_log("Checking " + name + " distance", 3);
+				var dist = Math.sqrt(Math.pow(nodes[name].attributes.geometry.x - center.x, 2) + Math.pow(nodes[name].attributes.geometry.y - center.y, 2));
+				distances.push(dist);
+				});
+			ja_log(distances, 3);
+			ja_log("Mean distance is " + distances.reduce(function(a,b){return a + b;}) / distances.length, 3);
+			
+			var circle = window.OpenLayers.Geometry.Polygon.createRegularPolygon(
+				center,
+				distances.reduce(function(a,b){return a + b;}) / distances.length,
+				40,
+				0
+			);
+			var roundaboutCircle = new window.OpenLayers.Feature.Vector(circle, {'ja_type': 'roundaboutoverlay'});
+			ja_roundabout_points.push(circle);
+			ja_mapLayer.addFeatures([roundaboutCircle]);
+		}
+	}
+	
 	function ja_calculate_real() {
 		ja_log("Actually calculating now", 2);
 		var ja_start_time = Date.now();
+		ja_roundabout_points = [];
 		ja_log(window.Waze.map, 3);
 		if(typeof ja_mapLayer === 'undefined') { return 1;}
 		//clear old info
 		ja_mapLayer.destroyFeatures();
+
+		if(ja_getOption("roundaboutOverlayDisplay") == "rOverAlways") ja_draw_roundabout_overlay();
 
 		//try to show all angles for all selected segments
 		if (window.Waze.selectionManager.selectedItems.length == 0) return 1;
@@ -1076,10 +1154,9 @@ function run_ja() {
 
 		ja_features = [];
 		
-		//Figure out if we have a roundabout and do some magic
-		var ja_roundabouts = window.Waze.model.junctions.getObjectArray();
+		//Figure out if we have a selected roundabout and do some magic
 		var ja_selected_roundabouts = {};
-		ja_log(ja_roundabouts, 3);
+
 		for (var i = 0; i < ja_nodes.length; i++) {
 			ja_log("i " + i, 3);
 			ja_log(window.Waze.model.nodes.get(ja_nodes[i]), 3);
@@ -1114,7 +1191,15 @@ function run_ja() {
 			ja_log(tmp_roundabout, 3);
 			ja_log(ja_selected_roundabouts[tmp_roundabout], 3);
 
-			ja_log(ja_coordinates_to_point(ja_selected_roundabouts[tmp_roundabout].p.coordinates), 3);
+			//New roundabouts don't have coordinates yet..
+			if(typeof ja_selected_roundabouts[tmp_roundabout].p === 'undefined' ||
+				ja_selected_roundabouts[tmp_roundabout].out_n === null
+				) {
+				continue;
+			}
+
+			//Draw circle overlay for this roundabout
+			if(ja_getOption("roundaboutOverlayDisplay") == "rOverSelected") ja_draw_roundabout_overlay(tmp_roundabout);
 
 			//Transform LonLat to actual layer projection
 			var tmp_roundabout_center = ja_coordinates_to_point(ja_selected_roundabouts[tmp_roundabout].p.coordinates);
@@ -1127,7 +1212,7 @@ function run_ja() {
 				new window.OpenLayers.Feature.Vector(
 					tmp_roundabout_center,
 					{ 
-						angle: ja_round(angle),
+						angle: ja_round(angle) + '°',
 						ja_type: ja_is_roundabout_normal(tmp_roundabout, ja_selected_roundabouts[tmp_roundabout].in_n) ? ja_routing_type.TURN : ja_routing_type.ROUNDABOUT
 					}
 				)
@@ -1312,11 +1397,22 @@ function run_ja() {
 						ja_log("Skipping marker, as we need only one of them", 2);
 					} else {
 						ja_log("Angle between " + angles[j][1] + " and " + angles[(j + 1) % angles.length][1] + " is " + a + " and position for label should be at " + ha, 3);
+						var point = new window.OpenLayers.Geometry.Point(
+									node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
+						);
+						//Don't paint points inside an overlaid roundabout
+						var skip_point = false;
+						for(var k = 0; k < ja_roundabout_points.length; k++) {
+							if(ja_roundabout_points[k].containsPoint(point)) {
+								skip_point = true;
+								break;
+							}
+						}
+						if(skip_point) continue;
+
 						//push the angle point
 						ja_features.push(new window.OpenLayers.Feature.Vector(
-							new window.OpenLayers.Geometry.Point(
-									node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
-							)
+							point
 							, { angle: ja_round(a) + "°", ja_type: "generic" }
 						));
 					}
@@ -1466,6 +1562,7 @@ function run_ja() {
 					}
 					break;
 				case "text":
+				case "select":
 					ja_setOption(a, document.getElementById(setting['elementId']).value);
 					break;
 			}
@@ -1497,13 +1594,16 @@ function run_ja() {
 					case "text":
 						document.getElementById(setting['elementId']).value = ja_getOption(a);
 						break;
+					case "select":
+						document.getElementById(setting['elementId']).value = ja_getOption(a);
+						break;
 				}
 			});
 		} else {
 			ja_log("WME not ready (no settings tab)", 2);
 		}
 		window.Waze.map.getLayersBy("uniqueName","junction_angles")[0].styleMap = ja_style();
-
+		ja_calculate_real();
 		ja_log(ja_options, 2);
 	};
 
@@ -1539,6 +1639,11 @@ function run_ja() {
 		def["turnInstructionColor"] = "Color for turn prompt";
 		def["problemColor"] = "Color for angles to avoid";
 		def["roundaboutColor"] = "Color for roundabouts (with non-straight exits)";
+		def["roundaboutOverlayColor"] = "Color for roundabout overlay";
+		def["roundaboutOverlayDisplay"] = "Show roundabout circle";
+		def["rOverNever"] = "Never";
+		def["rOverSelected"] = "When selected";
+		def["rOverAlways"] = "Always";
 		def["decimals"] = "Number of decimals";
 		def["pointSize"] = "Base point size";
 
@@ -1555,7 +1660,12 @@ function run_ja() {
 		fi["exitInstructionColor"] = "\"poistu\"-ohjeen väri";
 		fi["turnInstructionColor"] = "\"Käänny\"-ohjeen väri";
 		fi["problemColor"] = "Vältettävien kulmien väri";
-		def["roundaboutColor"] = "Liikenneympyrän (jolla ei-suoria kulmia) ohjeen väri";
+		fi["roundaboutColor"] = "Liikenneympyrän (jolla ei-suoria kulmia) ohjeen väri";
+		fi["roundaboutOverlayColor"] = "Liikenneympyrän korostusväri";
+		fi["roundaboutOverlayDisplay"] = "Korosta liikenneympyrä";
+		fi["rOverNever"] = "Ei ikinä";
+		fi["rOverSelected"] = "Kun valittu";
+		fi["rOverAlways"] = "Aina";
 		fi["decimals"] = "Desimaalien määrä";
 		fi["pointSize"] = "Ympyrän peruskoko";
 
@@ -1570,7 +1680,12 @@ function run_ja() {
 		sv["exitInstructionColor"] = "Färg för \"ta av\"-instruktion";
 		sv["turnInstructionColor"] = "Färg för \"sväng\"-instruktion";
 		sv["problemColor"] = "Färg för vinklar att undvika";
-		def["roundaboutColor"] = "Färg för rondell (med icke-räta vinklar)";
+		sv["roundaboutColor"] = "Färg för rondell (med icke-räta vinklar)";
+		sv["roundaboutOverlayColor"] = "Färg för rondellcirkel";
+		sv["roundaboutOverlayDisplay"] = "Visa cirkel på rondell";
+		sv["rOverNever"] = "Aldrig";
+		sv["rOverSelected"] = "När vald";
+		sv["rOverAlways"] = "Alltid";
 		sv["decimals"] = "Decimaler";
 		sv["pointSize"] = "Cirkelns basstorlek";
 		
