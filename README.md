@@ -20,6 +20,7 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 ###Changelog
 ####1.7.0
 - Roundabout checking! For non-normal roundabouts, the angle will be shown in orange (default), and "turn color" for normal roundabouts
+- Added option for roundabout circle display (always, when selected, never)
 
 ####1.6.7
 - Do calculations after a small delay (with each new recalculation request resetting the delay). Should fix "application not responding" and similar issues. Fixed compatibility issues with WME toolbox.
