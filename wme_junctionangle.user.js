@@ -1401,14 +1401,9 @@ function run_ja() {
 									node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
 						);
 						//Don't paint points inside an overlaid roundabout
-						var skip_point = false;
-						for(var k = 0; k < ja_roundabout_points.length; k++) {
-							if(ja_roundabout_points[k].containsPoint(point)) {
-								skip_point = true;
-								break;
-							}
-						}
-						if(skip_point) continue;
+						if(ja_roundabout_points.some(function (element, index, array){
+							return element.containsPoint(point);
+						})) continue;
 						
 						//Draw a line to the point
 						ja_features.push(
