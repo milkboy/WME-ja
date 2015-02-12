@@ -79,10 +79,10 @@ function run_ja() {
 				('undefined' !== typeof window.Waze.loginManager.events.register)) {
 				setTimeout(function(){junctionangle_init();}, 500);
 			} else {
-				setTimeout(function(){ja_bootstrap(retries++);}, 1000);
+				setTimeout(function(){ja_bootstrap(++retries);}, 1000);
 			}
 		} catch (err) {
-			setTimeout(function(){ja_bootstrap(retries++);}, 1000);
+			setTimeout(function(){ja_bootstrap(++retries);}, 1000);
 		}
 	}
 
@@ -1409,6 +1409,15 @@ function run_ja() {
 							}
 						}
 						if(skip_point) continue;
+						
+						//Draw a line to the point
+						ja_features.push(
+							new window.OpenLayers.Feature.Vector(
+								new window.OpenLayers.Geometry.LineString([node.geometry, point]),
+								{},
+								{strokeOpacity: 0.6, strokeWidth: 1.2, strokeDashstyle: "solid", strokeColor: "#ff9966"}
+							)
+						);
 
 						//push the angle point
 						ja_features.push(new window.OpenLayers.Feature.Vector(
