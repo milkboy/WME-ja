@@ -1212,7 +1212,7 @@ function run_ja() {
 				new window.OpenLayers.Feature.Vector(
 					tmp_roundabout_center,
 					{ 
-						angle: ja_round(angle),
+						angle: ja_round(angle) + '°',
 						ja_type: ja_is_roundabout_normal(tmp_roundabout, ja_selected_roundabouts[tmp_roundabout].in_n) ? ja_routing_type.TURN : ja_routing_type.ROUNDABOUT
 					}
 				)
