@@ -1369,6 +1369,28 @@ function run_ja() {
 						var point = new window.OpenLayers.Geometry.Point(
 									node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
 						);
+						
+						//Try to estimate of the point is "too close" to another point (or maybe something else in the future; like turn restriction arrows or something)
+						var ja_tmp_distance = ja_label_distance;
+						ja_log("Starting distance estimation", 3);
+						while(ja_mapLayer.features.some(function(feature, index){
+							if(typeof feature.attributes.ja_type !== 'undefined'  && feature.attributes.ja_type !== 'roundaboutoverlay') {
+								//Arbitrarily chosen minimum distance.. Should actually use the real bounds of the markers, but that didn't work out.. Bounds are always 0.. 
+								if(ja_label_distance / 1.4 > feature.geometry.distanceTo(point)) {
+									ja_log(ja_label_distance / 1.5 > feature.geometry.distanceTo(point) + " is kinda close..", 3);
+									return true;
+								}
+							}
+							return false;
+						})) {
+							ja_tmp_distance = ja_tmp_distance + ja_label_distance / 4; //add 1/4 of the original distance and hope for the best =)
+							ja_log("setting distance to " + ja_tmp_distance, 2);
+							point = new window.OpenLayers.Geometry.Point(
+								node.geometry.x + (ja_tmp_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_tmp_distance * Math.sin((ha * Math.PI) / 180))
+							);
+						};
+						ja_log("Done distance estimation", 3);
+						
 						var anglePoint = new window.OpenLayers.Feature.Vector(
 							point
 							, { angle: ja_round(a) + "°", ja_type: "generic" }
