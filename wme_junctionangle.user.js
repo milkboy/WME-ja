@@ -26,7 +26,6 @@ function run_ja() {
 	var junctionangle_version = "1.7.0";
 	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
 	var $;
-	var ja_features = [];
 
 	var ja_last_restart = 0;
 	var ja_roundabout_points = [];
@@ -337,7 +336,9 @@ function run_ja() {
 		// to actually work. Took me a while to figure that out...
 		I18n.translations[window.I18n.locale].layers.name["junction_angles"] = ja_getMessage("name");
 
-		//try to see if we already have a layer
+		/**
+		 * Initialize JAI OpenLayers vector layer
+		 */
 		if (window.Waze.map.getLayersBy("uniqueName","junction_angles").length == 0) {
 
 			// Create a vector layer and give it your style map.
@@ -1014,14 +1015,14 @@ function run_ja() {
 					ja_log("turn is NOT normal", 3);
 					is_normal = false;
 					//Push a marker on the node to show which exit is "not normal"
-					ja_features.push(
+					ja_mapLayer.addFeatures([
 						new window.OpenLayers.Feature.Vector(
 							window.Waze.model.nodes.get(n).geometry,
 							{ 
 								angle: '±' + ja_round(Math.min(angle, 90-angle)),
 								ja_type: ja_routing_type.ROUNDABOUT
 							}
-						)
+						)]
 					);
 				}
 			}
@@ -1124,8 +1125,6 @@ function run_ja() {
 			ja_log(ja_nodes, 2);
 		});
 
-		ja_features = [];
-		
 		//Figure out if we have a selected roundabout and do some magic
 		var ja_selected_roundabouts = {};
 
@@ -1179,7 +1178,7 @@ function run_ja() {
 				tmp_roundabout_center,
 				window.Waze.model.nodes.get(ja_selected_roundabouts[tmp_roundabout].out_n).geometry
 			);
-			ja_features.push(
+			ja_mapLayer.addFeatures([
 				new window.OpenLayers.Feature.Vector(
 					tmp_roundabout_center,
 					{ 
@@ -1187,7 +1186,7 @@ function run_ja() {
 						ja_type: ja_is_roundabout_normal(tmp_roundabout, ja_selected_roundabouts[tmp_roundabout].in_n) ? ja_routing_type.TURN : ja_routing_type.ROUNDABOUT
 					}
 				)
-			);
+			]);
 		}
 
 		//Start looping through selected nodes
@@ -1285,7 +1284,7 @@ function run_ja() {
 					ja_label_distance = 80;
 					break;
 				case 3:
-					ja_label_distance = 140;
+					ja_label_distance = 150;
 					break;
 				case 2:
 					ja_label_distance = 300;
@@ -1335,13 +1334,13 @@ function run_ja() {
 					ja_log("Type is: " + ja_junction_type, 2);
 				}
 				//put the angle point
-				ja_features.push(new window.OpenLayers.Feature.Vector(
+				ja_mapLayer.addFeatures([new window.OpenLayers.Feature.Vector(
 					new window.OpenLayers.Geometry.Point(
 						node.geometry.x + (ja_extra_space_multiplier * ja_label_distance * Math.cos((ha * Math.PI) / 180)),
 						node.geometry.y + (ja_extra_space_multiplier * ja_label_distance * Math.sin((ha * Math.PI) / 180))
 					)
 					, { angle: (a>0?"<":"") + ja_round(Math.abs(a)) + "°" + (a<0?">":""), ja_type: ja_junction_type }
-				));
+				)]);
 			}
 			else {
 				//sort angle data (ascending)
@@ -1370,33 +1369,34 @@ function run_ja() {
 						var point = new window.OpenLayers.Geometry.Point(
 									node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
 						);
+						var anglePoint = new window.OpenLayers.Feature.Vector(
+							point
+							, { angle: ja_round(a) + "°", ja_type: "generic" }
+						);
+						ja_log(anglePoint, 3);
+
 						//Don't paint points inside an overlaid roundabout
 						if(ja_roundabout_points.some(function (rondaboutPoint){
 							return rondaboutPoint.containsPoint(point);
 						})) return;
 						
 						//Draw a line to the point
-						ja_features.push(
+						ja_mapLayer.addFeatures([
 							new window.OpenLayers.Feature.Vector(
 								new window.OpenLayers.Geometry.LineString([node.geometry, point]),
 								{},
 								{strokeOpacity: 0.6, strokeWidth: 1.2, strokeDashstyle: "solid", strokeColor: "#ff9966"}
 							)
+						]
 						);
 
 						//push the angle point
-						ja_features.push(new window.OpenLayers.Feature.Vector(
-							point
-							, { angle: ja_round(a) + "°", ja_type: "generic" }
-						));
+						ja_mapLayer.addFeatures([anglePoint]);
 					}
 				});
 			}
 		}
 
-		ja_log(ja_features, 2);
-		//Update the displayed angles
-		ja_mapLayer.addFeatures(ja_features);
 		ja_last_restart = 0;
 		var ja_end_time = Date.now();
 		ja_log("Calculation took " + String(ja_end_time - ja_start_time) + " ms", 2);
