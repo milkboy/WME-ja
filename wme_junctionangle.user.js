@@ -223,6 +223,12 @@ function run_ja() {
 		ja_settings_header.appendChild(document.createTextNode(ja_getMessage("settingsTitle")));
 		ja_settings_dom_content.appendChild(ja_settings_header);
 
+		var style = document.createElement('style');
+		style.appendChild(document.createTextNode(''
+				+ '#jaOptions label { display: inline; }\n'
+				+ '#jaOptions input, select { margin-right: 5px; }\n'
+			));
+
 		var form = document.createElement('form');
 		var section = document.createElement('div');
 		section.className = "form-group";
@@ -305,6 +311,9 @@ function run_ja() {
 		ja_settings_dom.className = "tab-pane";
 
 		ja_settings_dom_content.style.paddingTop = "0";
+
+		ja_settings_dom.appendChild(style);
+
 		ja_settings_dom_panel.appendChild(ja_settings_dom_content);
 		ja_settings_dom.appendChild(ja_settings_dom_panel);
 		
