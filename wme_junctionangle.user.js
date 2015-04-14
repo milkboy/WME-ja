@@ -30,6 +30,7 @@ function run_ja() {
 
 	var ja_last_restart = 0;
 	var ja_roundabout_points = [];
+	var ja_options = {};
 
 	var ja_routing_type = {
 		BC: "junction_none",
@@ -75,6 +76,20 @@ function run_ja() {
 		MOTORBIKE: 256,
 		PRIVATE: 512,
 		HAZ: 1024
+	};
+
+	var ja_settings = {
+		guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false},
+		noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff"},
+		keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84"},
+		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
+		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
+		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
+		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000"},
+		roundaboutOverlayColor: { elementType: "color", elementId: "_jaTbRoundaboutOverlayColor", defaultValue: "#aa0000"},
+		roundaboutOverlayDisplay: { elementType: "select", elementId: "_jaSelRoundaboutOverlayDisplay", defaultValue: "rOverNever", options: ["rOverNever","rOverSelected","rOverAlways"]},
+		decimals: { elementType: "number", elementId: "_jaTbDecimals", defaultValue: 0, min: 0, max: 2},
+		pointSize: { elementType: "number", elementId: "_jaTbPointSize", defaultValue: 12, min: 6, max: 20}
 	};
 
 	function ja_bootstrap(retries) {
@@ -129,7 +144,7 @@ function run_ja() {
 			})
 	}
 	/**
-	 * Make some style settings
+	 * Make some map marker style settings
 	 */
 	function ja_style() {
 		ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10)) + (parseInt(ja_getOption("decimals") > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0)));
@@ -175,20 +190,6 @@ function run_ja() {
 			]
 		});
 	}
-
-	var ja_settings = {
-		guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false},
-		noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff"},
-		keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84"},
-		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
-		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
-		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
-		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000"},
-		roundaboutOverlayColor: { elementType: "color", elementId: "_jaTbRoundaboutOverlayColor", defaultValue: "#aa0000"},
-		roundaboutOverlayDisplay: { elementType: "select", elementId: "_jaSelRoundaboutOverlayDisplay", defaultValue: "rOverNever", options: ["rOverNever","rOverSelected","rOverAlways"]},
-		decimals: { elementType: "number", elementId: "_jaTbDecimals", defaultValue: 0, min: 0, max: 2},
-		pointSize: { elementType: "number", elementId: "_jaTbPointSize", defaultValue: 12, min: 6, max: 20}
-	};
 
 	function ja_helplink(url, text) {
 		var elem = document.createElement('li');
@@ -1380,8 +1381,6 @@ function run_ja() {
 		value = value.toString().split('e');
 		return +(value[0] + 'e' + (value[1] ? (+value[1] + ja_rounding) : ja_rounding));
 	}
-
-	var ja_options = {};
 
 	function ja_getOption(name) {
 		ja_log("Loading option: " + name, 2);
