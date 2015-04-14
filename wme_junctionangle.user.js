@@ -631,17 +631,13 @@ function run_ja() {
 			/*
 			 * Filter out disallowed turns. FIXME: Need to check for disallowed turns somehow!
 			 */
-			var tmp_street_out = {};
-			tmp_street_out[s_out_id] = street_n[s_out_id];
-
 			ja_log("Original angles and street_n:", 2);
 			ja_log(angles, 2);
 			ja_log(street_n, 2);
 			ja_log(s_n, 2);
 			angles = angles.filter(function (a,b,c) {
 				ja_log("Filtering angle: " + ja_angle_diff(s_in_a,a[0],false), 2);
-				if(Math.abs(ja_angle_diff(s_in_a,a[0],false)) <=45
-					&& typeof s_n[a[1]] !== 'undefined'
+				if(typeof s_n[a[1]] !== 'undefined'
 					&& ja_is_turn_allowed(s_in, node, s_n[a[1]])) {
 					return true;
 				} else {
@@ -662,238 +658,94 @@ function run_ja() {
 				return ja_routing_type.BC;
 			} //No instruction
 
+			/*
+			 * Apply simplified BC check
+			 */
+			var bc_matches = {}, bc_prio = 0, bc_count = 0;
+			var bc_collect = function(a, prio) {
+				ja_log("Potential BC = " + prio, 2);
+				ja_log(a);
+				if (bc_prio == 0 || prio < bc_prio) {
+					bc_matches = {};
+					bc_prio = prio;
+					bc_count = 0;
+				}
+				if (prio == bc_prio) {
+					bc_matches[a[1]] = a;
+					bc_count++;
+				}
+				ja_log("BC candidates:", 2);
+				ja_log(bc_matches, 2);
+			};
+
+			//Collect all matching unrestricted <45 turns
 			for(k=0; k< angles.length; k++) {
+				var a = angles[k];
+
 				ja_log("Checking angle " + k, 2);
-				ja_log(angles[k],2);
+				ja_log(a, 2);
 
-				ja_log("in: " + s_in_a[0] + ", " + (s_in_a[0] + 180), 3);
-				ja_log("a_n: " + angles[k][0], 3);
-				var tmp_angle = ja_angle_diff(s_in_a[0], angles[k][0], false);
+				var tmp_angle = ja_angle_diff(s_in_a[0], a[0], false);
 				ja_log(tmp_angle, 2);
-				
-				//tmp test
-				ja_log("Node getDirectionBetweenSegments", 2);
-				ja_log(node.getAngleToSegment(s_in, s_out[s_out_id]), 2);
-				ja_log(node.allConnectionKeys(s_out[s_out_id]), 2);
-				//end
-				
-				if(
-					Math.abs(tmp_angle < 45) &&  //Angle is < 45
-					ja_is_turn_allowed(s_in, node, s_n[angles[k][1]]) && //Direction is allowed FIXME: Need to check for disallowed turns somehow!
-					Math.abs(ja_angle_diff(angles[k][0],s_out_a[0], true)) > 1 //Arbitrarily chosen angle for "overlapping" segments.
-					){
-					ja_log("Found other allowed turn <= 44", 2);
 
-					/*
-					 * Begin "best continuation" logic
-					 */
-					ja_log("BC 2", 1);
-					//2 Is there any alt on both s-in & any s-n?
-					if(ja_has_alt_name(street_in) && ja_has_alt_name(street_n)) {
-						//3 Is s-out a type match?
-						ja_log("BC 3", 2);
-						//Road types match?
-						if(ja_segment_type_match(s_in, s_out)) {
-							//4 Does s-in have a primary name?
-							ja_log("BC 4", 2);
-							if(street_in.primary.name) {
-								//5 Is s-out a primary OR cross name match?
-								ja_log("BC 5", 2);
-								if(ja_primary_name_match(street_in, tmp_street_out) ||
-									ja_cross_name_match(street_in,  tmp_street_out)) {
-									//6 Is any SN a primary name AND type match?
-									//FIXME: Does this mean match to s_in?
-									ja_log("BC 6", 2);
-									if(ja_primary_name_and_type_match(street_in, street_n, tmp_street_out)) {
-										ja_log("Found a name+type match", 2);
-										return ja_routing_type.KEEP;
-									} else {
-										return ja_routing_type.BC;
-									}
-								} else {
-									//10	Is any SN a primary name AND type match?
-									ja_log("BC 10", 2);
-									if(ja_primary_name_and_type_match(street_in, street_n)) {
-										return ja_routing_type.KEEP;
-									} else {
-										//11	Is s-out an alternate name match?
-										ja_log("BC 11", 2);
-										if(!ja_alt_name_match(street_in, tmp_street_out)) {
-											//12	Is any SN a primary OR cross OR alternate name match?
-											ja_log("BC 12", 2);
-											if(ja_primary_name_match(street_in, street_n)
-												|| ja_cross_name_match(street_in, street_n)
-												|| ja_alt_name_match(street_in, street_n)) {
-												return ja_routing_type.KEEP;
-											} else {
-												return ja_routing_type.BC;
-											}
-										} else {
-											//13	Is any SN an alternate name AND type match?
-											ja_log("BC 13", 2);
-											if(ja_alt_name_match(street_in, street_n)
-												&& ja_segment_type_match(s_in, s_out)) {
-												return ja_routing_type.KEEP;
-											} else {
-												return ja_routing_type.BC;
-											}
-										}
-									}
-								}
-							} else {
-								//7 Is any SN a primary OR cross match name?
-								ja_log("BC 7", 2);
-								if(ja_primary_name_match(street_in, street_n)
-									|| ja_cross_name_match(street_in, street_n)) {
-									return ja_routing_type.KEEP;
-								} else {
-									//8 Is s-out a primary OR cross name match?
-									ja_log("BC 8", 2);
-									if(ja_primary_name_match(street_in, tmp_street_out)
-										|| ja_cross_name_match(street_in, tmp_street_out)) {
-										return ja_routing_type.BC;
-									} else {
-										//9 Is any SN a type match?
-										ja_log("BC 9", 2);
-										if(ja_segment_type_match(s_in, s_n)) {
-											return ja_routing_type.KEEP;
-										} else {
-											return ja_routing_type.BC;
-										}
-									}
-								}
-							}
-						} else {
-							//14 Is any SN a type match?
-							ja_log("BC 14", 2);
-							if(ja_segment_type_match(s_in, s_n)) {
-								//15	Is any SN a primary OR cross name match?
-								ja_log("BC 15", 2);
-								if(ja_cross_name_match(street_in, street_n || ja_cross_name_match(street_in, street_n))) {
-									//Keep
-									return ja_routing_type.KEEP;
-								} else {
-									//16	Does s-in have a primary name?
-									ja_log("BC 16", 2);
-									if(street_in.primary.name) {
-										//17	Is s-out a primary OR cross match?
-										ja_log("BC 17", 2);
-										if(ja_primary_name_match(street_in, tmp_street_out)
-											|| ja_cross_name_match(street_in, tmp_street_out)) {
-											return ja_routing_type.BC;
-										} else {
-											//18	Is s-out an alternate name match?
-											ja_log("BC 18", 2);
-											if(ja_alt_name_match(street_in, tmp_street_out)) {
-												//19	Is any SN an alternate name match?
-												if(ja_alt_name_match(street_in, street_n)) {
-													return ja_routing_type.KEEP;
-												} else {
-													return ja_routing_type.BC;
-												}
-											} else {
-												return ja_routing_type.KEEP;
-											}
-										}
-									} else {
-										//keep
-										return ja_routing_type.KEEP;
-									}
-								}
-							} else {
-								//20	Is s-out a primary name match?
-								ja_log("BC 20", 2);
-								if(ja_primary_name_match(street_in, tmp_street_out)) {
-									//21	Is any SN a primary or cross name match?
-									ja_log("BC 21", 2);
-									if(ja_primary_name_match(street_in, street_n) || ja_cross_name_match(street_in, street_n)) {
-										return ja_routing_type.KEEP;
-									} else {
-										return ja_routing_type.BC;
-									}
-								} else {
-									//22	Is any SN a primary name match?
-									ja_log("BC 22", 2);
-									if(ja_primary_name_match(street_in, street_n)) {
-										return ja_routing_type.KEEP;
-									} else {
-										//23	Is s-out a cross name match?
-										ja_log("BC 23", 2);
-										if(ja_cross_name_match(street_in, tmp_street_out)) {
-											//24	Is any SN a cross name match?
-											ja_log("BC 24", 2);
-											if(ja_cross_name_match(street_in, street_n)) {
-												return ja_routing_type.KEEP;
-											} else {
-												return ja_routing_type.BC;
-											}
-										} else {
-											//25	Is any SN a cross name match?
-											ja_log("BC 25", 2);
-											if(ja_cross_name_match(street_in, street_n)) {
-												return ja_routing_type.KEEP;
-											} else {
-												//26	Does s-in have a primary name?
-												ja_log("BC 26", 2);
-												if(street_in.primary.name) {
-													//27	Is s-out an alternate name match?
-													ja_log("BC 27", 2);
-													if(ja_alt_name_match(street_in, tmp_street_out)) {
-														//28	Is any SN an alternate name match?
-														ja_log("BC 28", 2);
-														if(ja_alt_name_match(street_in, street_n)) {
-															return ja_routing_type.KEEP;
-														} else {
-															return ja_routing_type.BC;
-														}
-													} else {
-														return ja_routing_type.KEEP;
-													}
-												} else {
-													return ja_routing_type.KEEP;
-												}
-											}
-										}
-									}
-								}
-							}
-						}
+				var tmp_s_out = {};
+				tmp_s_out[a[1]] = s_n[a[1]];
+				var tmp_street_out = {};
+				tmp_street_out[a[1]] = street_n[a[1]];
+
+				if(s_out_id == a[1] || (
+					Math.abs(tmp_angle) < 45 &&  //Angle is < 45
+					Math.abs(ja_angle_diff(a[0], s_out_a[0], true)) > 1 //Arbitrarily chosen angle for "overlapping" segments.
+					)){
+					ja_log("Found BC eligible turn <= 44", 2);
+
+					if(ja_primary_name_and_type_match(street_in, tmp_street_out)) {
+						bc_collect(a, 1);
+					} else if(ja_alt_name_match(street_in, tmp_street_out)
+								&& ja_segment_type_match(s_in, tmp_s_out)) {
+						bc_collect(a, 2);
+					} else if(ja_primary_name_match(street_in, tmp_street_out)
+								|| ja_cross_name_match(street_in, tmp_street_out)) {
+						bc_collect(a, 3);
+					} else if(ja_alt_name_match(street_in, tmp_street_out)) {
+						bc_collect(a, 4);
+					} else if(ja_segment_type_match(s_in, tmp_s_out)) {
+						bc_collect(a, 5);
 					} else {
-						ja_log("No BC logic.............................", 2);
-						ja_log(s_in,2);
-						ja_log(s_in.isHighway(), 2);
-						ja_log(s_out[s_out_id].isHighway(), 2);
-						ja_log(s_out[s_out_id].isRoutable(), 2);
-						ja_log(s_in.model.isLeftHand, 2);
-						//Highway ends, 2(+?) ramps continuing
-						if(s_in.isHighway() && ja_all_ramps(s_out)) {
-							ja_log("HW ends, all outs are ramps == keep", 2);
-							return ja_routing_type.KEEP;
-						}
-						//Continue straight on highway
-						if(s_in.isHighway() && s_out[s_out_id].isHighway() && !s_n[angles[k][1]].isRoutable()) {
-							ja_log("HW->HW (FIXME. not sure if this is correct at all) == no instruction", 2);
-							return ja_routing_type.BC;
-						}
-						//Highway -> ramp
-						if(s_in.isHighway() && !s_out[s_out_id].isRoutable()) {
-							ja_log("HW->ramp == exit", 2);
-							//Exit right on RHD, left on LHD
-							if(s_in.model.isLeftHand ? (angle > 0 ) : (angle < 0)) {
-								return ja_routing_type.EXIT;
-							}
-						}
-						//TESTING....
-						if(s_in.model.isLeftHand ? (angle < 0 ) : (angle > 0)) {
-							return ja_routing_type.BC;
-						}
-						ja_log("DEFAULT: keep", 2);
-						return ja_routing_type.KEEP;
+						//Non-BC
 					}
 				}
 			}
-			ja_log("\"straight\": no instruction", 2);
-			return ja_routing_type.BC;
+
+			if (bc_matches[s_out_id] !== undefined && bc_count == 1) {
+				ja_log("\"straight\": no instruction", 2);
+				return ja_routing_type.BC
+			}
+
+			ja_log("No BC logic.............................", 2);
+
+			// Primary to non-primary
+			if(ja_is_primary_road(s_in) && !ja_is_primary_road(s_out[s_out_id])) {
+				ja_log("Primary to non-primary == exit", 2);
+				if(s_in.model.isLeftHand ? (angle > 0 ) : (angle < 0)) {
+					return ja_routing_type.EXIT;
+				} else {
+					return ja_routing_type.PROBLEM;
+				}
+			}
+
+			// Ramp to non-primary or non-ramp
+			if(ja_is_ramp(s_in) && !ja_is_primary_road(s_out[s_out_id]) && !ja_is_ramp(s_out[s_out_id]) ) {
+				ja_log("Ramp to non-primary and non-ramp == exit", 2);
+				if(s_in.model.isLeftHand ? (angle > 0 ) : (angle < 0)) {
+					return ja_routing_type.EXIT;
+				} else {
+					return ja_routing_type.PROBLEM;
+				}
+			}
+
+			ja_log("DEFAULT: keep", 2);
+			return ja_routing_type.KEEP;
 		} else if(Math.abs(angle) <= 46) {
 			ja_log("Angle is in gray zone 44-46", 2);
 			return ja_routing_type.PROBLEM;
