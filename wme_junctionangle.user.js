@@ -42,13 +42,25 @@ function run_ja() {
 	};
 	
 	var ja_road_type = {
-		PRIMARY_STREET: 1,
-		STREET: 2,
+        //Streets
+		STREET: 1,
+        PRIMARY_STREET: 2,
+        //Highways
 		RAMP: 4,
-		H1: 3,
-		H2: 4,
-		H3: 6,
-		H4: 7
+        FREEWAY: 3,
+		MAJOR_HIGHWAY: 6,
+		MINOR_HIGHWAY: 7,
+        //Other drivable
+        DIRT_ROAD: 8,
+        FERRY: 14,
+        PRIVATE_ROAD: 17,
+        PARKING_LOT_ROAD: 20,
+        //Non-drivable
+        WALKING_TRAIL: 5,
+        PEDESTRIAB_BOARDWALK: 10,
+        STAIRWAY: 16,
+        RAILROAD: 18,
+        RUNWAY: 19
 	};
 	
 	var ja_vehicle_types = {
@@ -63,7 +75,7 @@ function run_ja() {
 		MOTORBIKE: 256,
 		PRIVATE: 512,
 		HAZ: 1024
-	}
+	};
 
 	function ja_bootstrap(retries) {
 		retries = retries || 0;
@@ -432,7 +444,7 @@ function run_ja() {
 		ja_log(street_in, 2);
 		ja_log(streets, 2);
 		return Object.getOwnPropertyNames(streets).some(function (street_n_id, index, array) {
-			street_n_element = streets[street_n_id];
+			var street_n_element = streets[street_n_id];
 			ja_log("CN: Checking element " + index, 2);
 			ja_log(street_n_element, 2);
 			return (street_in.secondary.some(function (street_in_secondary, index2, array2){
@@ -500,12 +512,12 @@ function run_ja() {
 
 	function ja_is_primary_road(seg) {
 		var t = seg.attributes.roadType;
-		return t == 3 || t == 6 || t == 7;
+		return t == ja_road_type.FREEWAY || t == ja_road_type.MAJOR_HIGHWAY || t == ja_road_type.MINOR_HIGHWAY;
 	}
 
 	function ja_is_ramp(seg) {
 		var t = seg.attributes.roadType;
-		return t == 4;
+		return t == ja_road_type.RAMP;
 	}
 
 	//segment or segment array
@@ -889,8 +901,6 @@ function run_ja() {
 			ja_log("Normal turn", 2);
 			return ja_routing_type.TURN; //Normal turn (left|right)
 		}
-		ja_log("No matching turn instruction logic", 2);
-		return ja_routing_type.TURN; //default
 	}
 
 	function ja_is_turn_allowed(s_from, via_node, s_to) {
@@ -934,7 +944,7 @@ function run_ja() {
 		start: function() {
 			ja_log("Starting timer", 2);
 			this.cancel();
-			ja_calculation_timer_self = this;
+			var ja_calculation_timer_self = this;
 			this.timeoutID = window.setTimeout(function(){ja_calculation_timer_self.calculate();}, 200);
 		},
 
@@ -951,7 +961,7 @@ function run_ja() {
 			}
 		}
 		
-	}
+	};
 
 	function ja_calculate() {
 		ja_calculation_timer.start();
