@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name				WME Junction Angle info
+// @name				WME Junction Angle Info
 // @namespace			https://github.com/milkboy/WME-ja
 // @description			Show the angle between two selected (and connected) segments
 // @include				/^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
@@ -19,35 +19,52 @@
  *	2014 Paweł Pyrczak "tkr85" <support@pyrczak.pl>
  *	2014 "AlanOfTheBerg" <alanoftheberg@gmail.com>
  *	2014 "berestovskyy" <?>
+ *	2015 "FZ69617" <?>
  */
 
 function run_ja() {
 
+	/*
+	 * First some variable and enumeration definitions
+	 */
 	var junctionangle_version = "1.7.0";
 	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
 	var $;
 
 	var ja_last_restart = 0;
 	var ja_roundabout_points = [];
+	var ja_options = {};
 
 	var ja_routing_type = {
 		BC: "junction_none",
 		KEEP: "junction_keep",
 		TURN: "junction",
-		EXIT: "junction_exit", //not actually used (yet)
+		EXIT: "junction_exit",
 		PROBLEM: "junction_problem",
 		ERROR: "junction_error",
 		ROUNDABOUT: "junction_roundabout"
 	};
 	
 	var ja_road_type = {
-		PRIMARY_STREET: 1,
-		STREET: 2,
+		//Streets
+		STREET: 1,
+		PRIMARY_STREET: 2,
+		//Highways
 		RAMP: 4,
-		H1: 3,
-		H2: 4,
-		H3: 6,
-		H4: 7
+		FREEWAY: 3,
+		MAJOR_HIGHWAY: 6,
+		MINOR_HIGHWAY: 7,
+		//Other drivable
+		DIRT_ROAD: 8,
+		FERRY: 14,
+		PRIVATE_ROAD: 17,
+		PARKING_LOT_ROAD: 20,
+		//Non-drivable
+		WALKING_TRAIL: 5,
+		PEDESTRIAB_BOARDWALK: 10,
+		STAIRWAY: 16,
+		RAILROAD: 18,
+		RUNWAY: 19
 	};
 	
 	var ja_vehicle_types = {
@@ -62,113 +79,14 @@ function run_ja() {
 		MOTORBIKE: 256,
 		PRIVATE: 512,
 		HAZ: 1024
-	}
-
-	function ja_bootstrap(retries) {
-		retries = retries || 0;
-		//If Waze has not been defined in 10 seconds, it probably won't work anyway.
-		if(retries >= 10) {
-			ja_log("Failed to bootstrap 10 times. Giving up.", 0);
-			return;
-		}
-
-		try {
-			if ((typeof window.Waze.map !== 'undefined') && ('undefined' !== typeof window.Waze.map.events.register) &&
-				('undefined' !== typeof window.Waze.selectionManager.events.register ) &&
-				('undefined' !== typeof window.Waze.loginManager.events.register)) {
-				setTimeout(function(){junctionangle_init();}, 500);
-			} else {
-				setTimeout(function(){ja_bootstrap(++retries);}, 1000);
-			}
-		} catch (err) {
-			setTimeout(function(){ja_bootstrap(++retries);}, 1000);
-		}
-	}
-
-	function ja_log(ja_log_msg, ja_log_level) {
-
-		//##NO_FF_START##
-		if (ja_log_level <= junctionangle_debug) {
-			if (typeof ja_log_msg == "object") {
-				console.debug(ja_log_msg);
-			}
-			else {
-				console.debug("WME Junction Angle: " + ja_log_msg);
-			}
-		}
-		//##NO_FF_END##
-	}
-
-	function ja_get_style_rule(routingType, fillColorOption) {
-		return new window.OpenLayers.Rule(
-			{
-				filter: new window.OpenLayers.Filter.Comparison({
-					type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-					property: "ja_type",
-					value: routingType
-				}),
-				symbolizer: {
-					pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
-					fontSize: "12px",
-					fillColor: ja_getOption(fillColorOption),
-					strokeColor: "#183800"
-				}
-			})
-	}
-	/**
-	 * Make some style settings
-	 */
-	function ja_style() {
-		ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10)) + (parseInt(ja_getOption("decimals") > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0)));
-		return new window.OpenLayers.Style({
-			fillColor: "#ffcc88",
-			strokeColor: "#ff9966",
-			strokeWidth: 2,
-			label: "${angle}",
-			fontWeight: "bold",
-			pointRadius: parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
-			fontSize: "10px"
-		}, {
-			rules: [
-				new window.OpenLayers.Rule({
-					symbolizer: {
-					}
-				}),
-				ja_get_style_rule(ja_routing_type.TURN, "turnInstructionColor"),
-				ja_get_style_rule(ja_routing_type.BC, "noInstructionColor"),
-				ja_get_style_rule(ja_routing_type.KEEP, "keepInstructionColor"),
-				ja_get_style_rule(ja_routing_type.EXIT, "exitInstructionColor"),
-				ja_get_style_rule(ja_routing_type.PROBLEM, "problemColor"),
-				ja_get_style_rule(ja_routing_type.ERROR, "problemColor"),
-				ja_get_style_rule(ja_routing_type.ROUNDABOUT, "roundaboutColor"),
-
-				new window.OpenLayers.Rule(
-				{
-					filter: new window.OpenLayers.Filter.Comparison({
-						type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
-						property: "ja_type",
-						value: "roundaboutoverlay"
-					}),
-					symbolizer: {
-						pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
-						fontSize: "12px",
-						fillColor: ja_getOption("roundaboutOverlayColor"),
-						fillOpacity: 0.1,
-						strokeColor: ja_getOption("roundaboutOverlayColor"),
-						label: ""
-					}
-				})
-
-			]
-		});
-	}
+	};
 
 	var ja_settings = {
 		guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false},
 		noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff"},
 		keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84"},
-		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
 		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
+		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
 		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
 		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000"},
 		roundaboutOverlayColor: { elementType: "color", elementId: "_jaTbRoundaboutOverlayColor", defaultValue: "#aa0000"},
@@ -177,15 +95,11 @@ function run_ja() {
 		pointSize: { elementType: "number", elementId: "_jaTbPointSize", defaultValue: 12, min: 6, max: 20}
 	};
 
-	function ja_helplink(url, text) {
-		var elem = document.createElement('li');
-		var l = document.createElement('a');
-		l.href = url;
-		l.appendChild(document.createTextNode(ja_getMessage(text)));
-		elem.appendChild(l);
-		return elem;
-	}
-	
+
+	/*
+	 * Main logic functions
+	 */
+
 	function junctionangle_init() {
 
 		//Listen for selected nodes change event
@@ -221,6 +135,12 @@ function run_ja() {
 		var ja_settings_header = document.createElement('h4');
 		ja_settings_header.appendChild(document.createTextNode(ja_getMessage("settingsTitle")));
 		ja_settings_dom_content.appendChild(ja_settings_header);
+
+		var style = document.createElement('style');
+		style.appendChild(document.createTextNode(''
+				+ '#jaOptions label { display: inline; }\n'
+				+ '#jaOptions input, select { margin-right: 5px; }\n'
+			));
 
 		var form = document.createElement('form');
 		var section = document.createElement('div');
@@ -304,6 +224,9 @@ function run_ja() {
 		ja_settings_dom.className = "tab-pane";
 
 		ja_settings_dom_content.style.paddingTop = "0";
+
+		ja_settings_dom.appendChild(style);
+
 		ja_settings_dom_panel.appendChild(ja_settings_dom_content);
 		ja_settings_dom.appendChild(ja_settings_dom_panel);
 		
@@ -368,154 +291,6 @@ function run_ja() {
 		ja_calculate();
 	}
 
-	function ja_get_streets(segmentId) {
-		var primary = window.Waze.model.streets.objects[window.Waze.model.segments.objects[segmentId].attributes.primaryStreetID];
-		var secondary = [];
-		window.Waze.model.segments.objects[segmentId].attributes.streetIDs.forEach(function (element, index, array) {
-			secondary.push(window.Waze.model.streets.objects[element]);
-		});
-		ja_log(primary, 3);
-		ja_log(secondary, 3);
-		return { primary: primary, secondary: secondary };
-	}
-
-	function ja_primary_name_and_type_match(street_in, streets, exceptStreet) {
-		ja_log("PNT", 2);
-		ja_log(street_in, 2);
-		return Object.getOwnPropertyNames(streets).some(function (id, index, array) {
-			ja_log("PNT Checking element " + index, 2);
-			ja_log(streets[id], 2);
-			ja_log("Checking exception", 2);
-			ja_log(exceptStreet, 2);
-			var exempt = exceptStreet[id] != null && exceptStreet[id] != id;
-			ja_log(exempt, 2);
-			return (!exempt && streets[id].primary.name == street_in.primary.name
-				&& streets[id].primary.type == street_in.primary.type);
-		});
-	}
-
-	function ja_primary_name_match(street_in, streets) {
-		ja_log("PN", 2);
-		ja_log(street_in, 2);
-		ja_log(streets, 2);
-		return Object.getOwnPropertyNames(streets).some(function (id, index, array) {
-			element = streets[id];
-			ja_log("PN Checking element " + index + " of " + array.length, 2);
-			ja_log(element, 2);
-			return (element.primary.name == street_in.primary.name);
-		});
-	}
-
-	/**
-	 * From wiki:
-	 * A Cross-match is when the primary name of one segment is identical to the alternate name of an adjacent segment. It had the same priory as a Primary name match.
-	 * In order for a Cross match to work there must be at least one alt name on both involved segments (even though they don't necessarily match each other).
-	 * It will work even if the are no Primary names on those segments.
-	 * It will not work if all three segments at a split have a matching Primary name or a matching Alternate name.
-	 * @param street_in
-	 * @param streets
-	 * @returns {boolean}
-	 */
-	//TODO: test!
-	function ja_cross_name_match(street_in, streets) {
-		ja_log("CN: init", 2);
-		ja_log(street_in, 2);
-		ja_log(streets, 2);
-		return Object.getOwnPropertyNames(streets).some(function (street_n_id, index, array) {
-			street_n_element = streets[street_n_id];
-			ja_log("CN: Checking element " + index, 2);
-			ja_log(street_n_element, 2);
-			return (street_in.secondary.some(function (street_in_secondary, index2, array2){
-				ja_log("CN2a: checking n.p: " + street_n_element.primary.name + " vs in.s: " + street_in_secondary.name, 2);
-				return street_n_element.primary.name == street_in_secondary.name;
-			}) || street_n_element.secondary.some(function (street_n_secondary, index2, array2) {
-				ja_log("CN2b: checking in.p: " + street_in.primary.name + " vs n.s: " + street_n_secondary.name, 2);
-			}));
-		});
-	}
-
-	//TODO: TEST
-	function ja_alt_name_match(street_in, streets) {
-		return Object.getOwnPropertyNames(streets).some(function (street_n_id, index, array) {
-			var street_n_element = streets[street_n_id];
-			ja_log("AN alt name check: Checking element " + index, 2);
-			ja_log(street_n_element, 2);
-
-			if(street_in.secondary.length == 0) return false;
-			if(street_n_element.secondary.length == 0) return false;
-
-			return street_in.secondary.some(function (street_in_secondary, index2, array2) {
-				ja_log("AN2 checking element " + index2, 2);
-				ja_log(street_in_secondary, 2);
-				return street_n_element.secondary.some(function (street_n_secondary_element, index3,  array3) {
-					ja_log("AN3 Checking in.s: " + street_in_secondary.name + " vs n.s." + index3 + ": " + street_n_secondary_element.name, 2);
-					return street_in_secondary.name == street_n_secondary_element.name;
-				});
-			});
-		});
-	}
-
-	/**
-	 * Check if segment in type matches any other segments
-	 * @param segment_in
-	 * @param segments
-	 * @returns {boolean}
-	 */
-	function ja_segment_type_match(segment_in, segments) {
-		ja_log(segment_in, 2);
-		ja_log(segments, 2);
-		//ja_log(window.Waze.model.segments, 2);
-
-		return Object.getOwnPropertyNames(segments).some(function (segment_n_id, index, array) {
-			var segment_n = segments[segment_n_id];
-			ja_log("PT Checking element " + index, 2);
-			ja_log(segment_n, 2);
-			if(segment_n.attributes.id == segment_in.attributes.id) return false;
-			ja_log("PT checking sn.rt " + segment_n.attributes.roadType +
-				" vs i.pt: " + segment_in.attributes.roadType, 2);
-			return (segment_n.attributes.roadType == segment_in.attributes.roadType);
-		});
-	}
-
-	function ja_has_alt_name(seg) {
-		//Single segment?
-		if(seg.hasOwnProperty('primary')) {
-			return seg.secondary.length > 0;
-		} else {
-			return Object.getOwnPropertyNames(seg).some(function (s,i,a) {
-				return seg[s].secondary.length > 0;
-			});
-		}
-	}
-
-	//segment or segment array
-	function ja_all_ramps(seg) {
-		//Single segment?
-		if(seg.hasOwnProperty('type')) {
-			return seg.isRoutable();
-		} else {
-			return Object.getOwnPropertyNames(seg).some(function (s,i,a) {
-				return !seg[s].isRoutable();
-			});
-		}
-	}
-
-	/**
-	 * get absolute (or turn) angle between 2 inputs.
-	 * 0,90,true  -> 90	 0,90,false -> -90
-	 * 0,170,true -> 170	0,170,false -> -10
-	 * @param aIn absolute s_in angle (from node)
-	 * @param aOut absolute s_out angle (from node)
-	 * @param absolute return absolute or turn angle?
-	 * @returns {number}
-	 */
-	function ja_angle_diff(aIn, aOut, absolute) {
-		var a = parseFloat(aOut) - parseFloat(aIn);
-		if(a > 180) a -= 360;
-		if(a < -180) a+= 360;
-		return absolute ? a : (a > 0 ? a - 180 : a + 180);
-	}
-	
 	/**
 	 *
 	 * @param node Junction node
@@ -576,6 +351,7 @@ function run_ja() {
 
 		var angle = ja_angle_diff(s_in_a[0], (s_out_a[0]), false);
 		ja_log("turn angle is: " + angle, 2);
+
 		//No other possible turns
 		if(node.attributes.segIDs.length <= 2) {
 			ja_log("Only one possible turn", 2);
@@ -596,19 +372,15 @@ function run_ja() {
 			ja_log("Turn is <= 44", 2);
 
 			/*
-			 Need to filter out turns that have no useful meaning for BC. Hope this won't break anything...
+			 * Filter out disallowed turns. FIXME: Need to check for disallowed turns somehow!
 			 */
-			var tmp_street_out = {};
-			tmp_street_out[s_out_id] = street_n[s_out_id];
-
 			ja_log("Original angles and street_n:", 2);
 			ja_log(angles, 2);
 			ja_log(street_n, 2);
 			ja_log(s_n, 2);
 			angles = angles.filter(function (a,b,c) {
 				ja_log("Filtering angle: " + ja_angle_diff(s_in_a,a[0],false), 2);
-				if(Math.abs(ja_angle_diff(s_in_a,a[0],false)) <=45
-					&& typeof s_n[a[1]] !== 'undefined'
+				if(typeof s_n[a[1]] !== 'undefined'
 					&& ja_is_turn_allowed(s_in, node, s_n[a[1]])) {
 					return true;
 				} else {
@@ -624,241 +396,99 @@ function run_ja() {
 			ja_log(street_n, 2);
 			ja_log(s_n, 2);
 
-			if(angles.length == 1) return ja_routing_type.BC;
-			//FIXME: Need to have logic for multiple <45 matches?...
-			//Check for other unrestricted <45 turns?
+			if(angles.length <= 1) {
+				ja_log("Only one allowed turn left", 2);
+				return ja_routing_type.BC;
+			} //No instruction
+
+			/*
+			 * Apply simplified BC check
+			 */
+			var bc_matches = {}, bc_prio = 0, bc_count = 0;
+			var bc_collect = function(a, prio) {
+				ja_log("Potential BC = " + prio, 2);
+				ja_log(a);
+				if (bc_prio == 0 || prio < bc_prio) {
+					bc_matches = {};
+					bc_prio = prio;
+					bc_count = 0;
+				}
+				if (prio == bc_prio) {
+					bc_matches[a[1]] = a;
+					bc_count++;
+				}
+				ja_log("BC candidates:", 2);
+				ja_log(bc_matches, 2);
+			};
+
+			//Collect all matching unrestricted <45 turns
 			for(k=0; k< angles.length; k++) {
+				var a = angles[k];
+
 				ja_log("Checking angle " + k, 2);
-				ja_log(angles[k],2);
+				ja_log(a, 2);
 
-				ja_log("in: " + s_in_a[0] + ", " + (s_in_a[0] + 180), 3);
-				ja_log("a_n: " + angles[k][0], 3);
-				var tmp_angle = ja_angle_diff(s_in_a[0], angles[k][0], false);
+				var tmp_angle = ja_angle_diff(s_in_a[0], a[0], false);
 				ja_log(tmp_angle, 2);
-				
-				//tmp test
-				ja_log("Node getDirectionBetweenSegments", 2);
-				ja_log(node.getAngleToSegment(s_in, s_out[s_out_id]), 2);
-				ja_log(node.allConnectionKeys(s_out[s_out_id]), 2);
-				//end
-				
-				if(
-					Math.abs(tmp_angle < 45) &&  //Angle is < 45
-					ja_is_turn_allowed(s_in, node, s_n[angles[k][1]]) && //Direction is allowed FIXME: Need to check for disallowed turns somehow!
-					Math.abs(ja_angle_diff(angles[k][0],s_out_a[0], true)) > 1 //Arbitrarily chosen angle for "overlapping" segments.
-					){
-					ja_log("Found other allowed turn <= 44", 2);
 
-					/*
-					 * Begin "best continuation" logic
-					 */
-					ja_log("BC 2", 1);
-					//2 Is there any alt on both s-in & any s-n?
-					if(ja_has_alt_name(street_in) && ja_has_alt_name(street_n)) {
-						//3 Is s-out a type match?
-						ja_log("BC 3", 2);
-						//Road types match?
-						if(ja_segment_type_match(s_in, s_out)) {
-							//4 Does s-in have a primary name?
-							ja_log("BC 4", 2);
-							if(street_in.primary.name) {
-								//5 Is s-out a primary OR cross name match?
-								ja_log("BC 5", 2);
-								if(ja_primary_name_match(street_in, tmp_street_out) ||
-									ja_cross_name_match(street_in,  tmp_street_out)) {
-									//6 Is any SN a primary name AND type match?
-									//FIXME: Does this mean match to s_in?
-									ja_log("BC 6", 2);
-									if(ja_primary_name_and_type_match(street_in, street_n, tmp_street_out)) {
-										ja_log("Found a name+type match", 2);
-										return ja_routing_type.KEEP;
-									} else {
-										return ja_routing_type.BC;
-									}
-								} else {
-									//10	Is any SN a primary name AND type match?
-									ja_log("BC 10", 2);
-									if(ja_primary_name_and_type_match(street_in, street_n)) {
-										return ja_routing_type.KEEP;
-									} else {
-										//11	Is s-out an alternate name match?
-										ja_log("BC 11", 2);
-										if(!ja_alt_name_match(street_in, tmp_street_out)) {
-											//12	Is any SN a primary OR cross OR alternate name match?
-											ja_log("BC 12", 2);
-											if(ja_primary_name_match(street_in, street_n)
-												|| ja_cross_name_match(street_in, street_n)
-												|| ja_alt_name_match(street_in, street_n)) {
-												return ja_routing_type.KEEP;
-											} else {
-												return ja_routing_type.BC;
-											}
-										} else {
-											//13	Is any SN an alternate name AND type match?
-											ja_log("BC 13", 2);
-											if(ja_alt_name_match(street_in, street_n)
-												&& ja_segment_type_match(s_in, s_out)) {
-												return ja_routing_type.KEEP;
-											} else {
-												return ja_routing_type.BC;
-											}
-										}
-									}
-								}
-							} else {
-								//7 Is any SN a primary OR cross match name?
-								ja_log("BC 7", 2);
-								if(ja_primary_name_match(street_in, street_n)
-									|| ja_cross_name_match(street_in, street_n)) {
-									return ja_routing_type.KEEP;
-								} else {
-									//8 Is s-out a primary OR cross name match?
-									ja_log("BC 8", 2);
-									if(ja_primary_name_match(street_in, tmp_street_out)
-										|| ja_cross_name_match(street_in, tmp_street_out)) {
-										return ja_routing_type.BC;
-									} else {
-										//9 Is any SN a type match?
-										ja_log("BC 9", 2);
-										if(ja_segment_type_match(s_in, s_n)) {
-											return ja_routing_type.KEEP;
-										} else {
-											return ja_routing_type.BC;
-										}
-									}
-								}
-							}
-						} else {
-							//14 Is any SN a type match?
-							ja_log("BC 14", 2);
-							if(ja_segment_type_match(s_in, s_n)) {
-								//15	Is any SN a primary OR cross name match?
-								ja_log("BC 15", 2);
-								if(ja_cross_name_match(street_in, street_n || ja_cross_name_match(street_in, street_n))) {
-									//Keep
-									return ja_routing_type.KEEP;
-								} else {
-									//16	Does s-in have a primary name?
-									ja_log("BC 16", 2);
-									if(street_in.primary.name) {
-										//17	Is s-out a primary OR cross match?
-										ja_log("BC 17", 2);
-										if(ja_primary_name_match(street_in, tmp_street_out)
-											|| ja_cross_name_match(street_in, tmp_street_out)) {
-											return ja_routing_type.BC;
-										} else {
-											//18	Is s-out an alternate name match?
-											ja_log("BC 18", 2);
-											if(ja_alt_name_match(street_in, tmp_street_out)) {
-												//19	Is any SN an alternate name match?
-												if(ja_alt_name_match(street_in, street_n)) {
-													return ja_routing_type.KEEP;
-												} else {
-													return ja_routing_type.BC;
-												}
-											} else {
-												return ja_routing_type.KEEP;
-											}
-										}
-									} else {
-										//keep
-										return ja_routing_type.KEEP;
-									}
-								}
-							} else {
-								//20	Is s-out a primary name match?
-								ja_log("BC 20", 2);
-								if(ja_primary_name_match(street_in, tmp_street_out)) {
-									//21	Is any SN a primary or cross name match?
-									ja_log("BC 21", 2);
-									if(ja_primary_name_match(street_in, street_n) || ja_cross_name_match(street_in, street_n)) {
-										return ja_routing_type.KEEP;
-									} else {
-										return ja_routing_type.BC;
-									}
-								} else {
-									//22	Is any SN a primary name match?
-									ja_log("BC 22", 2);
-									if(ja_primary_name_match(street_in, street_n)) {
-										return ja_routing_type.KEEP;
-									} else {
-										//23	Is s-out a cross name match?
-										ja_log("BC 23", 2);
-										if(ja_cross_name_match(street_in, tmp_street_out)) {
-											//24	Is any SN a cross name match?
-											ja_log("BC 24", 2);
-											if(ja_cross_name_match(street_in, street_n)) {
-												return ja_routing_type.KEEP;
-											} else {
-												return ja_routing_type.BC;
-											}
-										} else {
-											//25	Is any SN a cross name match?
-											ja_log("BC 25", 2);
-											if(ja_cross_name_match(street_in, street_n)) {
-												return ja_routing_type.KEEP;
-											} else {
-												//26	Does s-in have a primary name?
-												ja_log("BC 26", 2);
-												if(street_in.primary.name) {
-													//27	Is s-out an alternate name match?
-													ja_log("BC 27", 2);
-													if(ja_alt_name_match(street_in, tmp_street_out)) {
-														//28	Is any SN an alternate name match?
-														ja_log("BC 28", 2);
-														if(ja_alt_name_match(street_in, street_n)) {
-															return ja_routing_type.KEEP;
-														} else {
-															return ja_routing_type.BC;
-														}
-													} else {
-														return ja_routing_type.KEEP;
-													}
-												} else {
-													return ja_routing_type.KEEP;
-												}
-											}
-										}
-									}
-								}
-							}
-						}
+				var tmp_s_out = {};
+				tmp_s_out[a[1]] = s_n[a[1]];
+				var tmp_street_out = {};
+				tmp_street_out[a[1]] = street_n[a[1]];
+
+				if(s_out_id == a[1] || (
+					Math.abs(tmp_angle) < 45 &&  //Angle is < 45
+					Math.abs(ja_angle_diff(a[0], s_out_a[0], true)) > 1 //Arbitrarily chosen angle for "overlapping" segments.
+					)){
+					ja_log("Found BC eligible turn <= 44", 2);
+
+					if(ja_primary_name_and_type_match(street_in, tmp_street_out)) {
+						bc_collect(a, 1);
+					} else if(ja_alt_name_match(street_in, tmp_street_out)
+								&& ja_segment_type_match(s_in, tmp_s_out)) {
+						bc_collect(a, 2);
+					} else if(ja_primary_name_match(street_in, tmp_street_out)
+								|| ja_cross_name_match(street_in, tmp_street_out)) {
+						bc_collect(a, 3);
+					} else if(ja_alt_name_match(street_in, tmp_street_out)) {
+						bc_collect(a, 4);
+					} else if(ja_segment_type_match(s_in, tmp_s_out)) {
+						bc_collect(a, 5);
 					} else {
-						ja_log("No BC logic.............................", 2);
-						ja_log(s_in,2);
-						ja_log(s_in.isHighway(), 2);
-						ja_log(s_out[s_out_id].isHighway(), 2);
-						ja_log(s_out[s_out_id].isRoutable(), 2);
-						ja_log(s_in.model.isLeftHand, 2);
-						//Highway ends, 2(+?) ramps continuing
-						if(s_in.isHighway() && ja_all_ramps(s_out)) {
-							ja_log("HW ends, all outs are ramps == keep", 2);
-							return ja_routing_type.KEEP;
-						}
-						//Continue straight on highway
-						if(s_in.isHighway() && s_out[s_out_id].isHighway() && !s_n[angles[k][1]].isRoutable()) {
-							ja_log("HW->HW (FIXME. not sure if this is correct at all) == no instruction", 2);
-							return ja_routing_type.BC;
-						}
-						//Highway -> ramp
-						if(s_in.isHighway() && !s_out[s_out_id].isRoutable()) {
-							ja_log("HW->ramp == exit", 2);
-							//Exit right on RHD, left on LHD
-							if(s_in.model.isLeftHand ? (angle > 0 ) : (angle < 0)) {
-								return ja_routing_type.EXIT;
-							}
-						}
-						//TESTING....
-						if(s_in.model.isLeftHand ? (angle < 0 ) : (angle > 0)) {
-							return ja_routing_type.BC;
-						}
-						ja_log("DEFAULT: keep", 2);
-						return ja_routing_type.KEEP;
+						//Non-BC
 					}
 				}
 			}
-			ja_log("\"straight\": no instruction", 2);
-			return ja_routing_type.BC;
+
+			if (bc_matches[s_out_id] !== undefined && bc_count == 1) {
+				ja_log("\"straight\": no instruction", 2);
+				return ja_routing_type.BC
+			}
+
+			ja_log("No BC logic.............................", 2);
+
+			// Primary to non-primary
+			if(ja_is_primary_road(s_in) && !ja_is_primary_road(s_out[s_out_id])) {
+				ja_log("Primary to non-primary == exit", 2);
+				if(s_in.model.isLeftHand ? (angle > 0 ) : (angle < 0)) {
+					return ja_routing_type.EXIT;
+				} else {
+					return ja_routing_type.PROBLEM;
+				}
+			}
+
+			// Ramp to non-primary or non-ramp
+			if(ja_is_ramp(s_in) && !ja_is_primary_road(s_out[s_out_id]) && !ja_is_ramp(s_out[s_out_id]) ) {
+				ja_log("Ramp to non-primary and non-ramp == exit", 2);
+				if(s_in.model.isLeftHand ? (angle > 0 ) : (angle < 0)) {
+					return ja_routing_type.EXIT;
+				} else {
+					return ja_routing_type.PROBLEM;
+				}
+			}
+
+			ja_log("DEFAULT: keep", 2);
+			return ja_routing_type.KEEP;
 		} else if(Math.abs(angle) <= 46) {
 			ja_log("Angle is in gray zone 44-46", 2);
 			return ja_routing_type.PROBLEM;
@@ -866,184 +496,8 @@ function run_ja() {
 			ja_log("Normal turn", 2);
 			return ja_routing_type.TURN; //Normal turn (left|right)
 		}
-		ja_log("No matching turn instruction logic", 2);
-		return ja_routing_type.TURN; //default
 	}
 
-	function ja_is_turn_allowed(s_from, via_node, s_to) {
-		ja_log("Allow from " + s_from.attributes.id + " to " + s_to.attributes.id + " via " + via_node.attributes.id + "? "
-			+ via_node.isTurnAllowedBySegDirections(s_from, s_to), 2);
-
-		//Is there a driving direction restriction?
-		if(!via_node.isTurnAllowedBySegDirections(s_from, s_to)) return false;
-
-		ja_log("Checking restrictions", 2);
-		ja_log(s_to, 3);
-		
-		if(s_to.attributes.fromNodeID == via_node.attributes.id) {
-			ja_log("FWD direction",3);
-			return ja_is_car_allowed_by_restrictions(s_to.attributes.fwdRestrictions);
-		} else {
-			ja_log("REV direction",3);
-			return ja_is_car_allowed_by_restrictions(s_to.attributes.revRestrictions);
-		}
-	}
-	
-	function ja_is_car_allowed_by_restrictions(restrictions) {
-		if(restrictions == null || typeof restrictions === 'undefined') return true;
-		ja_log("Checking restrictions for cars", 2);
-		ja_log(restrictions, 3);
-		
-		return !restrictions.some(function(element, index, array){
-			ja_log("Checking restriction " + element, 3);
-			return element.allDay //All day restriction
-				&& element.days == 127	//Every week day
-				&& ( element.vehicleTypes == -1 //All vehicle types
-					|| element.vehicleTypes & ja_vehicle_types.PRIVATE //or at least private cars
-				);
-		});
-	}
-
-	var ja_calculation_timer = {
-		start: function() {
-			ja_log("Starting timer", 2);
-			this.cancel();
-			ja_calculation_timer_self = this;
-			this.timeoutID = window.setTimeout(function(){ja_calculation_timer_self.calculate();}, 200);
-		},
-
-		calculate: function() {
-			ja_calculate_real();
-			delete this.timeoutID;
-		},
-		
-		cancel: function() {
-			if(typeof this.timeoutID == "number") {
-				window.clearTimeout(this.timeoutID);
-				ja_log("Cleared timeout ID" + this.timeoutID, 2);
-				delete this.timeoutID;
-			}
-		}
-		
-	}
-
-	function ja_calculate() {
-		ja_calculation_timer.start();
-	}
-
-	/**
-	 * p1 being "center"
-	 */
-	function ja_angle_between_points(p0,p1,p2) {
-		ja_log("p0 " + p0,3);
-		ja_log("p1 " + p1,3);
-		ja_log("p2 " + p2,3);
-		var a = Math.pow(p1.x-p0.x,2) + Math.pow(p1.y-p0.y,2);
-        var b = Math.pow(p1.x-p2.x,2) + Math.pow(p1.y-p2.y,2);
-        var c = Math.pow(p2.x-p0.x,2) + Math.pow(p2.y-p0.y,2);
-		var angle = Math.acos((a+b-c) / Math.sqrt(4*a*b)) / (Math.PI / 180);
-		ja_log("angle is " + angle,3);
-		return angle;
-	}
-	
-	function ja_is_roundabout_normal(junctionID, n_in) {
-		ja_log("Check normal roundabout", 3);
-		var junction = window.Waze.model.junctions.get(junctionID);
-		var nodes = {};
-		var numValidExits = 0;
-		junction.segIDs.forEach(function(element, index, array){
-			var s = window.Waze.model.segments.get(element);
-			ja_log("index: " + index, 3);
-			//ja_log(s, 3);
-			if(!nodes.hasOwnProperty(s.attributes.toNodeID)) {
-				ja_log("Adding node id: " + s.attributes.toNodeID, 3);
-				//Check if node has allowed exits
-				var allowed = false;
-				var currNode = window.Waze.model.nodes.get(s.attributes.toNodeID);
-				ja_log(currNode, 3);
-				currNode.attributes.segIDs.forEach(function(element2, index2, array2){
-					var s_exit = window.Waze.model.segments.get(element2);
-					ja_log(s_exit, 3);
-					if(s_exit.attributes.junctionID !== null) {
-						//part of the junction.. Ignoring
-						ja_log(s_exit.attributes.id + " is in the roundabout. ignoring", 3);
-					} else {
-						ja_log("Checking: " +s_exit.attributes.id, 3);
-						if(currNode.isTurnAllowedBySegDirections(s, s_exit)) {
-							//Exit possibly allowed
-							ja_log("YAY", 3);
-							allowed = true;
-						} else {
-							ja_log("NAY", 3);
-						}
-					}
-				});
-				if(allowed) {
-					numValidExits++;
-					nodes[s.attributes.toNodeID] = window.Waze.model.nodes.get(s.attributes.toNodeID);
-				}
-			}
-		});
-
-		var is_normal = true;
-		ja_log(n_in, 3);
-		ja_log(junction, 3);
-		ja_log(nodes, 3);
-		
-		//If we have more than 4 possible exits, the roundabout is non-normal, and we don't want to paint the offending angles.
-		if(numValidExits > 4) return false;
-		
-		for(var n in nodes) {
-			ja_log("Checking " + n, 3);
-			if(n == n_in) {
-				ja_log("Not comparing to n_in ;)", 3);
-			} else {
-				var angle = ja_angle_between_points(
-					window.Waze.model.nodes.get(n_in).geometry,
-					ja_coordinates_to_point(junction.geometry.coordinates),
-					window.Waze.model.nodes.get(n).geometry
-				);
-				ja_log("Angle is: " + angle, 3);
-				ja_log("Normalized angle is: " + (angle%90), 3);
-				//angle = Math.abs((angle%90 - 90))
-				angle = Math.abs((angle%90))
-				ja_log("Angle is: " + angle, 3);
-				// 90 +/- 15 is considered "normal"
-				if(angle <= 15 || 90-angle <= 15) {
-					ja_log("turn is normal", 3);
-				} else {
-					ja_log("turn is NOT normal", 3);
-					is_normal = false;
-					//Push a marker on the node to show which exit is "not normal"
-					ja_mapLayer.addFeatures([
-						new window.OpenLayers.Feature.Vector(
-							window.Waze.model.nodes.get(n).geometry,
-							{ 
-								angle: '±' + ja_round(Math.min(angle, 90-angle)),
-								ja_type: ja_routing_type.ROUNDABOUT
-							}
-						)]
-					);
-				}
-			}
-		}
-		return is_normal;
-	}
-	
-	/**
-	 * Helper to get get correct projections for roundabout center point
-	 */
-	function ja_coordinates_to_point(coordinates) {
-		return window.OpenLayers.Projection.transform(
-			new window.OpenLayers.Geometry.Point(
-				coordinates[0],
-				coordinates[1]
-				),
-			"EPSG:4326",
-			ja_mapLayer.projection.projCode
-		);
-	}
-	
 	function ja_draw_roundabout_overlay(junctionId) {
 		window.Waze.model.junctions.getObjectArray().forEach(function (element, index, array){
 			ja_log(element, 3);
@@ -1424,8 +878,304 @@ function run_ja() {
 		ja_log("Calculation took " + String(ja_end_time - ja_start_time) + " ms", 2);
 	}
 
-	function ja_points_equal(point1, point2) {
-		return (point1.x == point2.x && point1.y == point2.y);
+
+	/*
+	 * Segment and routing helpers
+	 */
+
+	/**
+	 * Check if segment in type matches any other segments
+	 * @param segment_in
+	 * @param segments
+	 * @returns {boolean}
+	 */
+	function ja_segment_type_match(segment_in, segments) {
+		ja_log(segment_in, 2);
+		ja_log(segments, 2);
+		//ja_log(window.Waze.model.segments, 2);
+
+		return Object.getOwnPropertyNames(segments).some(function (segment_n_id, index, array) {
+			var segment_n = segments[segment_n_id];
+			ja_log("PT Checking element " + index, 2);
+			ja_log(segment_n, 2);
+			if(segment_n.attributes.id == segment_in.attributes.id) return false;
+			ja_log("PT checking sn.rt " + segment_n.attributes.roadType +
+				" vs i.pt: " + segment_in.attributes.roadType, 2);
+			return (segment_n.attributes.roadType == segment_in.attributes.roadType);
+		});
+	}
+
+	function ja_is_primary_road(seg) {
+		var t = seg.attributes.roadType;
+		return t == ja_road_type.FREEWAY || t == ja_road_type.MAJOR_HIGHWAY || t == ja_road_type.MINOR_HIGHWAY;
+	}
+
+	function ja_is_ramp(seg) {
+		var t = seg.attributes.roadType;
+		return t == ja_road_type.RAMP;
+	}
+
+	function ja_is_turn_allowed(s_from, via_node, s_to) {
+		ja_log("Allow from " + s_from.attributes.id + " to " + s_to.attributes.id + " via " + via_node.attributes.id + "? "
+			+ via_node.isTurnAllowedBySegDirections(s_from, s_to) + " | " + s_from.isTurnAllowed(s_to, via_node), 2);
+
+		//Is there a driving direction restriction?
+		if(!via_node.isTurnAllowedBySegDirections(s_from, s_to)) return false;
+
+		//Is turn allowed by other means (e.g. turn restrictions)?
+		if(!s_from.isTurnAllowed(s_to, via_node)) return false;
+
+		ja_log("Checking restrictions", 2);
+		ja_log(s_to, 3);
+
+		if(s_to.attributes.fromNodeID == via_node.attributes.id) {
+			ja_log("FWD direction",3);
+			return ja_is_car_allowed_by_restrictions(s_to.attributes.fwdRestrictions);
+		} else {
+			ja_log("REV direction",3);
+			return ja_is_car_allowed_by_restrictions(s_to.attributes.revRestrictions);
+		}
+	}
+
+	function ja_is_car_allowed_by_restrictions(restrictions) {
+		if(restrictions == null || typeof restrictions === 'undefined') return true;
+		ja_log("Checking restrictions for cars", 2);
+		ja_log(restrictions, 3);
+
+		return !restrictions.some(function(element, index, array){
+			ja_log("Checking restriction " + element, 3);
+			return element.allDay //All day restriction
+				&& element.days == 127	//Every week day
+				&& ( element.vehicleTypes == -1 //All vehicle types
+					|| element.vehicleTypes & ja_vehicle_types.PRIVATE //or at least private cars
+					);
+		});
+	}
+
+	/**
+	 * From wiki:
+	 * A Cross-match is when the primary name of one segment is identical to the alternate name of an adjacent segment. It had the same priory as a Primary name match.
+	 * In order for a Cross match to work there must be at least one alt name on both involved segments (even though they don't necessarily match each other).
+	 * It will work even if the are no Primary names on those segments.
+	 * It will not work if all three segments at a split have a matching Primary name or a matching Alternate name.
+	 * @param street_in
+	 * @param streets
+	 * @returns {boolean}
+	 */
+	function ja_cross_name_match(street_in, streets) {
+		ja_log("CN: init", 2);
+		ja_log(street_in, 2);
+		ja_log(streets, 2);
+		return Object.getOwnPropertyNames(streets).some(function (street_n_id, index, array) {
+			var street_n_element = streets[street_n_id];
+			ja_log("CN: Checking element " + index, 2);
+			ja_log(street_n_element, 2);
+			return (street_in.secondary.some(function (street_in_secondary, index2, array2){
+				ja_log("CN2a: checking n.p: " + street_n_element.primary.name + " vs in.s: " + street_in_secondary.name, 2);
+				return street_n_element.primary.name == street_in_secondary.name;
+			}) || street_n_element.secondary.some(function (street_n_secondary, index2, array2) {
+				ja_log("CN2b: checking in.p: " + street_in.primary.name + " vs n.s: " + street_n_secondary.name, 2);
+			}));
+		});
+	}
+
+	function ja_alt_name_match(street_in, streets) {
+		return Object.getOwnPropertyNames(streets).some(function (street_n_id, index, array) {
+			var street_n_element = streets[street_n_id];
+			ja_log("AN alt name check: Checking element " + index, 2);
+			ja_log(street_n_element, 2);
+
+			if(street_in.secondary.length == 0) return false;
+			if(street_n_element.secondary.length == 0) return false;
+
+			return street_in.secondary.some(function (street_in_secondary, index2, array2) {
+				ja_log("AN2 checking element " + index2, 2);
+				ja_log(street_in_secondary, 2);
+				return street_n_element.secondary.some(function (street_n_secondary_element, index3,  array3) {
+					ja_log("AN3 Checking in.s: " + street_in_secondary.name + " vs n.s." + index3 + ": " + street_n_secondary_element.name, 2);
+					return street_in_secondary.name == street_n_secondary_element.name;
+				});
+			});
+		});
+	}
+
+	function ja_primary_name_and_type_match(street_in, streets, exceptStreet) {
+		ja_log("PNT", 2);
+		ja_log(street_in, 2);
+		return Object.getOwnPropertyNames(streets).some(function (id, index, array) {
+			ja_log("PNT Checking element " + index, 2);
+			ja_log(streets[id], 2);
+			ja_log("Checking exception", 2);
+			ja_log(exceptStreet, 2);
+			var exempt = exceptStreet !== undefined && exceptStreet[id] != null && exceptStreet[id] != id;
+			ja_log(exempt, 2);
+			return (!exempt && streets[id].primary.name == street_in.primary.name
+				&& streets[id].primary.type == street_in.primary.type);
+		});
+	}
+
+	function ja_primary_name_match(street_in, streets) {
+		ja_log("PN", 2);
+		ja_log(street_in, 2);
+		ja_log(streets, 2);
+		return Object.getOwnPropertyNames(streets).some(function (id, index, array) {
+			element = streets[id];
+			ja_log("PN Checking element " + index + " of " + array.length, 2);
+			ja_log(element, 2);
+			return (element.primary.name == street_in.primary.name);
+		});
+	}
+
+	function ja_get_streets(segmentId) {
+		var primary = window.Waze.model.streets.objects[window.Waze.model.segments.objects[segmentId].attributes.primaryStreetID];
+		var secondary = [];
+		window.Waze.model.segments.objects[segmentId].attributes.streetIDs.forEach(function (element, index, array) {
+			secondary.push(window.Waze.model.streets.objects[element]);
+		});
+		ja_log(primary, 3);
+		ja_log(secondary, 3);
+		return { primary: primary, secondary: secondary };
+	}
+
+
+
+	/*
+	 * Misc math and map element functions
+	 */
+
+	/**
+	 *
+	 * @param p0 From point
+	 * @param p1 Center point
+	 * @param p2 To point
+	 * @returns {number}
+	 */
+	function ja_angle_between_points(p0,p1,p2) {
+		ja_log("p0 " + p0,3);
+		ja_log("p1 " + p1,3);
+		ja_log("p2 " + p2,3);
+		var a = Math.pow(p1.x-p0.x,2) + Math.pow(p1.y-p0.y,2);
+		var b = Math.pow(p1.x-p2.x,2) + Math.pow(p1.y-p2.y,2);
+		var c = Math.pow(p2.x-p0.x,2) + Math.pow(p2.y-p0.y,2);
+		var angle = Math.acos((a+b-c) / Math.sqrt(4*a*b)) / (Math.PI / 180);
+		ja_log("angle is " + angle,3);
+		return angle;
+	}
+
+	/**
+	 * get absolute (or turn) angle between 2 inputs.
+	 * 0,90,true  -> 90	 0,90,false -> -90
+	 * 0,170,true -> 170	0,170,false -> -10
+	 * @param aIn absolute s_in angle (from node)
+	 * @param aOut absolute s_out angle (from node)
+	 * @param absolute return absolute or turn angle?
+	 * @returns {number}
+	 */
+	function ja_angle_diff(aIn, aOut, absolute) {
+		var a = parseFloat(aOut) - parseFloat(aIn);
+		if(a > 180) a -= 360;
+		if(a < -180) a+= 360;
+		return absolute ? a : (a > 0 ? a - 180 : a + 180);
+	}
+
+	function ja_is_roundabout_normal(junctionID, n_in) {
+		ja_log("Check normal roundabout", 3);
+		var junction = window.Waze.model.junctions.get(junctionID);
+		var nodes = {};
+		var numValidExits = 0;
+		junction.segIDs.forEach(function(element, index, array){
+			var s = window.Waze.model.segments.get(element);
+			ja_log("index: " + index, 3);
+			//ja_log(s, 3);
+			if(!nodes.hasOwnProperty(s.attributes.toNodeID)) {
+				ja_log("Adding node id: " + s.attributes.toNodeID, 3);
+				//Check if node has allowed exits
+				var allowed = false;
+				var currNode = window.Waze.model.nodes.get(s.attributes.toNodeID);
+				ja_log(currNode, 3);
+				currNode.attributes.segIDs.forEach(function(element2, index2, array2){
+					var s_exit = window.Waze.model.segments.get(element2);
+					ja_log(s_exit, 3);
+					if(s_exit.attributes.junctionID !== null) {
+						//part of the junction.. Ignoring
+						ja_log(s_exit.attributes.id + " is in the roundabout. ignoring", 3);
+					} else {
+						ja_log("Checking: " +s_exit.attributes.id, 3);
+						if(currNode.isTurnAllowedBySegDirections(s, s_exit)) {
+							//Exit possibly allowed
+							ja_log("YAY", 3);
+							allowed = true;
+						} else {
+							ja_log("NAY", 3);
+						}
+					}
+				});
+				if(allowed) {
+					numValidExits++;
+					nodes[s.attributes.toNodeID] = window.Waze.model.nodes.get(s.attributes.toNodeID);
+				}
+			}
+		});
+
+		var is_normal = true;
+		ja_log(n_in, 3);
+		ja_log(junction, 3);
+		ja_log(nodes, 3);
+
+		//If we have more than 4 possible exits, the roundabout is non-normal, and we don't want to paint the offending angles.
+		if(numValidExits > 4) return false;
+
+		for(var n in nodes) {
+			ja_log("Checking " + n, 3);
+			if(n == n_in) {
+				ja_log("Not comparing to n_in ;)", 3);
+			} else {
+				var angle = ja_angle_between_points(
+					window.Waze.model.nodes.get(n_in).geometry,
+					ja_coordinates_to_point(junction.geometry.coordinates),
+					window.Waze.model.nodes.get(n).geometry
+				);
+				ja_log("Angle is: " + angle, 3);
+				ja_log("Normalized angle is: " + (angle%90), 3);
+				//angle = Math.abs((angle%90 - 90))
+				angle = Math.abs((angle%90))
+				ja_log("Angle is: " + angle, 3);
+				// 90 +/- 15 is considered "normal"
+				if(angle <= 15 || 90-angle <= 15) {
+					ja_log("turn is normal", 3);
+				} else {
+					ja_log("turn is NOT normal", 3);
+					is_normal = false;
+					//Push a marker on the node to show which exit is "not normal"
+					ja_mapLayer.addFeatures([
+							new window.OpenLayers.Feature.Vector(
+								window.Waze.model.nodes.get(n).geometry,
+								{
+									angle: '±' + ja_round(Math.min(angle, 90-angle)),
+									ja_type: ja_routing_type.ROUNDABOUT
+								}
+							)]
+					);
+				}
+			}
+		}
+		return is_normal;
+	}
+
+
+	/**
+	 * Helper to get get correct projections for roundabout center point
+	 */
+
+	function ja_coordinates_to_point(coordinates) {
+		return window.OpenLayers.Projection.transform(
+			new window.OpenLayers.Geometry.Point(
+				coordinates[0],
+				coordinates[1]
+			),
+			"EPSG:4326",
+			ja_mapLayer.projection.projCode
+		);
 	}
 
 	function ja_get_first_point(segment) {
@@ -1493,7 +1243,10 @@ function run_ja() {
 		return +(value[0] + 'e' + (value[1] ? (+value[1] + ja_rounding) : ja_rounding));
 	}
 
-	var ja_options = {};
+
+	/*
+	 * WME interface helper functions
+	 */
 
 	function ja_getOption(name) {
 		ja_log("Loading option: " + name, 2);
@@ -1532,7 +1285,7 @@ function run_ja() {
 		}
 	};
 
-	ja_save = function saveJAOptions() {
+	var ja_save = function saveJAOptions() {
 		ja_log("Saving settings", 2);
 		Object.getOwnPropertyNames(ja_settings).forEach(function (a,b,c) {
 			var setting = ja_settings[a];
@@ -1603,7 +1356,7 @@ function run_ja() {
 		ja_log(ja_options, 2);
 	};
 
-	ja_reset = function resetJAOptions() {
+	var ja_reset = function resetJAOptions() {
 		ja_log("Resetting settings", 2);
 		if(localStorage != null) {
 			localStorage.removeItem("wme_ja_options");
@@ -1612,7 +1365,110 @@ function run_ja() {
 		ja_apply();
 		return false;
 	};
-	
+
+	function ja_helplink(url, text) {
+		var elem = document.createElement('li');
+		var l = document.createElement('a');
+		l.href = url;
+		l.appendChild(document.createTextNode(ja_getMessage(text)));
+		elem.appendChild(l);
+		return elem;
+	}
+
+	var ja_calculation_timer = {
+		start: function() {
+			ja_log("Starting timer", 2);
+			this.cancel();
+			var ja_calculation_timer_self = this;
+			this.timeoutID = window.setTimeout(function(){ja_calculation_timer_self.calculate();}, 200);
+		},
+
+		calculate: function() {
+			ja_calculate_real();
+			delete this.timeoutID;
+		},
+
+		cancel: function() {
+			if(typeof this.timeoutID == "number") {
+				window.clearTimeout(this.timeoutID);
+				ja_log("Cleared timeout ID" + this.timeoutID, 2);
+				delete this.timeoutID;
+			}
+		}
+
+	};
+
+	function ja_calculate() {
+		ja_calculation_timer.start();
+	}
+
+	function ja_get_style_rule(routingType, fillColorOption) {
+		return new window.OpenLayers.Rule(
+			{
+				filter: new window.OpenLayers.Filter.Comparison({
+					type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+					property: "ja_type",
+					value: routingType
+				}),
+				symbolizer: {
+					pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+					fontSize: "12px",
+					fillColor: ja_getOption(fillColorOption),
+					strokeColor: "#183800"
+				}
+			})
+	}
+
+	function ja_style() {
+		ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10)) + (parseInt(ja_getOption("decimals") > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0)));
+		return new window.OpenLayers.Style({
+			fillColor: "#ffcc88",
+			strokeColor: "#ff9966",
+			strokeWidth: 2,
+			label: "${angle}",
+			fontWeight: "bold",
+			pointRadius: parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+			fontSize: "10px"
+		}, {
+			rules: [
+				new window.OpenLayers.Rule({
+					symbolizer: {
+					}
+				}),
+				ja_get_style_rule(ja_routing_type.TURN, "turnInstructionColor"),
+				ja_get_style_rule(ja_routing_type.BC, "noInstructionColor"),
+				ja_get_style_rule(ja_routing_type.KEEP, "keepInstructionColor"),
+				ja_get_style_rule(ja_routing_type.EXIT, "exitInstructionColor"),
+				ja_get_style_rule(ja_routing_type.PROBLEM, "problemColor"),
+				ja_get_style_rule(ja_routing_type.ERROR, "problemColor"),
+				ja_get_style_rule(ja_routing_type.ROUNDABOUT, "roundaboutColor"),
+
+				new window.OpenLayers.Rule(
+					{
+						filter: new window.OpenLayers.Filter.Comparison({
+							type: window.OpenLayers.Filter.Comparison.EQUAL_TO,
+							property: "ja_type",
+							value: "roundaboutoverlay"
+						}),
+						symbolizer: {
+							pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+							fontSize: "12px",
+							fillColor: ja_getOption("roundaboutOverlayColor"),
+							fillOpacity: 0.1,
+							strokeColor: ja_getOption("roundaboutOverlayColor"),
+							label: ""
+						}
+					})
+
+			]
+		});
+	}
+
+
+	/*
+	 * Translation helpers
+	 */
+
 	function ja_getMessage(key) {
 		return I18n.translate('ja.' + key);
 	}
@@ -1694,6 +1550,47 @@ function run_ja() {
 				I18n.translations['fi'].ja = fi;
 				break;
 		}
+	}
+
+
+	/*
+	 * Bootstrapping and logging
+	 */
+
+	function ja_bootstrap(retries) {
+		retries = retries || 0;
+		//If Waze has not been defined in 10 seconds, it probably won't work anyway.
+		if(retries >= 10) {
+			ja_log("Failed to bootstrap 10 times. Giving up.", 0);
+			return;
+		}
+
+		try {
+			if ((typeof window.Waze.map !== 'undefined') && ('undefined' !== typeof window.Waze.map.events.register) &&
+				('undefined' !== typeof window.Waze.selectionManager.events.register ) &&
+				('undefined' !== typeof window.Waze.loginManager.events.register)) {
+				setTimeout(function(){junctionangle_init();}, 500);
+			} else {
+				setTimeout(function(){ja_bootstrap(++retries);}, 1000);
+			}
+		} catch (err) {
+			setTimeout(function(){ja_bootstrap(++retries);}, 1000);
+		}
+	}
+
+	function ja_log(ja_log_msg, ja_log_level) {
+
+		//##NO_FF_START##
+		if(typeof ja_log_level === 'undefined') ja_log_level = 1;
+		if (ja_log_level <= junctionangle_debug) {
+			if (typeof ja_log_msg == "object") {
+				console.debug(ja_log_msg);
+			}
+			else {
+				console.debug("WME Junction Angle: " + ja_log_msg);
+			}
+		}
+		//##NO_FF_END##
 	}
 
 	ja_bootstrap();
