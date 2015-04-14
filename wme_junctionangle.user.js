@@ -82,6 +82,7 @@ function run_ja() {
 	};
 
 	var ja_settings = {
+		angleMode: { elementType: "select", elementId: "_jaSelAngleMode", defaultValue: "aAbsolute", options: ["aAbsolute", "aDeparture"]},
 		guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false},
 		noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff"},
 		keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84"},
@@ -783,13 +784,11 @@ function run_ja() {
 					ja_log("Type is: " + ja_junction_type, 2);
 				}
 				//put the angle point
-				ja_mapLayer.addFeatures([new window.OpenLayers.Feature.Vector(
-					new window.OpenLayers.Geometry.Point(
+				point = new window.OpenLayers.Geometry.Point(
 						node.geometry.x + (ja_extra_space_multiplier * ja_label_distance * Math.cos((ha * Math.PI) / 180)),
 						node.geometry.y + (ja_extra_space_multiplier * ja_label_distance * Math.sin((ha * Math.PI) / 180))
-					)
-					, { angle: (a>0?"<":"") + ja_round(Math.abs(a)) + "°" + (a<0?">":""), ja_type: ja_junction_type }
-				)]);
+				);
+				ja_draw_marker(point, node, ja_label_distance, a, ha, true, ja_junction_type);
 			}
 			else {
 				//sort angle data (ascending)
@@ -810,63 +809,35 @@ function run_ja() {
 
 					//Show only one angle for nodes with only 2 connected segments and a single selected segment
 					// (not on both sides). Skipping the one > 180
-					if (ja_selected_segments_count == 1
-						&& angles.length == 2
-						&& (Math.abs(a) > 180
-							|| (Math.abs(a)%180 == 0 && j == 0 )
+					if (
+						(ja_selected_segments_count == 1
+							&& angles.length == 2
+							&& (Math.abs(a) > 180
+								|| (Math.abs(a)%180 == 0 && j == 0 )
+								)
 							)
-						) {
+						|| (ja_getOption("angleMode") == "aDeparture" && angles[j][1] == a_in[1])) {
 						ja_log("Skipping marker, as we need only one of them", 2);
+					} else if(ja_getOption("angleMode") == "aDeparture") {
+						ja_log("Angle in:",2);
+						ja_log(a_in,2);
+						//ja_log(window.Waze.model.segments.objects[a_in[1]], 2);
+						ja_log(ja_guess_routing_instruction(node, a_in[1], angle[1], angles), 2);
+						ha = angle[0];
+						a = ja_angle_diff(a_in[0], angles[j][0], false);
+						//ha = (360 + ((a / 2) + angle[0])) % 360; //FIXME
+						point = new window.OpenLayers.Geometry.Point(
+								node.geometry.x + (ja_label_distance * 2 * Math.cos((ha * Math.PI) / 180)),
+								node.geometry.y + (ja_label_distance * 2 * Math.sin((ha * Math.PI) / 180))
+						);
+						ja_draw_marker(point, node, ja_label_distance, a, ha, true, ja_guess_routing_instruction(node, a_in[1], angle[1], angles));
 					} else {
 						ja_log("Angle between " + angle[1] + " and " + angles[(j + 1) % angles.length][1] + " is " + a + " and position for label should be at " + ha, 3);
-						var point = new window.OpenLayers.Geometry.Point(
-									node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
+						point = new window.OpenLayers.Geometry.Point(
+								node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)),
+								node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
 						);
-						
-						//Try to estimate of the point is "too close" to another point (or maybe something else in the future; like turn restriction arrows or something)
-						var ja_tmp_distance = ja_label_distance;
-						ja_log("Starting distance estimation", 3);
-						while(ja_mapLayer.features.some(function(feature, index){
-							if(typeof feature.attributes.ja_type !== 'undefined'  && feature.attributes.ja_type !== 'roundaboutoverlay') {
-								//Arbitrarily chosen minimum distance.. Should actually use the real bounds of the markers, but that didn't work out.. Bounds are always 0.. 
-								if(ja_label_distance / 1.4 > feature.geometry.distanceTo(point)) {
-									ja_log(ja_label_distance / 1.5 > feature.geometry.distanceTo(point) + " is kinda close..", 3);
-									return true;
-								}
-							}
-							return false;
-						})) {
-							ja_tmp_distance = ja_tmp_distance + ja_label_distance / 4; //add 1/4 of the original distance and hope for the best =)
-							ja_log("setting distance to " + ja_tmp_distance, 2);
-							point = new window.OpenLayers.Geometry.Point(
-								node.geometry.x + (ja_tmp_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_tmp_distance * Math.sin((ha * Math.PI) / 180))
-							);
-						};
-						ja_log("Done distance estimation", 3);
-						
-						var anglePoint = new window.OpenLayers.Feature.Vector(
-							point
-							, { angle: ja_round(a) + "°", ja_type: "generic" }
-						);
-						ja_log(anglePoint, 3);
-
-						//Don't paint points inside an overlaid roundabout
-						if(ja_roundabout_points.some(function (rondaboutPoint){
-							return rondaboutPoint.containsPoint(point);
-						})) return;
-						
-						//Draw a line to the point
-						ja_mapLayer.addFeatures([
-							new window.OpenLayers.Feature.Vector(
-								new window.OpenLayers.Geometry.LineString([node.geometry, point]),
-								{},
-								{strokeOpacity: 0.6, strokeWidth: 1.2, strokeDashstyle: "solid", strokeColor: "#ff9966"}
-							)
-						]
-						);
-
-						//push the angle point
-						ja_mapLayer.addFeatures([anglePoint]);
+						ja_draw_marker(point, node, ja_label_distance, a, ha);
 					}
 				});
 			}
@@ -877,6 +848,60 @@ function run_ja() {
 		ja_log("Calculation took " + String(ja_end_time - ja_start_time) + " ms", 2);
 	}
 
+	function ja_draw_marker(point, node, ja_label_distance, a, ha, withRouting, ja_junction_type) {
+		"use strict";
+
+
+		//Try to estimate of the point is "too close" to another point (or maybe something else in the future; like turn restriction arrows or something)
+		var ja_tmp_distance = ja_label_distance;
+		ja_log("Starting distance estimation", 3);
+		while(ja_mapLayer.features.some(function(feature, index){
+			if(typeof feature.attributes.ja_type !== 'undefined'  && feature.attributes.ja_type !== 'roundaboutoverlay') {
+				//Arbitrarily chosen minimum distance.. Should actually use the real bounds of the markers, but that didn't work out.. Bounds are always 0..
+				if(ja_label_distance / 1.4 > feature.geometry.distanceTo(point)) {
+					ja_log(ja_label_distance / 1.5 > feature.geometry.distanceTo(point) + " is kinda close..", 3);
+					return true;
+				}
+			}
+			return false;
+		})) {
+			ja_tmp_distance = ja_tmp_distance + ja_label_distance / 4; //add 1/4 of the original distance and hope for the best =)
+			ja_log("setting distance to " + ja_tmp_distance, 2);
+			point = new window.OpenLayers.Geometry.Point(
+					node.geometry.x + (ja_tmp_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_tmp_distance * Math.sin((ha * Math.PI) / 180))
+			);
+		}
+		ja_log("Done distance estimation", 3);
+
+		var anglePoint = withRouting ?
+			new window.OpenLayers.Feature.Vector(
+			point
+				, { angle: (a>0?"<":"") + ja_round(Math.abs(a)) + "°" + (a<0?">":""), ja_type: ja_junction_type }
+		): new window.OpenLayers.Feature.Vector(
+			point
+			, { angle: ja_round(a) + "°", ja_type: "generic" }
+		);
+		ja_log(anglePoint, 3);
+
+		//Don't paint points inside an overlaid roundabout
+		if(ja_roundabout_points.some(function (rondaboutPoint){
+			return rondaboutPoint.containsPoint(point);
+		})) return;
+
+		//Draw a line to the point
+		ja_mapLayer.addFeatures([
+				new window.OpenLayers.Feature.Vector(
+					new window.OpenLayers.Geometry.LineString([node.geometry, point]),
+					{},
+					{strokeOpacity: 0.6, strokeWidth: 1.2, strokeDashstyle: "solid", strokeColor: "#ff9966"}
+				)
+			]
+		);
+
+		//push the angle point
+		ja_mapLayer.addFeatures([anglePoint]);
+
+	}
 
 	/*
 	 * Segment and routing helpers
@@ -1482,6 +1507,9 @@ function run_ja() {
 		def["settingsTitle"] = "Junction Angle settings";
 		def["apply"] = "Apply";
 		def["resetToDefault"] = "Reset to default";
+		def["aAbsolute"] = "Absolute";
+		def["aDeparture"] = "Departure";
+		def["angleMode"] = "Angle mode";
 		def["guess"] = "Estimate routing instructions";
 		def["noInstructionColor"] = "Color for best continuation";
 		def["keepInstructionColor"] = "Color for keep prompt";
