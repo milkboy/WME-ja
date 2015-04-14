@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name				WME Junction Angle info
+// @name				WME Junction Angle Info
 // @namespace			https://github.com/milkboy/WME-ja
 // @description			Show the angle between two selected (and connected) segments
 // @include				/^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
@@ -19,6 +19,7 @@
  *	2014 Paweł Pyrczak "tkr85" <support@pyrczak.pl>
  *	2014 "AlanOfTheBerg" <alanoftheberg@gmail.com>
  *	2014 "berestovskyy" <?>
+ *	2015 "FZ69617" <?>
  */
 
 function run_ja() {
@@ -34,7 +35,7 @@ function run_ja() {
 		BC: "junction_none",
 		KEEP: "junction_keep",
 		TURN: "junction",
-		EXIT: "junction_exit", //not actually used (yet)
+		EXIT: "junction_exit",
 		PROBLEM: "junction_problem",
 		ERROR: "junction_error",
 		ROUNDABOUT: "junction_roundabout"
@@ -167,8 +168,8 @@ function run_ja() {
 		guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false},
 		noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff"},
 		keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84"},
-		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
 		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
+		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
 		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
 		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000"},
 		roundaboutOverlayColor: { elementType: "color", elementId: "_jaTbRoundaboutOverlayColor", defaultValue: "#aa0000"},
@@ -387,7 +388,7 @@ function run_ja() {
 			ja_log(streets[id], 2);
 			ja_log("Checking exception", 2);
 			ja_log(exceptStreet, 2);
-			var exempt = exceptStreet[id] != null && exceptStreet[id] != id;
+			var exempt = exceptStreet !== undefined && exceptStreet[id] != null && exceptStreet[id] != id;
 			ja_log(exempt, 2);
 			return (!exempt && streets[id].primary.name == street_in.primary.name
 				&& streets[id].primary.type == street_in.primary.type);
@@ -488,6 +489,16 @@ function run_ja() {
 		}
 	}
 
+	function ja_is_primary_road(seg) {
+		var t = seg.attributes.roadType;
+		return t == 3 || t == 6 || t == 7;
+	}
+
+	function ja_is_ramp(seg) {
+		var t = seg.attributes.roadType;
+		return t == 4;
+	}
+
 	//segment or segment array
 	function ja_all_ramps(seg) {
 		//Single segment?
@@ -576,6 +587,7 @@ function run_ja() {
 
 		var angle = ja_angle_diff(s_in_a[0], (s_out_a[0]), false);
 		ja_log("turn angle is: " + angle, 2);
+
 		//No other possible turns
 		if(node.attributes.segIDs.length <= 2) {
 			ja_log("Only one possible turn", 2);
@@ -596,7 +608,7 @@ function run_ja() {
 			ja_log("Turn is <= 44", 2);
 
 			/*
-			 Need to filter out turns that have no useful meaning for BC. Hope this won't break anything...
+			 * Filter out disallowed turns. FIXME: Need to check for disallowed turns somehow!
 			 */
 			var tmp_street_out = {};
 			tmp_street_out[s_out_id] = street_n[s_out_id];
@@ -624,9 +636,11 @@ function run_ja() {
 			ja_log(street_n, 2);
 			ja_log(s_n, 2);
 
-			if(angles.length == 1) return ja_routing_type.BC;
-			//FIXME: Need to have logic for multiple <45 matches?...
-			//Check for other unrestricted <45 turns?
+			if(angles.length <= 1) {
+				ja_log("Only one allowed turn left", 2);
+				return ja_routing_type.BC;
+			} //No instruction
+
 			for(k=0; k< angles.length; k++) {
 				ja_log("Checking angle " + k, 2);
 				ja_log(angles[k],2);
@@ -872,10 +886,13 @@ function run_ja() {
 
 	function ja_is_turn_allowed(s_from, via_node, s_to) {
 		ja_log("Allow from " + s_from.attributes.id + " to " + s_to.attributes.id + " via " + via_node.attributes.id + "? "
-			+ via_node.isTurnAllowedBySegDirections(s_from, s_to), 2);
+			+ via_node.isTurnAllowedBySegDirections(s_from, s_to) + " | " + s_from.isTurnAllowed(s_to, via_node), 2);
 
 		//Is there a driving direction restriction?
 		if(!via_node.isTurnAllowedBySegDirections(s_from, s_to)) return false;
+
+		//Is turn allowed by other means (e.g. turn restrictions)?
+		if(!s_from.isTurnAllowed(s_to, via_node)) return false;
 
 		ja_log("Checking restrictions", 2);
 		ja_log(s_to, 3);
