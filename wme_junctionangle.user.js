@@ -561,8 +561,8 @@ function run_ja() {
 						ja_nodes.indexOf(element.model.attributes.fromNodeID) == -1) {
 						ja_nodes.push(element.model.attributes.fromNodeID);
 					}
-					if (ja_nodes.indexOf(element.model.attributes.toNodeID != null &&
-						ja_nodes.indexOf(element.model.attributes.toNodeID) == -1)) {
+					if (element.model.attributes.toNodeID != null &&
+						ja_nodes.indexOf(element.model.attributes.toNodeID) == -1) {
 						ja_nodes.push(element.model.attributes.toNodeID);
 					}
 					break;
@@ -747,10 +747,10 @@ function run_ja() {
 
 			ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
 
-			var a, ha;
+			var a, ha, point;
 			//if we have two connected segments selected, do some magic to get the turn angle only =)
 			if (ja_selected_segments_count == 2) {
-				ja_extra_space_multiplier = 1;
+				var ja_extra_space_multiplier = 1;
 
 				a = ja_angle_diff(ja_selected_angles[0][0], ja_selected_angles[1][0], false);
 
@@ -803,6 +803,10 @@ function run_ja() {
 				angles.forEach(function(angle, j) {
 					a = (360 + (angles[(j + 1) % angles.length][0] - angle[0])) % 360;
 					ha = (360 + ((a / 2) + angle[0])) % 360;
+					var a_in = angles.filter(function(a,b,c) {
+						"use strict";
+						if(a[2]) return true;
+					})[0];
 
 					//Show only one angle for nodes with only 2 connected segments and a single selected segment
 					// (not on both sides). Skipping the one > 180
