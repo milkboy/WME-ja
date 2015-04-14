@@ -407,7 +407,7 @@ function run_ja() {
 			var bc_matches = {}, bc_prio = 0, bc_count = 0;
 			var bc_collect = function(a, prio) {
 				ja_log("Potential BC = " + prio, 2);
-				ja_log(a);
+				ja_log(a, 2);
 				if (bc_prio == 0 || prio < bc_prio) {
 					bc_matches = {};
 					bc_prio = prio;
@@ -472,8 +472,6 @@ function run_ja() {
 				ja_log("Primary to non-primary == exit", 2);
 				if(s_in.model.isLeftHand ? (angle > 0 ) : (angle < 0)) {
 					return ja_routing_type.EXIT;
-				} else {
-					return ja_routing_type.PROBLEM;
 				}
 			}
 
@@ -482,8 +480,6 @@ function run_ja() {
 				ja_log("Ramp to non-primary and non-ramp == exit", 2);
 				if(s_in.model.isLeftHand ? (angle > 0 ) : (angle < 0)) {
 					return ja_routing_type.EXIT;
-				} else {
-					return ja_routing_type.PROBLEM;
 				}
 			}
 
@@ -651,7 +647,6 @@ function run_ja() {
 				ja_log("Oh oh.. should not happen?",2);
 				ja_log(node, 2);
 				ja_log(ja_nodes[i], 2);
-				//ja_log(ja_nodes, 2);
 				ja_log(window.Waze.model, 3);
 				ja_log(window.Waze.model.nodes, 3);
 				continue;
@@ -892,7 +887,6 @@ function run_ja() {
 	function ja_segment_type_match(segment_in, segments) {
 		ja_log(segment_in, 2);
 		ja_log(segments, 2);
-		//ja_log(window.Waze.model.segments, 2);
 
 		return Object.getOwnPropertyNames(segments).some(function (segment_n_id, index, array) {
 			var segment_n = segments[segment_n_id];
@@ -1420,7 +1414,7 @@ function run_ja() {
 	}
 
 	function ja_style() {
-		ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10)) + (parseInt(ja_getOption("decimals") > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0)));
+		ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10)) + (parseInt(ja_getOption("decimals") > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0)), 2);
 		return new window.OpenLayers.Style({
 			fillColor: "#ffcc88",
 			strokeColor: "#ff9966",
