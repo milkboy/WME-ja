@@ -43,25 +43,25 @@ function run_ja() {
 	};
 	
 	var ja_road_type = {
-        //Streets
+		//Streets
 		STREET: 1,
-        PRIMARY_STREET: 2,
-        //Highways
+		PRIMARY_STREET: 2,
+		//Highways
 		RAMP: 4,
-        FREEWAY: 3,
+		FREEWAY: 3,
 		MAJOR_HIGHWAY: 6,
 		MINOR_HIGHWAY: 7,
-        //Other drivable
-        DIRT_ROAD: 8,
-        FERRY: 14,
-        PRIVATE_ROAD: 17,
-        PARKING_LOT_ROAD: 20,
-        //Non-drivable
-        WALKING_TRAIL: 5,
-        PEDESTRIAB_BOARDWALK: 10,
-        STAIRWAY: 16,
-        RAILROAD: 18,
-        RUNWAY: 19
+		//Other drivable
+		DIRT_ROAD: 8,
+		FERRY: 14,
+		PRIVATE_ROAD: 17,
+		PARKING_LOT_ROAD: 20,
+		//Non-drivable
+		WALKING_TRAIL: 5,
+		PEDESTRIAB_BOARDWALK: 10,
+		STAIRWAY: 16,
+		RAILROAD: 18,
+		RUNWAY: 19
 	};
 	
 	var ja_vehicle_types = {
@@ -116,6 +116,7 @@ function run_ja() {
 	function ja_log(ja_log_msg, ja_log_level) {
 
 		//##NO_FF_START##
+		if(typeof ja_log_level === 'undefined') ja_log_level = 0;
 		if (ja_log_level <= junctionangle_debug) {
 			if (typeof ja_log_msg == "object") {
 				console.debug(ja_log_msg);
@@ -500,17 +501,6 @@ function run_ja() {
 		});
 	}
 
-	function ja_has_alt_name(seg) {
-		//Single segment?
-		if(seg.hasOwnProperty('primary')) {
-			return seg.secondary.length > 0;
-		} else {
-			return Object.getOwnPropertyNames(seg).some(function (s,i,a) {
-				return seg[s].secondary.length > 0;
-			});
-		}
-	}
-
 	function ja_is_primary_road(seg) {
 		var t = seg.attributes.roadType;
 		return t == ja_road_type.FREEWAY || t == ja_road_type.MAJOR_HIGHWAY || t == ja_road_type.MINOR_HIGHWAY;
@@ -519,18 +509,6 @@ function run_ja() {
 	function ja_is_ramp(seg) {
 		var t = seg.attributes.roadType;
 		return t == ja_road_type.RAMP;
-	}
-
-	//segment or segment array
-	function ja_all_ramps(seg) {
-		//Single segment?
-		if(seg.hasOwnProperty('type')) {
-			return seg.isRoutable();
-		} else {
-			return Object.getOwnPropertyNames(seg).some(function (s,i,a) {
-				return !seg[s].isRoutable();
-			});
-		}
 	}
 
 	/**
@@ -828,8 +806,8 @@ function run_ja() {
 		ja_log("p1 " + p1,3);
 		ja_log("p2 " + p2,3);
 		var a = Math.pow(p1.x-p0.x,2) + Math.pow(p1.y-p0.y,2);
-        var b = Math.pow(p1.x-p2.x,2) + Math.pow(p1.y-p2.y,2);
-        var c = Math.pow(p2.x-p0.x,2) + Math.pow(p2.y-p0.y,2);
+		var b = Math.pow(p1.x-p2.x,2) + Math.pow(p1.y-p2.y,2);
+		var c = Math.pow(p2.x-p0.x,2) + Math.pow(p2.y-p0.y,2);
 		var angle = Math.acos((a+b-c) / Math.sqrt(4*a*b)) / (Math.PI / 180);
 		ja_log("angle is " + angle,3);
 		return angle;
