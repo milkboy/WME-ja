@@ -20,8 +20,10 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 ###Changelog
 ####1.8.2
 - Added support for having JAI show departure angles with routing instructions as default (instead of just the absolute angles at selection ends)
+
 ####1.8.1
 - BC logic fixes by FZ69617
+
 ####1.7.0
 - Roundabout checking! For non-normal roundabouts, the angle will be shown in orange (default), and "turn color" for normal roundabouts
 - Added option for roundabout circle display (always, when selected, never)
