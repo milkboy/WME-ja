@@ -83,15 +83,15 @@ function run_ja() {
 
 	var ja_settings = {
 		angleMode: { elementType: "select", elementId: "_jaSelAngleMode", defaultValue: "aAbsolute", options: ["aAbsolute", "aDeparture"]},
-		guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false},
-		noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff"},
-		keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84"},
-		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600"},
-		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff"},
-		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0"},
-		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000"},
-		roundaboutOverlayColor: { elementType: "color", elementId: "_jaTbRoundaboutOverlayColor", defaultValue: "#aa0000"},
+		guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false },
+		noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff", group: "guess"},
+		keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84", group: "guess"},
+		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600", group: "guess"},
+		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff", group: "guess"},
+		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0", group: "guess"},
 		roundaboutOverlayDisplay: { elementType: "select", elementId: "_jaSelRoundaboutOverlayDisplay", defaultValue: "rOverNever", options: ["rOverNever","rOverSelected","rOverAlways"]},
+		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000", group: "roundaboutOverlayDisplay"},
+		roundaboutOverlayColor: { elementType: "color", elementId: "_jaTbRoundaboutOverlayColor", defaultValue: "#aa0000", group: "roundaboutOverlayDisplay"},
 		decimals: { elementType: "number", elementId: "_jaTbDecimals", defaultValue: 0, min: 0, max: 2},
 		pointSize: { elementType: "number", elementId: "_jaTbPointSize", defaultValue: 12, min: 6, max: 20}
 	};
@@ -175,6 +175,7 @@ function run_ja() {
 					break;
 				case 'checkbox':
 					ja_input.id = setting['elementId'];
+					ja_input.onchange = function() { ja_onchange(this) };
 					ja_controls_container.appendChild(ja_input);
 					break;
 				case 'select':
@@ -186,6 +187,7 @@ function run_ja() {
 						ja_select_option.appendChild(document.createTextNode(ja_getMessage(setting["options"][i])));
 						ja_input.appendChild(ja_select_option);
 					}
+					ja_input.onchange = function() { ja_onchange(this) };
 					ja_controls_container.appendChild(ja_input);
 					break;
 			}
@@ -810,19 +812,19 @@ function run_ja() {
 	}
 
 
-    /*
-     * Drawing functions
-     */
-    /**
-     *
-     * @param point Estimated point for marker
-     * @param node Node the marker is for
-     * @param ja_label_distance Arbitrary distance to be used in moving markers further away etc
-     * @param a Angle to display
-     * @param ha Angle to marker from node (FIXME: either point or ha is probably unnecessary)
-     * @param withRouting true: show routing guessing markers, false: show "normal" angle markers
-     * @param ja_junction_type If using routing, this needs to be set to the desired type
-     */
+	/*
+	 * Drawing functions
+	 */
+	/**
+	 *
+	 * @param point Estimated point for marker
+	 * @param node Node the marker is for
+	 * @param ja_label_distance Arbitrary distance to be used in moving markers further away etc
+	 * @param a Angle to display
+	 * @param ha Angle to marker from node (FIXME: either point or ha is probably unnecessary)
+	 * @param withRouting true: show routing guessing markers, false: show "normal" angle markers
+	 * @param ja_junction_type If using routing, this needs to be set to the desired type
+	 */
 	function ja_draw_marker(point, node, ja_label_distance, a, ha, withRouting, ja_junction_type) {
 		"use strict";
 
@@ -878,49 +880,49 @@ function run_ja() {
 
 	}
 
-    function ja_draw_roundabout_overlay(junctionId) {
-        window.Waze.model.junctions.getObjectArray().forEach(function (element, index, array){
-            ja_log(element, 3);
-            //Check if we want a specific junction. FIXME: this should actually be done by a direct select, instead of looping through all..
-            if(typeof junctionId !== "undefined" && junctionId != element.id) {
-                return;
-            }
-            var nodes = {};
-            element.segIDs.forEach(function(s) {
-                var seg = window.Waze.model.segments.get(s);
-                ja_log(seg, 3);
-                nodes[seg.attributes.fromNodeID] = window.Waze.model.nodes.get(seg.attributes.fromNodeID);
-                nodes[seg.attributes.toNodeID] = window.Waze.model.nodes.get(seg.attributes.toNodeID);
-            });
+	function ja_draw_roundabout_overlay(junctionId) {
+		window.Waze.model.junctions.getObjectArray().forEach(function (element, index, array){
+			ja_log(element, 3);
+			//Check if we want a specific junction. FIXME: this should actually be done by a direct select, instead of looping through all..
+			if(typeof junctionId !== "undefined" && junctionId != element.id) {
+				return;
+			}
+			var nodes = {};
+			element.segIDs.forEach(function(s) {
+				var seg = window.Waze.model.segments.get(s);
+				ja_log(seg, 3);
+				nodes[seg.attributes.fromNodeID] = window.Waze.model.nodes.get(seg.attributes.fromNodeID);
+				nodes[seg.attributes.toNodeID] = window.Waze.model.nodes.get(seg.attributes.toNodeID);
+			});
 
-            ja_log(nodes, 3);
-            var center = ja_coordinates_to_point(element.geometry.coordinates);
-            ja_log(center, 3);
-            var distances = [];
-            Object.getOwnPropertyNames(nodes).forEach(function(name) {
-                ja_log("Checking " + name + " distance", 3);
-                var dist = Math.sqrt(Math.pow(nodes[name].attributes.geometry.x - center.x, 2) + Math.pow(nodes[name].attributes.geometry.y - center.y, 2));
-                distances.push(dist);
-            });
-            ja_log(distances, 3);
-            ja_log("Mean distance is " + distances.reduce(function(a,b){return a + b;}) / distances.length, 3);
+			ja_log(nodes, 3);
+			var center = ja_coordinates_to_point(element.geometry.coordinates);
+			ja_log(center, 3);
+			var distances = [];
+			Object.getOwnPropertyNames(nodes).forEach(function(name) {
+				ja_log("Checking " + name + " distance", 3);
+				var dist = Math.sqrt(Math.pow(nodes[name].attributes.geometry.x - center.x, 2) + Math.pow(nodes[name].attributes.geometry.y - center.y, 2));
+				distances.push(dist);
+			});
+			ja_log(distances, 3);
+			ja_log("Mean distance is " + distances.reduce(function(a,b){return a + b;}) / distances.length, 3);
 
-            var circle = window.OpenLayers.Geometry.Polygon.createRegularPolygon(
-                center,
-                    distances.reduce(function(a,b){return a + b;}) / distances.length,
-                40,
-                0
-            );
-            var roundaboutCircle = new window.OpenLayers.Feature.Vector(circle, {'ja_type': 'roundaboutoverlay'});
-            ja_roundabout_points.push(circle);
-            ja_mapLayer.addFeatures([roundaboutCircle]);
-        });
-    }
+			var circle = window.OpenLayers.Geometry.Polygon.createRegularPolygon(
+				center,
+					distances.reduce(function(a,b){return a + b;}) / distances.length,
+				40,
+				0
+			);
+			var roundaboutCircle = new window.OpenLayers.Feature.Vector(circle, {'ja_type': 'roundaboutoverlay'});
+			ja_roundabout_points.push(circle);
+			ja_mapLayer.addFeatures([roundaboutCircle]);
+		});
+	}
 
 
-    /*
-     * Segment and routing helpers
-     */
+	/*
+	 * Segment and routing helpers
+	 */
 
 	/**
 	 * Check if segment in type matches any other segments
@@ -1304,6 +1306,38 @@ function run_ja() {
 		ja_log(ja_options,3);
 	}
 
+	var ja_onchange = function(e) {
+		"use strict";
+		switch(e.id) {
+			case ja_settings['guess'].elementId:
+				Object.getOwnPropertyNames(ja_settings).forEach(function (a,b,c) {
+					var setting = ja_settings[a];
+					if(setting['group'] && setting['group'] == 'guess') {
+						ja_log(a + ": " + !e.checked , 3);
+						document.getElementById(setting["elementId"]).disabled = !e.checked;
+						//document.getElementById(setting["elementId"]).parentNode.disabled = !e.checked;
+						document.getElementById(setting["elementId"]).parentNode.style.color =
+							e.checked ? "black" : "lightgrey";
+					}
+				});
+				break;
+			case ja_settings['roundaboutOverlayDisplay'].elementId:
+				Object.getOwnPropertyNames(ja_settings).forEach(function (a,b,c) {
+					var setting = ja_settings[a];
+					if(setting['group'] && setting['group'] == 'roundaboutOverlayDisplay') {
+						ja_log(a +": " + e.value, 0);
+						document.getElementById(setting["elementId"]).disabled = e.value == "rOverNever";
+						//document.getElementById(setting["elementId"]).parentNode.disabled = !e.checked;
+						document.getElementById(setting["elementId"]).parentNode.style.color =
+							e.value != "rOverNever" ? "black" : "lightgrey";
+					}
+				});
+				break;
+			default:
+				ja_log("Nothing to do for " + e.id, 0);
+		}
+	};
+
 	var ja_load = function loadJAOptions() {
 		ja_log("Should load settings now.", 2);
 		if(localStorage != null) {
@@ -1375,6 +1409,7 @@ function run_ja() {
 				switch (setting['elementType']) {
 					case "checkbox":
 						document.getElementById(setting['elementId']).checked = ja_getOption(a);
+						document.getElementById(setting['elementId']).onchange();
 						break;
 					case "color":
 					case "number":
@@ -1383,6 +1418,7 @@ function run_ja() {
 						break;
 					case "select":
 						document.getElementById(setting['elementId']).value = ja_getOption(a);
+						document.getElementById(setting['elementId']).onchange();
 						break;
 				}
 			});
@@ -1547,6 +1583,9 @@ function run_ja() {
 		fi["settingsTitle"] = "Rysteyskulmien asetukset";
 		fi["apply"] = "Aseta";
 		fi["resetToDefault"] = "Palauta";
+		fi["aAbsolute"] = "Absoluuttinen";
+		fi["aDeparture"] = "Käännös";
+		fi["angleMode"] = "Kulmien näyttö";
 		fi["guess"] = "Arvioi reititysohjeet";
 		fi["noInstructionColor"] = "ohjeeton \"Suora\"-väri";
 		fi["keepInstructionColor"] = "\"Poistu\"-ohjeen väri";
@@ -1567,6 +1606,9 @@ function run_ja() {
 		sv["settingsTitle"] = "Inställningar för korsningsvinklar";
 		sv["apply"] = "Godkänn";
 		sv["resetToDefault"] = "Återställ";
+		sv["aAbsolute"] = "Absolut";
+		sv["aDeparture"] = "Sväng";
+		sv["angleMode"] = "Vinkelvisning";
 		sv["guess"] = "Gissa navigeringsinstruktioner";
 		sv["noInstructionColor"] = "Färg för \"ingen instruktion\"";
 		sv["keepInstructionColor"] = "Färg för\"håll höger/vänster\"-instruktion";
