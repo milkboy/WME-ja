@@ -241,8 +241,9 @@ function run_ja() {
 		var ja_version_elem = document.createElement('li');
 		ja_version_elem.appendChild(document.createTextNode(ja_getMessage("name") + ": v" + junctionangle_version));
 		ja_info.appendChild(ja_version_elem);
-		
+
 		ja_info.appendChild(ja_helplink('https://wiki.waze.com/wiki/Roundabouts/USA#Understanding_navigation_instructions', 'roundaboutnav'));
+		ja_info.appendChild(ja_helplink('https://github.com/milkboy/WME-ja/issues', 'ghissues'));
 
 		ja_settings_dom.appendChild(ja_info);
 
@@ -1578,7 +1579,8 @@ function run_ja() {
 		def["pointSize"] = "Base point size";
 
 		def["roundaboutnav"] = "WIKI: Roundabouts";
-		
+		def["ghissues"] = "JAI issue tracker";
+
 		//Finnish (Suomi)
 		fi["name"] = "Risteyskulmat";
 		fi["settingsTitle"] = "Rysteyskulmien asetukset";
