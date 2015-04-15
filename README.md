@@ -18,6 +18,10 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 ![Screenshot](https://github.com/milkboy/WME-ja/raw/master/screenshot1.png)
 
 ###Changelog
+####1.8.3
+- Minor settings tab tweaks
+- Added missing translations for the new angle mode selection options
+
 ####1.8.2
 - Added support for having JAI show departure angles with routing instructions as default (instead of just the absolute angles at selection ends)
 
