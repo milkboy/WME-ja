@@ -1444,6 +1444,7 @@ function run_ja() {
 		var elem = document.createElement('li');
 		var l = document.createElement('a');
 		l.href = url;
+		l.target = "_blank";
 		l.appendChild(document.createTextNode(ja_getMessage(text)));
 		elem.appendChild(l);
 		return elem;
