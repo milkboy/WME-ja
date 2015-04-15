@@ -495,45 +495,6 @@ function run_ja() {
 		}
 	}
 
-	function ja_draw_roundabout_overlay(junctionId) {
-		window.Waze.model.junctions.getObjectArray().forEach(function (element, index, array){
-			ja_log(element, 3);
-			//Check if we want a specific junction. FIXME: this should actually be done by a direct select, instead of looping through all..
-			if(typeof junctionId !== "undefined" && junctionId != element.id) {
-				return;
-			}
-			var nodes = {};
-			element.segIDs.forEach(function(s) { 
-				var seg = window.Waze.model.segments.get(s);
-				ja_log(seg, 3);
-				nodes[seg.attributes.fromNodeID] = window.Waze.model.nodes.get(seg.attributes.fromNodeID);
-				nodes[seg.attributes.toNodeID] = window.Waze.model.nodes.get(seg.attributes.toNodeID);
-			});
-
-			ja_log(nodes, 3);
-			var center = ja_coordinates_to_point(element.geometry.coordinates);
-			ja_log(center, 3);
-			var distances = [];
-			Object.getOwnPropertyNames(nodes).forEach(function(name) {
-				ja_log("Checking " + name + " distance", 3);
-				var dist = Math.sqrt(Math.pow(nodes[name].attributes.geometry.x - center.x, 2) + Math.pow(nodes[name].attributes.geometry.y - center.y, 2));
-				distances.push(dist);
-				});
-			ja_log(distances, 3);
-			ja_log("Mean distance is " + distances.reduce(function(a,b){return a + b;}) / distances.length, 3);
-			
-			var circle = window.OpenLayers.Geometry.Polygon.createRegularPolygon(
-				center,
-				distances.reduce(function(a,b){return a + b;}) / distances.length,
-				40,
-				0
-			);
-			var roundaboutCircle = new window.OpenLayers.Feature.Vector(circle, {'ja_type': 'roundaboutoverlay'});
-			ja_roundabout_points.push(circle);
-			ja_mapLayer.addFeatures([roundaboutCircle]);
-		});
-	}
-	
 	function ja_calculate_real() {
 		ja_log("Actually calculating now", 2);
 		var ja_start_time = Date.now();
@@ -848,6 +809,20 @@ function run_ja() {
 		ja_log("Calculation took " + String(ja_end_time - ja_start_time) + " ms", 2);
 	}
 
+
+    /*
+     * Drawing functions
+     */
+    /**
+     *
+     * @param point Estimated point for marker
+     * @param node Node the marker is for
+     * @param ja_label_distance Arbitrary distance to be used in moving markers further away etc
+     * @param a Angle to display
+     * @param ha Angle to marker from node (FIXME: either point or ha is probably unnecessary)
+     * @param withRouting true: show routing guessing markers, false: show "normal" angle markers
+     * @param ja_junction_type If using routing, this needs to be set to the desired type
+     */
 	function ja_draw_marker(point, node, ja_label_distance, a, ha, withRouting, ja_junction_type) {
 		"use strict";
 
@@ -903,9 +878,49 @@ function run_ja() {
 
 	}
 
-	/*
-	 * Segment and routing helpers
-	 */
+    function ja_draw_roundabout_overlay(junctionId) {
+        window.Waze.model.junctions.getObjectArray().forEach(function (element, index, array){
+            ja_log(element, 3);
+            //Check if we want a specific junction. FIXME: this should actually be done by a direct select, instead of looping through all..
+            if(typeof junctionId !== "undefined" && junctionId != element.id) {
+                return;
+            }
+            var nodes = {};
+            element.segIDs.forEach(function(s) {
+                var seg = window.Waze.model.segments.get(s);
+                ja_log(seg, 3);
+                nodes[seg.attributes.fromNodeID] = window.Waze.model.nodes.get(seg.attributes.fromNodeID);
+                nodes[seg.attributes.toNodeID] = window.Waze.model.nodes.get(seg.attributes.toNodeID);
+            });
+
+            ja_log(nodes, 3);
+            var center = ja_coordinates_to_point(element.geometry.coordinates);
+            ja_log(center, 3);
+            var distances = [];
+            Object.getOwnPropertyNames(nodes).forEach(function(name) {
+                ja_log("Checking " + name + " distance", 3);
+                var dist = Math.sqrt(Math.pow(nodes[name].attributes.geometry.x - center.x, 2) + Math.pow(nodes[name].attributes.geometry.y - center.y, 2));
+                distances.push(dist);
+            });
+            ja_log(distances, 3);
+            ja_log("Mean distance is " + distances.reduce(function(a,b){return a + b;}) / distances.length, 3);
+
+            var circle = window.OpenLayers.Geometry.Polygon.createRegularPolygon(
+                center,
+                    distances.reduce(function(a,b){return a + b;}) / distances.length,
+                40,
+                0
+            );
+            var roundaboutCircle = new window.OpenLayers.Feature.Vector(circle, {'ja_type': 'roundaboutoverlay'});
+            ja_roundabout_points.push(circle);
+            ja_mapLayer.addFeatures([roundaboutCircle]);
+        });
+    }
+
+
+    /*
+     * Segment and routing helpers
+     */
 
 	/**
 	 * Check if segment in type matches any other segments
