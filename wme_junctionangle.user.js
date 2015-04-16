@@ -20,6 +20,7 @@
  *	2014 "AlanOfTheBerg" <alanoftheberg@gmail.com>
  *	2014 "berestovskyy" <?>
  *	2015 "FZ69617" <?>
+ *	2015 "wlodek76" <?>
  */
 
 function run_ja() {
@@ -1061,6 +1062,8 @@ function run_ja() {
 				return street_n_element.primary.name == street_in_secondary.name;
 			}) || street_n_element.secondary.some(function (street_n_secondary, index2, array2) {
 				ja_log("CN2b: checking in.p: " + street_in.primary.name + " vs n.s: " + street_n_secondary.name, 2);
+				//wlodek76: missing return from checking primary name with alternate names
+				return street_in.primary.name == street_n_secondary.name;
 			}));
 		});
 	}
