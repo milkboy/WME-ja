@@ -355,6 +355,26 @@ function run_ja() {
 		var angle = ja_angle_diff(s_in_a[0], (s_out_a[0]), false);
 		ja_log("turn angle is: " + angle, 2);
 
+		//Check turn possibility first
+		if(!ja_is_turn_allowed(s_in, node, s_out[s_out_id])) {
+			ja_log("Turn is disallowed!", 2);
+			return ja_routing_type.ERROR;
+		}
+
+		//Roundabout - no true instruction guessing here!
+		if (s_in.attributes.junctionID) {
+			if (s_out[s_out_id].attributes.junctionID) {
+				ja_log("Roundabout continuation - no instruction", 2);
+				return ja_routing_type.BC;
+			} else {
+				ja_log("Roundabout exit - no instruction", 2);
+				return ja_routing_type.EXIT;  //exit just to visually distinguish from roundabout continuation
+			}
+		} else if (s_out[s_out_id].attributes.junctionID) {
+			ja_log("Roundabout entry - no instruction", 2);
+			return ja_routing_type.BC;  //no instruction since it's normally the only continuation - true instruction can be computed for entry-exit selection only
+		}
+
 		//No other possible turns
 		if(node.attributes.segIDs.length <= 2) {
 			ja_log("Only one possible turn", 2);
@@ -366,27 +386,24 @@ function run_ja() {
 		 * Here be dragons!
 		 *
 		 */
-		if(!ja_is_turn_allowed(s_in, node, s_out[s_out_id])) {
-			//Turn is disallowed!
-			return ja_routing_type.ERROR;
-		}
-
 		if(Math.abs(angle) <= 44) {
 			ja_log("Turn is <= 44", 2);
 
 			/*
-			 * Filter out disallowed turns. FIXME: Need to check for disallowed turns somehow!
+			 * Filter out disallowed and non-"BC eligible" turns.
 			 */
 			ja_log("Original angles and street_n:", 2);
 			ja_log(angles, 2);
 			ja_log(street_n, 2);
 			ja_log(s_n, 2);
 			angles = angles.filter(function (a,b,c) {
-				ja_log("Filtering angle: " + ja_angle_diff(s_in_a,a[0],false), 2);
-				if(typeof s_n[a[1]] !== 'undefined'
-					&& ja_is_turn_allowed(s_in, node, s_n[a[1]])
-                    && Math.abs(ja_angle_diff(s_in_a,a[0],false)) <= 45
-                    ) {
+				ja_log("Filtering angle: " + ja_angle_diff(s_in_a, a[0], false), 2);
+				if(s_out_id == a[1]
+					|| (typeof s_n[a[1]] !== 'undefined'
+						&& ja_is_turn_allowed(s_in, node, s_n[a[1]])
+						&& Math.abs(ja_angle_diff(s_in_a, a[0], false)) <= 45
+						&& Math.abs(ja_angle_diff(a[0], s_out_a[0], true)) > 1 //Arbitrarily chosen angle for "overlapping" segments.
+						)) {
 					ja_log(true, 4);
 					return true;
 				} else {
@@ -415,7 +432,7 @@ function run_ja() {
 			var bc_collect = function(a, prio) {
 				ja_log("Potential BC = " + prio, 2);
 				ja_log(a, 2);
-				if (bc_prio == 0 || prio < bc_prio) {
+				if (prio > bc_prio) { //highest priorities wins now
 					bc_matches = {};
 					bc_prio = prio;
 					bc_count = 0;
@@ -443,27 +460,23 @@ function run_ja() {
 				var tmp_street_out = {};
 				tmp_street_out[a[1]] = street_n[a[1]];
 
-				if(s_out_id == a[1] || (
-					Math.abs(tmp_angle) < 45 &&  //Angle is < 45
-					Math.abs(ja_angle_diff(a[0], s_out_a[0], true)) > 1 //Arbitrarily chosen angle for "overlapping" segments.
-					)){
-					ja_log("Found BC eligible turn <= 44", 2);
-
-					if(ja_primary_name_and_type_match(street_in, tmp_street_out)) {
-						bc_collect(a, 1);
-					} else if(ja_alt_name_match(street_in, tmp_street_out)
-								&& ja_segment_type_match(s_in, tmp_s_out)) {
-						bc_collect(a, 2);
-					} else if(ja_primary_name_match(street_in, tmp_street_out)
-								|| ja_cross_name_match(street_in, tmp_street_out)) {
-						bc_collect(a, 3);
-					} else if(ja_alt_name_match(street_in, tmp_street_out)) {
-						bc_collect(a, 4);
-					} else if(ja_segment_type_match(s_in, tmp_s_out)) {
-						bc_collect(a, 5);
-					} else {
-						//Non-BC
-					}
+				if(ja_primary_name_match(street_in, tmp_street_out) && ja_segment_type_match(s_in, tmp_s_out)) {
+					ja_log("BC primary name and type match", 2);
+					bc_collect(a, 3);
+				} else if(ja_alt_name_match(street_in, tmp_street_out) && ja_segment_type_match(s_in, tmp_s_out)) {
+					ja_log("BC alt name and type match", 2);
+					bc_collect(a, 3);
+				} else if(ja_primary_name_match(street_in, tmp_street_out) || ja_cross_name_match(street_in, tmp_street_out)) {
+					ja_log("BC primary name or cross name match", 2);
+					bc_collect(a, 2);
+				} else if(ja_alt_name_match(street_in, tmp_street_out)) {
+					ja_log("BC alt name match", 2);
+					bc_collect(a, 2);
+				} else if(ja_segment_type_match(s_in, tmp_s_out)) {
+					ja_log("BC type match", 2);
+					bc_collect(a, 1);
+				} else {
+					//Non-BC
 				}
 			}
 
