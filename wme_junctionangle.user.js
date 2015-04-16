@@ -1072,9 +1072,17 @@ function run_ja() {
 			ja_log(street_n_element, 2);
 			return (street_in.secondary.some(function (street_in_secondary, index2, array2){
 				ja_log("CN2a: checking n.p: " + street_n_element.primary.name + " vs in.s: " + street_in_secondary.name, 2);
+
+				//wlodek76: CROSS-MATCH works when two compared segments contain at least one ALT NAME - when alt name is empty cross-match does not work
+				if (street_n_element.secondary.length == 0) return false;
+                
 				return street_n_element.primary.name == street_in_secondary.name;
 			}) || street_n_element.secondary.some(function (street_n_secondary, index2, array2) {
 				ja_log("CN2b: checking in.p: " + street_in.primary.name + " vs n.s: " + street_n_secondary.name, 2);
+				
+				//wlodek76: CROSS-MATCH works when two compared segments contain at least one ALT NAME - when alt name is empty cross-match does not work
+				if (street_in.secondary.length == 0) return false;
+
 				//wlodek76: missing return from checking primary name with alternate names
 				return street_in.primary.name == street_n_secondary.name;
 			}));
