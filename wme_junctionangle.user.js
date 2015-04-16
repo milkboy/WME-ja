@@ -383,7 +383,9 @@ function run_ja() {
 			angles = angles.filter(function (a,b,c) {
 				ja_log("Filtering angle: " + ja_angle_diff(s_in_a,a[0],false), 2);
 				if(typeof s_n[a[1]] !== 'undefined'
-					&& ja_is_turn_allowed(s_in, node, s_n[a[1]])) {
+					&& ja_is_turn_allowed(s_in, node, s_n[a[1]])
+                    && Math.abs(ja_angle_diff(s_in_a,a[0],false)) <= 45
+                    ) {
 					ja_log(true, 4);
 					return true;
 				} else {
