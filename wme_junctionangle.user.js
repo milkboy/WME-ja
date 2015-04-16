@@ -45,7 +45,7 @@ function run_ja() {
 		ERROR: "junction_error",
 		ROUNDABOUT: "junction_roundabout"
 	};
-	
+
 	var ja_road_type = {
 		//Streets
 		STREET: 1,
@@ -67,7 +67,7 @@ function run_ja() {
 		RAILROAD: 18,
 		RUNWAY: 19
 	};
-	
+
 	var ja_vehicle_types = {
 		TRUCK: 1,
 		PUBLIC: 2,
@@ -142,7 +142,7 @@ function run_ja() {
 		style.appendChild(document.createTextNode(''
 				+ '#jaOptions label { display: inline; }\n'
 				+ '#jaOptions input, select { margin-right: 5px; }\n'
-			));
+		));
 
 		var form = document.createElement('form');
 		var section = document.createElement('div');
@@ -200,19 +200,19 @@ function run_ja() {
 			section.appendChild(ja_controls_container);
 		});
 		section.appendChild(document.createElement('br'));
-		
+
 		var ja_apply_button = document.createElement('button');
 		ja_apply_button.type = "button";
 		ja_apply_button.className = "btn btn-default";
 		ja_apply_button.addEventListener("click", ja_save, true);
 		ja_apply_button.appendChild(document.createTextNode(ja_getMessage("apply")));
-		
+
 		var ja_reset_button = document.createElement('button');
 		ja_reset_button.type = "button";
 		ja_reset_button.className = "btn btn-default";
 		ja_reset_button.addEventListener("click", ja_reset, true);
 		ja_reset_button.appendChild(document.createTextNode(ja_getMessage("resetToDefault")));
-		
+
 		section.appendChild(ja_apply_button);
 		section.appendChild(document.createTextNode(" "));
 		section.appendChild(ja_reset_button);
@@ -233,12 +233,12 @@ function run_ja() {
 
 		ja_settings_dom_panel.appendChild(ja_settings_dom_content);
 		ja_settings_dom.appendChild(ja_settings_dom_panel);
-		
+
 		//Add some version info etc
 		var ja_info = document.createElement('ul');
 		ja_info.className = "list-unstyled -side-panel-section";
 		ja_info.style.fontSize = "11px";
-		
+
 		var ja_version_elem = document.createElement('li');
 		ja_version_elem.appendChild(document.createTextNode(ja_getMessage("name") + ": v" + junctionangle_version));
 		ja_info.appendChild(ja_version_elem);
@@ -353,7 +353,7 @@ function run_ja() {
 		ja_log(street_in,2);
 
 		var angle = ja_angle_diff(s_in_a[0], (s_out_a[0]), false);
-		ja_log("Turn angle is: " + angle, 2);
+		ja_log("turn angle is: " + angle, 2);
 
 		//No other possible turns
 		if(node.attributes.segIDs.length <= 2) {
@@ -474,7 +474,7 @@ function run_ja() {
 
 			ja_log("No BC logic.............................", 2);
 
-			// Primary to non-primary
+			//Primary to non-primary
 			if(ja_is_primary_road(s_in) && !ja_is_primary_road(s_out[s_out_id])) {
 				ja_log("Primary to non-primary == exit", 2);
 				if(s_in.model.isLeftHand ? (angle > 0 ) : (angle < 0)) {
@@ -482,7 +482,7 @@ function run_ja() {
 				}
 			}
 
-			// Ramp to non-primary or non-ramp
+			//Ramp to non-primary or non-ramp
 			if(ja_is_ramp(s_in) && !ja_is_primary_road(s_out[s_out_id]) && !ja_is_ramp(s_out[s_out_id]) ) {
 				ja_log("Ramp to non-primary and non-ramp == exit", 2);
 				if(s_in.model.isLeftHand ? (angle > 0 ) : (angle < 0)) {
@@ -548,16 +548,16 @@ function run_ja() {
 
 		ja_nodes.forEach(function(node) {
 			ja_log(window.Waze.model.nodes.get(node), 3);
-			
+
 			var tmp_s = null;
 			var tmp_junctionID = null;
 			if(window.Waze.model.nodes.get(node) == null || typeof window.Waze.model.nodes.get(node).attributes.segIDs === 'undefined') return;
 			window.Waze.model.nodes.get(node).attributes.segIDs.forEach(function(segment) {
 				ja_log(segment, 3);
-				
+
 				if(window.Waze.model.segments.get(segment).attributes.junctionID) {
-						ja_log("WE ARE IN OR AROUND A ROUNDABOUT: " + window.Waze.model.segments.get(segment).attributes.junctionID, 3);
-						tmp_junctionID = window.Waze.model.segments.get(segment).attributes.junctionID;
+					ja_log("WE ARE IN OR AROUND A ROUNDABOUT: " + window.Waze.model.segments.get(segment).attributes.junctionID, 3);
+					tmp_junctionID = window.Waze.model.segments.get(segment).attributes.junctionID;
 				} else {
 					tmp_s = segment;
 					tmp_n = node;
@@ -599,7 +599,7 @@ function run_ja() {
 			ja_mapLayer.addFeatures([
 				new window.OpenLayers.Feature.Vector(
 					tmp_roundabout_center,
-					{ 
+					{
 						angle: ja_round(angle) + '°',
 						ja_type: ja_is_roundabout_normal(tmp_roundabout, ja_selected_roundabouts[tmp_roundabout].in_n) ? ja_routing_type.TURN : ja_routing_type.ROUNDABOUT
 					}
@@ -725,9 +725,9 @@ function run_ja() {
 				ha = (parseFloat(ja_selected_angles[0][0]) + parseFloat(ja_selected_angles[1][0]))/2;
 				if(
 					(Math.abs(ja_selected_angles[0][0]) + Math.abs(ja_selected_angles[1][0])) > 180
-				&& (
-						(ja_selected_angles[0][0] < 0 && ja_selected_angles[1][0] > 0)
-						|| (ja_selected_angles[0][0] > 0 && ja_selected_angles[1][0] < 0))
+					&& (
+					(ja_selected_angles[0][0] < 0 && ja_selected_angles[1][0] > 0)
+					|| (ja_selected_angles[0][0] > 0 && ja_selected_angles[1][0] < 0))
 					) ha += 180;
 
 				if (Math.abs(a) > 120) {
@@ -743,7 +743,7 @@ function run_ja() {
 
 				//Guess some routing instructions based on segment types, angles etc
 				var ja_junction_type = ja_routing_type.TURN; //Default to old behavior
-				
+
 				if(ja_getOption("guess")) {
 					ja_log(ja_selected_angles, 2);
 					ja_log(angles, 2);
@@ -856,9 +856,9 @@ function run_ja() {
 
 		var anglePoint = withRouting ?
 			new window.OpenLayers.Feature.Vector(
-			point
+				point
 				, { angle: (a>0?"<":"") + ja_round(Math.abs(a)) + "°" + (a<0?">":""), ja_type: ja_junction_type }
-		): new window.OpenLayers.Feature.Vector(
+			): new window.OpenLayers.Feature.Vector(
 			point
 			, { angle: ja_round(a) + "°", ja_type: "generic" }
 		);
@@ -1299,7 +1299,7 @@ function run_ja() {
 		ja_angle = Math.atan2(ja_dy, ja_dx);
 		return ((ja_angle * 180 / Math.PI)) % 360;
 	}
-	
+
 	/**
 	 * Decimal adjustment of a number. Borrowed (with some modifications) from
 	 * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round
@@ -1342,7 +1342,7 @@ function run_ja() {
 		if(!ja_options.hasOwnProperty(name) || typeof ja_options[name] === 'undefined') {
 			ja_options[name] = ja_settings[name]['defaultValue'];
 		}
-		
+
 		ja_log("Got value: " + ja_options[name], 2);
 		return ja_options[name];
 	}
@@ -1596,7 +1596,7 @@ function run_ja() {
 	function ja_getMessage(key) {
 		return I18n.translate('ja.' + key);
 	}
-	
+
 	function ja_loadTranslations() {
 		ja_log("Loading translations",2);
 		I18n.translations[window.I18n.defaultLocale].ja = {};
@@ -1674,7 +1674,7 @@ function run_ja() {
 		sv["rOverAlways"] = "Alltid";
 		sv["decimals"] = "Decimaler";
 		sv["pointSize"] = "Cirkelns basstorlek";
-		
+
 		//Apply
 		switch (I18n.locale) {
 			case 'sv':
