@@ -18,6 +18,10 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 ![Screenshot](https://github.com/milkboy/WME-ja/raw/master/screenshot1.png)
 
 ###Changelog
+####1.8.4
+- Fixed (hopefully) date range based restriction detection
+- Fixed best continuation logic segment filtering. DOH.
+
 ####1.8.3
 - Minor settings tab tweaks
 - Added missing translations for the new angle mode selection options
