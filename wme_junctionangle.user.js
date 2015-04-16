@@ -989,13 +989,50 @@ function run_ja() {
 		}
 		ja_log(restrictions, 3);
 
-		return !restrictions.some(function(element, index, array){
+		return !restrictions.some(function(element, index, array) {
 			ja_log("Checking restriction " + element, 3);
-			return element.allDay //All day restriction
+			var ret = element.allDay //All day restriction
 				&& element.days == 127	//Every week day
 				&& ( element.vehicleTypes == -1 //All vehicle types
 					|| element.vehicleTypes & ja_vehicle_types.PRIVATE //or at least private cars
 					);
+			if (ret) {
+				ja_log("There is an all-day-all-week restriction", 3);
+				var fromDate = Date.parse(element.fromDate);
+				var toDate = Date.parse(element.toDate);
+				ja_log("From: " + fromDate + ", to: " + toDate + ". " + ret, 3);
+				if(isNaN(fromDate && isNaN(toDate))) {
+					ja_log("No start nor end date defined");
+					return false;
+				}
+				var fRes, tRes;
+				if(!isNaN(fromDate) && new Date() > fromDate) {
+					ja_log("From date is in the past", 3);
+					fRes = 2;
+				} else if(isNaN(fromDate)) {
+					ja_log("From date is invalid/not set", 3);
+					fRes = 1;
+				} else {
+					ja_log("From date is in the future: " + fromDate, 3);
+					fRes = 0;
+				}
+				if(!isNaN(toDate) && new Date() < toDate) {
+					ja_log("To date is in the future", 3);
+					tRes = 2;
+				} else if(isNaN(toDate)) {
+					ja_log("To date is invalid/not set", 3);
+					tRes = 1;
+				} else {
+					ja_log("To date is in the past: " + toDate, 3);
+					tRes = 0;
+				}
+				// Car allowed unless
+				//  - toDate is in the future and fromDate is unset or in the past
+				//  - fromDate is in the past and toDate is unset in the future
+				// Hope I got this right ;)
+				return (fRes <= 1 && tRes <= 1);
+			}
+			return ret;
 		});
 	}
 
