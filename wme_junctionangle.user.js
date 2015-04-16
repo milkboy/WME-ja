@@ -1066,6 +1066,10 @@ function run_ja() {
 		ja_log("CN: init", 2);
 		ja_log(street_in, 2);
 		ja_log(streets, 2);
+		
+		//FZ69617: complementary optimized check
+		if (street_in.secondary.length == 0) return false;
+		
 		return Object.getOwnPropertyNames(streets).some(function (street_n_id, index, array) {
 			var street_n_element = streets[street_n_id];
 			ja_log("CN: Checking element " + index, 2);
