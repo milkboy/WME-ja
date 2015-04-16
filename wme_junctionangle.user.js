@@ -304,10 +304,10 @@ function run_ja() {
 	 * @returns {string}
 	 */
 	function ja_guess_routing_instruction(node, s_in_a, s_out_a, angles) {
-		ja_log("Guessing routing instructions",2);
-		ja_log(node, 3);
-		ja_log(s_in_a, 3);
-		ja_log(s_out_a, 3);
+		ja_log("Guessing routing instructions from " + s_in_a + " via node " + node.attributes.id + " to " + s_out_a,2);
+		ja_log(node, 4);
+		ja_log(s_in_a, 4);
+		ja_log(s_out_a, 4);
 		ja_log(angles, 3);
 		var s_in_id = s_in_a;
 		var s_out_id = s_out_a;
@@ -346,15 +346,13 @@ function run_ja() {
 			}
 		});
 
-		ja_log(s_in_a, 3);
-		ja_log(s_out_a, 3);
 		ja_log(s_n, 3);
 		ja_log(street_n,3);
 		ja_log(s_in,3);
 		ja_log(street_in,2);
 
 		var angle = ja_angle_diff(s_in_a[0], (s_out_a[0]), false);
-		ja_log("turn angle is: " + angle, 2);
+		ja_log("Turn angle is: " + angle, 2);
 
 		//No other possible turns
 		if(node.attributes.segIDs.length <= 2) {
@@ -386,8 +384,10 @@ function run_ja() {
 				ja_log("Filtering angle: " + ja_angle_diff(s_in_a,a[0],false), 2);
 				if(typeof s_n[a[1]] !== 'undefined'
 					&& ja_is_turn_allowed(s_in, node, s_n[a[1]])) {
+					ja_log(true, 4);
 					return true;
 				} else {
+					ja_log(false, 4);
 					if(street_n[a[1]]) {
 						delete s_n[a[1]];
 						delete street_n[a[1]];
@@ -961,13 +961,16 @@ function run_ja() {
 			+ via_node.isTurnAllowedBySegDirections(s_from, s_to) + " | " + s_from.isTurnAllowed(s_to, via_node), 2);
 
 		//Is there a driving direction restriction?
-		if(!via_node.isTurnAllowedBySegDirections(s_from, s_to)) return false;
+		if(!via_node.isTurnAllowedBySegDirections(s_from, s_to)) {
+			ja_log("Driving direction restricion applies", 3);
+			return false;
+		}
 
 		//Is turn allowed by other means (e.g. turn restrictions)?
-		if(!s_from.isTurnAllowed(s_to, via_node)) return false;
-
-		ja_log("Checking restrictions", 2);
-		ja_log(s_to, 3);
+		if(!s_from.isTurnAllowed(s_to, via_node)) {
+			ja_log("Other restricion applies", 3);
+			return false;
+		}
 
 		if(s_to.attributes.fromNodeID == via_node.attributes.id) {
 			ja_log("FWD direction",3);
@@ -979,8 +982,11 @@ function run_ja() {
 	}
 
 	function ja_is_car_allowed_by_restrictions(restrictions) {
-		if(restrictions == null || typeof restrictions === 'undefined') return true;
 		ja_log("Checking restrictions for cars", 2);
+		if(typeof restrictions === 'undefined' || restrictions == null || restrictions.length == 0) {
+			ja_log("No car type restrictions to check...", 3);
+			return true;
+		}
 		ja_log(restrictions, 3);
 
 		return !restrictions.some(function(element, index, array){
