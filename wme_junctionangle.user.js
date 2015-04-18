@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name				WME Junction Angle Info
+// @name				WME Junction Angle Info (development version)
 // @namespace			https://github.com/milkboy/WME-ja
 // @description			Show the angle between two selected (and connected) segments
 // @include				/^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
@@ -28,7 +28,7 @@ function run_ja() {
 	/*
 	 * First some variable and enumeration definitions
 	 */
-	var junctionangle_version = "1.8.4.1";
+	var junctionangle_version = "1.8.4.2";
 	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
 	var $;
 
