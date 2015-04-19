@@ -518,7 +518,10 @@ function run_ja() {
 
 			//wlodek76: FIXING KEEP LEFT/RIGHT regarding to left most segment
 			//WIKI WAZE: When there are more than two segments less than 45.04°, only the left most segment will be KEEP LEFT, all the rest will be KEEP RIGHT
-			if (angles.length > 2) { //FZ69617: "more than two..."
+			if (true || angles.length > 2) { //FZ69617: "more than two..."
+						//FIXME: true added to temporarily ignore this condition
+						//without it many "keep left"s changed into "exit right"
+						//but I'm finally not sure whether we can safely ignore the precondition from Wiki?
 
 				//wlodek76: KEEP LEFT/RIGHT overlapping case
 				//WIKI WAZE: If the left most segment is overlapping another segment, it will also be KEEP RIGHT.
@@ -542,7 +545,7 @@ function run_ja() {
 			//FZ69617: Two overlapping sements logic
 			//WAZE WIKI: If the only two segments less than 45.04° overlap each other, neither will get an instruction.
 			if (angles.length == 2) {
-				var overlapped_angle = Math.abs(mostleftangle[0] - mostleftangle2[0]);
+				var overlapped_angle = Math.abs(angles[0][0] - angles[1][0]);
 
 				// TODO: verify overlapping check on the side of routing server.
 				if (overlapped_angle < 2.0) {
