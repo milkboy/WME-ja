@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name				WME Junction Angle Info
+// @name				WME Junction Angle Info (development version)
 // @namespace			https://github.com/milkboy/WME-ja
 // @description			Show the angle between two selected (and connected) segments
 // @include				/^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
@@ -178,7 +178,7 @@ function run_ja() {
 					break;
 				case 'checkbox':
 					ja_input.id = setting['elementId'];
-					ja_input.onchange = function() { ja_onchange(this) };
+					ja_input.onchange = function() { ja_onchange(this); };
 					ja_controls_container.appendChild(ja_input);
 					break;
 				case 'select':
@@ -190,7 +190,7 @@ function run_ja() {
 						ja_select_option.appendChild(document.createTextNode(ja_getMessage(setting["options"][i])));
 						ja_input.appendChild(ja_select_option);
 					}
-					ja_input.onchange = function() { ja_onchange(this) };
+					ja_input.onchange = function() { ja_onchange(this); };
 					ja_controls_container.appendChild(ja_input);
 					break;
 			}
@@ -256,7 +256,7 @@ function run_ja() {
 			ja_log("Could not append setting to tabContent!?!", 1);
 		}
 
-		jatab = document.createElement('li');
+		var jatab = document.createElement('li');
 		jatab.innerHTML = '<!--suppress HtmlUnknownAnchorTarget --><a href="#sidepanel-ja" data-toggle="tab">JAI</a>';
 		if(navTabs != null)
 			navTabs.appendChild(jatab);
@@ -453,7 +453,7 @@ function run_ja() {
 			var mostleftangle2 = null, templeftangle2 = 0;
 
 			//Collect all matching unrestricted <45 turns
-			for(k=0; k< angles.length; k++) {
+			for(var k=0; k< angles.length; k++) {
 				var a = angles[k];
 
 				ja_log("Checking angle " + k, 2);
@@ -608,8 +608,7 @@ function run_ja() {
 		ja_nodes.forEach(function(node) {
 			ja_log(window.Waze.model.nodes.get(node), 3);
 
-			var tmp_s = null;
-			var tmp_junctionID = null;
+			var tmp_s = null, tmp_n = null, tmp_junctionID = null;
 			if(window.Waze.model.nodes.get(node) == null || typeof window.Waze.model.nodes.get(node).attributes.segIDs === 'undefined') return;
 			window.Waze.model.nodes.get(node).attributes.segIDs.forEach(function(segment) {
 				ja_log(segment, 3);
@@ -668,7 +667,7 @@ function run_ja() {
 
 		//Start looping through selected nodes
 		for (var i = 0; i < ja_nodes.length; i++) {
-			node = window.Waze.model.nodes.get(ja_nodes[i]);
+			var node = window.Waze.model.nodes.get(ja_nodes[i]);
 			if (node == null || !node.hasOwnProperty('attributes')) {
 				//Oh oh.. should not happen? We want to use a node that does not exist
 				ja_log("Oh oh.. should not happen?",2);
@@ -694,8 +693,10 @@ function run_ja() {
 			var ja_selected_segments_count = 0;
 			var ja_selected_angles = [];
 
+			var a;
+
 			ja_current_node_segments.forEach(function (nodeSegment, j) {
-				s = window.Waze.model.segments.objects[nodeSegment];
+				var s = window.Waze.model.segments.objects[nodeSegment];
 				if(typeof s === 'undefined') {
 					//Meh. Something went wrong, and we lost track of the segment. This needs a proper fix, but for now
 					// it should be sufficient to just restart the calculation
@@ -722,7 +723,7 @@ function run_ja() {
 				if(ja_current_node_segments.indexOf(selectedSegmentId) >= 0) {
 					ja_log("It is!", 3);
 					//find the angle
-					for(j=0; j < angles.length; j++) {
+					for(var j=0; j < angles.length; j++) {
 						if(angles[j][1] == selectedSegmentId) {
 							ja_selected_angles.push(angles[j]);
 							break;
@@ -1129,11 +1130,11 @@ function run_ja() {
 
 				//wlodek76: CROSS-MATCH works when two compared segments contain at least one ALT NAME - when alt name is empty cross-match does not work
 				if (street_n_element.secondary.length == 0) return false;
-                
+
 				return street_n_element.primary.name == street_in_secondary.name;
 			}) || street_n_element.secondary.some(function (street_n_secondary, index2, array2) {
 				ja_log("CN2b: checking in.p: " + street_in.primary.name + " vs n.s: " + street_n_secondary.name, 2);
-				
+
 				//wlodek76: CROSS-MATCH works when two compared segments contain at least one ALT NAME - when alt name is empty cross-match does not work
 				if (street_in.secondary.length == 0) return false;
 
@@ -1163,27 +1164,12 @@ function run_ja() {
 		});
 	}
 
-	function ja_primary_name_and_type_match(street_in, streets, exceptStreet) {
-		ja_log("PNT", 2);
-		ja_log(street_in, 2);
-		return Object.getOwnPropertyNames(streets).some(function (id, index, array) {
-			ja_log("PNT Checking element " + index, 2);
-			ja_log(streets[id], 2);
-			ja_log("Checking exception", 2);
-			ja_log(exceptStreet, 2);
-			var exempt = exceptStreet !== undefined && exceptStreet[id] != null && exceptStreet[id] != id;
-			ja_log(exempt, 2);
-			return (!exempt && streets[id].primary.name == street_in.primary.name
-				&& streets[id].primary.type == street_in.primary.type);
-		});
-	}
-
 	function ja_primary_name_match(street_in, streets) {
 		ja_log("PN", 2);
 		ja_log(street_in, 2);
 		ja_log(streets, 2);
 		return Object.getOwnPropertyNames(streets).some(function (id, index, array) {
-			element = streets[id];
+			var element = streets[id];
 			ja_log("PN Checking element " + index + " of " + array.length, 2);
 			ja_log(element, 2);
 			return (element.primary.name == street_in.primary.name);
@@ -1363,6 +1349,7 @@ function run_ja() {
 		ja_log("node: " + ja_node, 2);
 		ja_log("segment: " + ja_segment, 2);
 		if (ja_node == null || ja_segment == null) return null;
+		var ja_dx, ja_dy;
 		if (ja_segment.attributes.fromNodeID == ja_node) {
 			ja_dx = ja_get_second_point(ja_segment).x - ja_get_first_point(ja_segment).x;
 			ja_dy = ja_get_second_point(ja_segment).y - ja_get_first_point(ja_segment).y;
@@ -1371,7 +1358,7 @@ function run_ja() {
 			ja_dy = ja_get_next_to_last_point(ja_segment).y - ja_get_last_point(ja_segment).y;
 		}
 		ja_log(ja_node + " / " + ja_segment + ": dx:" + ja_dx + ", dy:" + ja_dy, 2);
-		ja_angle = Math.atan2(ja_dy, ja_dx);
+		var ja_angle = Math.atan2(ja_dy, ja_dx);
 		return ((ja_angle * 180 / Math.PI)) % 360;
 	}
 
@@ -1675,90 +1662,123 @@ function run_ja() {
 
 	function ja_loadTranslations() {
 		ja_log("Loading translations",2);
-		I18n.translations[window.I18n.defaultLocale].ja = {};
-		def = I18n.translations[window.I18n.defaultLocale].ja;
-		sv = {};
-		fi = {};
+
+		var set_trans = function(loc, def) {
+			return I18n.translations[loc].ja = def;
+		};
+
 		//Default language (English)
-		def["name"] = "Junction Angles";
-		def["settingsTitle"] = "Junction Angle settings";
-		def["apply"] = "Apply";
-		def["resetToDefault"] = "Reset to default";
-		def["aAbsolute"] = "Absolute";
-		def["aDeparture"] = "Departure";
-		def["angleMode"] = "Angle mode";
-		def["guess"] = "Estimate routing instructions";
-		def["noInstructionColor"] = "Color for best continuation";
-		def["keepInstructionColor"] = "Color for keep prompt";
-		def["exitInstructionColor"] = "Color for exit prompt";
-		def["turnInstructionColor"] = "Color for turn prompt";
-		def["problemColor"] = "Color for angles to avoid";
-		def["roundaboutColor"] = "Color for roundabouts (with non-straight exits)";
-		def["roundaboutOverlayColor"] = "Color for roundabout overlay";
-		def["roundaboutOverlayDisplay"] = "Show roundabout circle";
-		def["rOverNever"] = "Never";
-		def["rOverSelected"] = "When selected";
-		def["rOverAlways"] = "Always";
-		def["decimals"] = "Number of decimals";
-		def["pointSize"] = "Base point size";
+		set_trans(window.I18n.defaultLocale,
+		set_trans('en', {
+			name: "Junction Angle Info",
+			settingsTitle: "Junction Angle settings",
+			apply: "Apply",
+			resetToDefault: "Reset to default",
+			aAbsolute: "Absolute",
+			aDeparture: "Departure",
+			angleMode: "Angle mode",
+			guess: "Estimate routing instructions",
+			noInstructionColor: "Color for best continuation",
+			keepInstructionColor: "Color for keep prompt",
+			exitInstructionColor: "Color for exit prompt",
+			turnInstructionColor: "Color for turn prompt",
+			problemColor: "Color for angles to avoid",
+			roundaboutColor: "Color for roundabouts (with non-straight exits)",
+			roundaboutOverlayColor: "Color for roundabout overlay",
+			roundaboutOverlayDisplay: "Show roundabout circle",
+			rOverNever: "Never",
+			rOverSelected: "When selected",
+			rOverAlways: "Always",
+			decimals: "Number of decimals",
+			pointSize: "Base point size",
 
-		def["roundaboutnav"] = "WIKI: Roundabouts";
-		def["ghissues"] = "JAI issue tracker";
-
-		//Finnish (Suomi)
-		fi["name"] = "Risteyskulmat";
-		fi["settingsTitle"] = "Rysteyskulmien asetukset";
-		fi["apply"] = "Aseta";
-		fi["resetToDefault"] = "Palauta";
-		fi["aAbsolute"] = "Absoluuttinen";
-		fi["aDeparture"] = "Käännös";
-		fi["angleMode"] = "Kulmien näyttö";
-		fi["guess"] = "Arvioi reititysohjeet";
-		fi["noInstructionColor"] = "ohjeeton \"Suora\"-väri";
-		fi["keepInstructionColor"] = "\"Poistu\"-ohjeen väri";
-		fi["exitInstructionColor"] = "\"poistu\"-ohjeen väri";
-		fi["turnInstructionColor"] = "\"Käänny\"-ohjeen väri";
-		fi["problemColor"] = "Vältettävien kulmien väri";
-		fi["roundaboutColor"] = "Liikenneympyrän (jolla ei-suoria kulmia) ohjeen väri";
-		fi["roundaboutOverlayColor"] = "Liikenneympyrän korostusväri";
-		fi["roundaboutOverlayDisplay"] = "Korosta liikenneympyrä";
-		fi["rOverNever"] = "Ei ikinä";
-		fi["rOverSelected"] = "Kun valittu";
-		fi["rOverAlways"] = "Aina";
-		fi["decimals"] = "Desimaalien määrä";
-		fi["pointSize"] = "Ympyrän peruskoko";
-
-		//Swedish (Svenska)
-		sv["name"] = "Korsningsvinklar";
-		sv["settingsTitle"] = "Inställningar för korsningsvinklar";
-		sv["apply"] = "Godkänn";
-		sv["resetToDefault"] = "Återställ";
-		sv["aAbsolute"] = "Absolut";
-		sv["aDeparture"] = "Sväng";
-		sv["angleMode"] = "Vinkelvisning";
-		sv["guess"] = "Gissa navigeringsinstruktioner";
-		sv["noInstructionColor"] = "Färg för \"ingen instruktion\"";
-		sv["keepInstructionColor"] = "Färg för\"håll höger/vänster\"-instruktion";
-		sv["exitInstructionColor"] = "Färg för \"ta av\"-instruktion";
-		sv["turnInstructionColor"] = "Färg för \"sväng\"-instruktion";
-		sv["problemColor"] = "Färg för vinklar att undvika";
-		sv["roundaboutColor"] = "Färg för rondell (med icke-räta vinklar)";
-		sv["roundaboutOverlayColor"] = "Färg för rondellcirkel";
-		sv["roundaboutOverlayDisplay"] = "Visa cirkel på rondell";
-		sv["rOverNever"] = "Aldrig";
-		sv["rOverSelected"] = "När vald";
-		sv["rOverAlways"] = "Alltid";
-		sv["decimals"] = "Decimaler";
-		sv["pointSize"] = "Cirkelns basstorlek";
+			roundaboutnav: "WIKI: Roundabouts",
+			ghissues: "JAI issue tracker",
+		}));
 
 		//Apply
 		switch (I18n.locale) {
+
+			//Swedish (Svenska)
 			case 'sv':
-				I18n.translations['sv'].ja = sv;
+				set_trans('sv', {
+					name: "Korsningsvinklar",
+					settingsTitle: "Inställningar för korsningsvinklar",
+					apply: "Godkänn",
+					resetToDefault: "Återställ",
+					aAbsolute: "Absolut",
+					aDeparture: "Sväng",
+					angleMode: "Vinkelvisning",
+					guess: "Gissa navigeringsinstruktioner",
+					noInstructionColor: "Färg för \"ingen instruktion\"",
+					keepInstructionColor: "Färg för\"håll höger/vänster\"-instruktion",
+					exitInstructionColor: "Färg för \"ta av\"-instruktion",
+					turnInstructionColor: "Färg för \"sväng\"-instruktion",
+					problemColor: "Färg för vinklar att undvika",
+					roundaboutColor: "Färg för rondell (med icke-räta vinklar)",
+					roundaboutOverlayColor: "Färg för rondellcirkel",
+					roundaboutOverlayDisplay: "Visa cirkel på rondell",
+					rOverNever: "Aldrig",
+					rOverSelected: "När vald",
+					rOverAlways: "Alltid",
+					decimals: "Decimaler",
+					pointSize: "Cirkelns basstorlek",
+				});
 				break;
+
+			//Finnish (Suomi)
 			case 'fi':
-				I18n.translations['fi'].ja = fi;
+				set_trans('fi', {
+					name: "Risteyskulmat",
+					settingsTitle: "Rysteyskulmien asetukset",
+					apply: "Aseta",
+					resetToDefault: "Palauta",
+					aAbsolute: "Absoluuttinen",
+					aDeparture: "Käännös",
+					angleMode: "Kulmien näyttö",
+					guess: "Arvioi reititysohjeet",
+					noInstructionColor: "ohjeeton \"Suora\"-väri",
+					keepInstructionColor: "\"Poistu\"-ohjeen väri",
+					exitInstructionColor: "\"poistu\"-ohjeen väri",
+					turnInstructionColor: "\"Käänny\"-ohjeen väri",
+					problemColor: "Vältettävien kulmien väri",
+					roundaboutColor: "Liikenneympyrän (jolla ei-suoria kulmia) ohjeen väri",
+					roundaboutOverlayColor: "Liikenneympyrän korostusväri",
+					roundaboutOverlayDisplay: "Korosta liikenneympyrä",
+					rOverNever: "Ei ikinä",
+					rOverSelected: "Kun valittu",
+					rOverAlways: "Aina",
+					decimals: "Desimaalien määrä",
+					pointSize: "Ympyrän peruskoko",
+				});
 				break;
+
+			//Polish
+			case 'pl':
+				set_trans('pl', {
+					settingsTitle: "Ustawienia",
+					apply: "Zastosuj",
+					resetToDefault: "Przywróć domyślne",
+					aAbsolute: "Absolutne",
+					aDeparture: "Rozjazdy",
+					angleMode: "Tryb wyświetlania kątów",
+					guess: "Szacuj komunikaty trasy",
+					noInstructionColor: "Kolor najlepszej kontynuacji",
+					keepInstructionColor: "Kolor dla \"kieruj się\"",
+					exitInstructionColor: "Kolor dla \"zjedź\"",
+					turnInstructionColor: "Kolor dla \"skręć\"",
+					problemColor: "Kolor niedozwolonych manewrów lub niejednoznacznych kątów",
+					roundaboutColor: "Kolor numerowanych zjazdów na rondzie",
+					roundaboutOverlayColor: "Kolor markera ronda",
+					roundaboutOverlayDisplay: "Pokazuj marker ronda",
+					rOverNever: "Nigdy",
+					rOverSelected: "Gdy zaznaczone",
+					rOverAlways: "Zawsze",
+					decimals: "Ilość cyfr po przecinku",
+					pointSize: "Rozmiar punktów pomiaru",
+				});
+				break;
+
 		}
 	}
 
