@@ -918,6 +918,9 @@ function run_ja() {
 		if (ja_junction_type == ja_routing_type.KEEP_LEFT)  anglestring = "<" + ja_round(Math.abs(a)) + "°";
 		if (ja_junction_type == ja_routing_type.KEEP_RIGHT) anglestring =       ja_round(Math.abs(a)) + "°" + ">";
 
+		//wlodek76: do not show left/right direction in best continuation we go only straight here
+		if (ja_junction_type == ja_routing_type.BC)         anglestring =       ja_round(Math.abs(a)) + "°";
+
 		var anglePoint = withRouting ?
 			new window.OpenLayers.Feature.Vector(
 				point
