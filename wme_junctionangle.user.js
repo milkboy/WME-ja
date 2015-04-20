@@ -29,7 +29,7 @@ function run_ja() {
 	 * First some variable and enumeration definitions
 	 */
 	var junctionangle_version = "1.8.4.2";
-	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: crazy debug
+	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: verbose debug, 4: insane debug
 	var $;
 
 	var ja_last_restart = 0;
@@ -62,7 +62,7 @@ function run_ja() {
 		PARKING_LOT_ROAD: 20,
 		//Non-drivable
 		WALKING_TRAIL: 5,
-		PEDESTRIAB_BOARDWALK: 10,
+		PEDESTRIAL_BOARDWALK: 10,
 		STAIRWAY: 16,
 		RAILROAD: 18,
 		RUNWAY: 19
@@ -243,7 +243,10 @@ function run_ja() {
 		ja_version_elem.appendChild(document.createTextNode(ja_getMessage("name") + ": v" + junctionangle_version));
 		ja_info.appendChild(ja_version_elem);
 
-		ja_info.appendChild(ja_helplink('https://wiki.waze.com/wiki/Roundabouts/USA#Understanding_navigation_instructions', 'roundaboutnav'));
+		//Add some useful links
+		ja_info.appendChild(ja_helplink(
+			'https://wiki.waze.com/wiki/Roundabouts/USA#Understanding_navigation_instructions', 'roundaboutnav')
+		);
 		ja_info.appendChild(ja_helplink('https://github.com/milkboy/WME-ja/issues', 'ghissues'));
 
 		ja_settings_dom.appendChild(ja_info);
@@ -260,7 +263,7 @@ function run_ja() {
 			navTabs.appendChild(jatab);
 
 		//Add support for translations. Default (and fallback) is "en".
-		//Note, don't make typos in "acceleratorName", as it has to match the layer name (with whitespace removed
+		//Note, don't make typos in "acceleratorName", as it has to match the layer name (with whitespace removed)
 		// to actually work. Took me a while to figure that out...
 		I18n.translations[window.I18n.locale].layers.name["junction_angles"] = ja_getMessage("name");
 
@@ -372,7 +375,9 @@ function run_ja() {
 			}
 		} else if (s_out[s_out_id].attributes.junctionID) {
 			ja_log("Roundabout entry - no instruction", 2);
-			return ja_routing_type.BC;  //no instruction since it's normally the only continuation - true instruction can be computed for entry-exit selection only
+			//no instruction since it's normally the only continuation - true instruction can be computed for
+			//entry-exit selection only
+			return ja_routing_type.BC;
 		}
 
 		//No other possible turns
@@ -401,7 +406,7 @@ function run_ja() {
 				if(s_out_id == a[1]
 					|| (typeof s_n[a[1]] !== 'undefined'
 						&& ja_is_turn_allowed(s_in, node, s_n[a[1]])
-						&& Math.abs(ja_angle_diff(s_in_a, a[0], false)) <= 45
+						&& Math.abs(ja_angle_diff(s_in_a, a[0], false)) <= 45 //Any angle above 45 is not eligible
 						&& Math.abs(ja_angle_diff(a[0], s_out_a[0], true)) > 1 //Arbitrarily chosen angle for "overlapping" segments.
 						)) {
 					ja_log(true, 4);
@@ -432,7 +437,7 @@ function run_ja() {
 			var bc_collect = function(a, prio) {
 				ja_log("Potential BC = " + prio, 2);
 				ja_log(a, 2);
-				if (prio > bc_prio) { //highest priorities wins now
+				if (prio > bc_prio) { //highest priority wins now
 					bc_matches = {};
 					bc_prio = prio;
 					bc_count = 0;
@@ -445,7 +450,7 @@ function run_ja() {
 				ja_log(bc_matches, 2);
 			};
 
-			//Collect all matching unrestricted <45 turns
+			//Check each eligible turn against routing rules
 			for(var k=0; k< angles.length; k++) {
 				var a = angles[k];
 
@@ -485,7 +490,7 @@ function run_ja() {
 				return ja_routing_type.BC
 			}
 
-			ja_log("No BC logic.............................", 2);
+			ja_log("BC logic did not apply; using old default rules instead.", 2);
 
 			//Primary to non-primary
 			if(ja_is_primary_road(s_in) && !ja_is_primary_road(s_out[s_out_id])) {
@@ -519,11 +524,15 @@ function run_ja() {
 		var ja_start_time = Date.now();
 		ja_roundabout_points = [];
 		ja_log(window.Waze.map, 3);
-		if(typeof ja_mapLayer === 'undefined') { return 1;}
+		if (typeof ja_mapLayer === 'undefined') {
+			return 1;
+		}
 		//clear old info
 		ja_mapLayer.destroyFeatures();
 
-		if(ja_getOption("roundaboutOverlayDisplay") == "rOverAlways") ja_draw_roundabout_overlay();
+		if (ja_getOption("roundaboutOverlayDisplay") == "rOverAlways") {
+			ja_draw_roundabout_overlay();
+		}
 
 		//try to show all angles for all selected segments
 		if (window.Waze.selectionManager.selectedItems.length == 0) return 1;
@@ -563,12 +572,15 @@ function run_ja() {
 			ja_log(window.Waze.model.nodes.get(node), 3);
 
 			var tmp_s = null, tmp_n = null, tmp_junctionID = null;
-			if(window.Waze.model.nodes.get(node) == null || typeof window.Waze.model.nodes.get(node).attributes.segIDs === 'undefined') return;
+			if(window.Waze.model.nodes.get(node) == null ||
+				typeof window.Waze.model.nodes.get(node).attributes.segIDs === 'undefined') {
+				return;
+			}
 			window.Waze.model.nodes.get(node).attributes.segIDs.forEach(function(segment) {
 				ja_log(segment, 3);
 
 				if(window.Waze.model.segments.get(segment).attributes.junctionID) {
-					ja_log("WE ARE IN OR AROUND A ROUNDABOUT: " + window.Waze.model.segments.get(segment).attributes.junctionID, 3);
+					ja_log("Roundabout detected: " + window.Waze.model.segments.get(segment).attributes.junctionID, 3);
 					tmp_junctionID = window.Waze.model.segments.get(segment).attributes.junctionID;
 				} else {
 					tmp_s = segment;
@@ -579,7 +591,13 @@ function run_ja() {
 			ja_log("final tmp_s: " + (tmp_s === null ? 'null' : tmp_s), 3);
 			if(tmp_junctionID === null) return;
 			if(!ja_selected_roundabouts.hasOwnProperty(tmp_junctionID)) {
-				ja_selected_roundabouts[tmp_junctionID] = { 'in_s': tmp_s, 'in_n': tmp_n, 'out_s': null, 'out_n': null, 'p': window.Waze.model.junctions.get(tmp_junctionID).geometry };
+				ja_selected_roundabouts[tmp_junctionID] = {
+					'in_s': tmp_s,
+					'in_n': tmp_n,
+					'out_s': null,
+					'out_n': null,
+					'p': window.Waze.model.junctions.get(tmp_junctionID).geometry
+				};
 			} else {
 				ja_selected_roundabouts[tmp_junctionID].out_s = tmp_s;
 				ja_selected_roundabouts[tmp_junctionID].out_n = node;
@@ -588,35 +606,41 @@ function run_ja() {
 
 		//Do some fancy painting for the roundabouts...
 		for(var tmp_roundabout in ja_selected_roundabouts) {
-			ja_log(tmp_roundabout, 3);
-			ja_log(ja_selected_roundabouts[tmp_roundabout], 3);
+			if (ja_selected_roundabouts.hasOwnProperty(tmp_roundabout)) {
+				ja_log(tmp_roundabout, 3);
+				ja_log(ja_selected_roundabouts[tmp_roundabout], 3);
 
-			//New roundabouts don't have coordinates yet..
-			if(typeof ja_selected_roundabouts[tmp_roundabout].p === 'undefined' ||
-				ja_selected_roundabouts[tmp_roundabout].out_n === null
-				) {
-				continue;
-			}
+				//New roundabouts don't have coordinates yet..
+				if(typeof ja_selected_roundabouts[tmp_roundabout].p === 'undefined' ||
+					ja_selected_roundabouts[tmp_roundabout].out_n === null
+					) {
+					continue;
+				}
 
-			//Draw circle overlay for this roundabout
-			if(ja_getOption("roundaboutOverlayDisplay") == "rOverSelected") ja_draw_roundabout_overlay(tmp_roundabout);
+				//Draw circle overlay for this roundabout
+				if(ja_getOption("roundaboutOverlayDisplay") == "rOverSelected") {
+					ja_draw_roundabout_overlay(tmp_roundabout);
+				}
 
-			//Transform LonLat to actual layer projection
-			var tmp_roundabout_center = ja_coordinates_to_point(ja_selected_roundabouts[tmp_roundabout].p.coordinates);
-			var angle = ja_angle_between_points(
-				window.Waze.model.nodes.get(ja_selected_roundabouts[tmp_roundabout].in_n).geometry,
-				tmp_roundabout_center,
-				window.Waze.model.nodes.get(ja_selected_roundabouts[tmp_roundabout].out_n).geometry
-			);
-			ja_mapLayer.addFeatures([
-				new window.OpenLayers.Feature.Vector(
+				//Transform LonLat to actual layer projection
+				var tmp_roundabout_center = ja_coordinates_to_point(ja_selected_roundabouts[tmp_roundabout].p.coordinates);
+				var angle = ja_angle_between_points(
+					window.Waze.model.nodes.get(ja_selected_roundabouts[tmp_roundabout].in_n).geometry,
 					tmp_roundabout_center,
-					{
-						angle: ja_round(angle) + '°',
-						ja_type: ja_is_roundabout_normal(tmp_roundabout, ja_selected_roundabouts[tmp_roundabout].in_n) ? ja_routing_type.TURN : ja_routing_type.ROUNDABOUT
-					}
-				)
-			]);
+					window.Waze.model.nodes.get(ja_selected_roundabouts[tmp_roundabout].out_n).geometry
+				);
+				ja_mapLayer.addFeatures([
+					new window.OpenLayers.Feature.Vector(
+						tmp_roundabout_center,
+						{
+							angle: ja_round(angle) + '°',
+							ja_type: ja_is_roundabout_normal(
+								tmp_roundabout,
+								ja_selected_roundabouts[tmp_roundabout].in_n) ? ja_routing_type.TURN : ja_routing_type.ROUNDABOUT
+						}
+					)
+				]);
+			}
 		}
 
 		//Start looping through selected nodes
@@ -637,7 +661,8 @@ function run_ja() {
 
 			//ignore of we have less than 2 segments
 			if (ja_current_node_segments.length <= 1) {
-				ja_log("Found only " + ja_current_node_segments.length + " connected segments at " + ja_nodes[i] + ", not calculating anything...", 2);
+				ja_log("Found only " + ja_current_node_segments.length + " connected segments at " + ja_nodes[i]
+					+ ", not calculating anything...", 2);
 				continue;
 			}
 
@@ -646,7 +671,6 @@ function run_ja() {
 			var angles = [];
 			var ja_selected_segments_count = 0;
 			var ja_selected_angles = [];
-
 			var a;
 
 			ja_current_node_segments.forEach(function (nodeSegment, j) {
@@ -675,7 +699,7 @@ function run_ja() {
 				var selectedSegmentId = selectedSegment.model.attributes.id;
 				ja_log("Checking if " + selectedSegmentId + " is in current node", 3);
 				if(ja_current_node_segments.indexOf(selectedSegmentId) >= 0) {
-					ja_log("It is!", 3);
+					ja_log("It is!", 4);
 					//find the angle
 					for(var j=0; j < angles.length; j++) {
 						if(angles[j][1] == selectedSegmentId) {
@@ -684,7 +708,7 @@ function run_ja() {
 						}
 					}
 				} else {
-					ja_log("It's not..", 3);
+					ja_log("It's not..", 4);
 				}
 			});
 
@@ -692,6 +716,9 @@ function run_ja() {
 			ja_log(angles, 3);
 
 			var ja_label_distance;
+			/*
+			 * Define a base distance to markers, depending on the zoom level
+			 */
 			switch (window.Waze.map.zoom) {
 				case 10:
 					ja_label_distance = 2.8;
@@ -729,7 +756,7 @@ function run_ja() {
 
 			ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
 
-			var a, ha, point;
+			var ha, point;
 			//if we have two connected segments selected, do some magic to get the turn angle only =)
 			if (ja_selected_segments_count == 2) {
 				var ja_extra_space_multiplier = 1;
@@ -752,8 +779,8 @@ function run_ja() {
 				//Move point a bit if it's on the top (Bridge icon will obscure it otherwise)
 				if(ha > 40 && ha < 120) ja_extra_space_multiplier = 2;
 
-
-				ja_log("Angle between " + ja_selected_angles[0][1] + " and " + ja_selected_angles[1][1] + " is " + a + " and position for label should be at " + ha, 2);
+				ja_log("Angle between " + ja_selected_angles[0][1] + " and " + ja_selected_angles[1][1] + " is "
+					+ a + " and position for label should be at " + ha, 3);
 
 				//Guess some routing instructions based on segment types, angles etc
 				var ja_junction_type = ja_routing_type.TURN; //Default to old behavior
@@ -761,10 +788,11 @@ function run_ja() {
 				if(ja_getOption("guess")) {
 					ja_log(ja_selected_angles, 2);
 					ja_log(angles, 2);
-					ja_junction_type = ja_guess_routing_instruction(node, ja_selected_angles[0][1], ja_selected_angles[1][1], angles);
+					ja_junction_type =
+						ja_guess_routing_instruction(node, ja_selected_angles[0][1], ja_selected_angles[1][1], angles);
 					ja_log("Type is: " + ja_junction_type, 2);
 				}
-				//put the angle point
+				//get the initial marker point
 				point = new window.OpenLayers.Geometry.Point(
 						node.geometry.x + (ja_extra_space_multiplier * ja_label_distance * Math.cos((ha * Math.PI) / 180)),
 						node.geometry.y + (ja_extra_space_multiplier * ja_label_distance * Math.sin((ha * Math.PI) / 180))
@@ -802,18 +830,20 @@ function run_ja() {
 					} else if(ja_getOption("angleMode") == "aDeparture") {
 						ja_log("Angle in:",2);
 						ja_log(a_in,2);
-						//ja_log(window.Waze.model.segments.objects[a_in[1]], 2);
 						ja_log(ja_guess_routing_instruction(node, a_in[1], angle[1], angles), 2);
+						//FIXME: we might want to try to keep the marker on the segment, instead of just
+						//in the direction of the first part
 						ha = angle[0];
 						a = ja_angle_diff(a_in[0], angles[j][0], false);
-						//ha = (360 + ((a / 2) + angle[0])) % 360; //FIXME
 						point = new window.OpenLayers.Geometry.Point(
 								node.geometry.x + (ja_label_distance * 2 * Math.cos((ha * Math.PI) / 180)),
 								node.geometry.y + (ja_label_distance * 2 * Math.sin((ha * Math.PI) / 180))
 						);
-						ja_draw_marker(point, node, ja_label_distance, a, ha, true, ja_guess_routing_instruction(node, a_in[1], angle[1], angles));
+						ja_draw_marker(point, node, ja_label_distance, a, ha, true,
+							ja_guess_routing_instruction(node, a_in[1], angle[1], angles));
 					} else {
-						ja_log("Angle between " + angle[1] + " and " + angles[(j + 1) % angles.length][1] + " is " + a + " and position for label should be at " + ha, 3);
+						ja_log("Angle between " + angle[1] + " and " + angles[(j + 1) % angles.length][1] + " is "
+							+ a + " and position for label should be at " + ha, 3);
 						point = new window.OpenLayers.Geometry.Point(
 								node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)),
 								node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
@@ -847,12 +877,14 @@ function run_ja() {
 		"use strict";
 
 
-		//Try to estimate of the point is "too close" to another point (or maybe something else in the future; like turn restriction arrows or something)
+		//Try to estimate of the point is "too close" to another point
+		//(or maybe something else in the future; like turn restriction arrows or something)
 		var ja_tmp_distance = ja_label_distance;
 		ja_log("Starting distance estimation", 3);
 		while(ja_mapLayer.features.some(function(feature, index){
-			if(typeof feature.attributes.ja_type !== 'undefined'  && feature.attributes.ja_type !== 'roundaboutoverlay') {
-				//Arbitrarily chosen minimum distance.. Should actually use the real bounds of the markers, but that didn't work out.. Bounds are always 0..
+			if(typeof feature.attributes.ja_type !== 'undefined' && feature.attributes.ja_type !== 'roundaboutoverlay') {
+				//Arbitrarily chosen minimum distance.. Should actually use the real bounds of the markers,
+				//but that didn't work out.. Bounds are always 0..
 				if(ja_label_distance / 1.4 > feature.geometry.distanceTo(point)) {
 					ja_log(ja_label_distance / 1.5 > feature.geometry.distanceTo(point) + " is kinda close..", 3);
 					return true;
@@ -860,13 +892,15 @@ function run_ja() {
 			}
 			return false;
 		})) {
-			ja_tmp_distance = ja_tmp_distance + ja_label_distance / 4; //add 1/4 of the original distance and hope for the best =)
+			//add 1/4 of the original distance and hope for the best =)
+			ja_tmp_distance = ja_tmp_distance + ja_label_distance / 4;
 			ja_log("setting distance to " + ja_tmp_distance, 2);
 			point = new window.OpenLayers.Geometry.Point(
-					node.geometry.x + (ja_tmp_distance * Math.cos((ha * Math.PI) / 180)), node.geometry.y + (ja_tmp_distance * Math.sin((ha * Math.PI) / 180))
+					node.geometry.x + (ja_tmp_distance * Math.cos((ha * Math.PI) / 180)),
+					node.geometry.y + (ja_tmp_distance * Math.sin((ha * Math.PI) / 180))
 			);
 		}
-		ja_log("Done distance estimation", 3);
+		ja_log("Distance estimation done", 3);
 
 		var anglePoint = withRouting ?
 			new window.OpenLayers.Feature.Vector(
@@ -901,7 +935,8 @@ function run_ja() {
 	function ja_draw_roundabout_overlay(junctionId) {
 		window.Waze.model.junctions.getObjectArray().forEach(function (element, index, array){
 			ja_log(element, 3);
-			//Check if we want a specific junction. FIXME: this should actually be done by a direct select, instead of looping through all..
+			//Check if we want a specific junction.
+			//FIXME: this should actually be done by a direct select, instead of looping through all..
 			if(typeof junctionId !== "undefined" && junctionId != element.id) {
 				return;
 			}
@@ -919,7 +954,10 @@ function run_ja() {
 			var distances = [];
 			Object.getOwnPropertyNames(nodes).forEach(function(name) {
 				ja_log("Checking " + name + " distance", 3);
-				var dist = Math.sqrt(Math.pow(nodes[name].attributes.geometry.x - center.x, 2) + Math.pow(nodes[name].attributes.geometry.y - center.y, 2));
+				var dist = Math.sqrt(
+						Math.pow(nodes[name].attributes.geometry.x - center.x, 2) +
+						Math.pow(nodes[name].attributes.geometry.y - center.y, 2)
+				);
 				distances.push(dist);
 			});
 			ja_log(distances, 3);
@@ -927,7 +965,7 @@ function run_ja() {
 
 			var circle = window.OpenLayers.Geometry.Polygon.createRegularPolygon(
 				center,
-					distances.reduce(function(a,b){return a + b;}) / distances.length,
+				distances.reduce(function(a,b){return a + b;}) / distances.length,
 				40,
 				0
 			);
@@ -974,18 +1012,20 @@ function run_ja() {
 	}
 
 	function ja_is_turn_allowed(s_from, via_node, s_to) {
-		ja_log("Allow from " + s_from.attributes.id + " to " + s_to.attributes.id + " via " + via_node.attributes.id + "? "
+		ja_log("Allow from " + s_from.attributes.id
+			+ " to " + s_to.attributes.id
+			+ " via " + via_node.attributes.id + "? "
 			+ via_node.isTurnAllowedBySegDirections(s_from, s_to) + " | " + s_from.isTurnAllowed(s_to, via_node), 2);
 
 		//Is there a driving direction restriction?
 		if(!via_node.isTurnAllowedBySegDirections(s_from, s_to)) {
-			ja_log("Driving direction restricion applies", 3);
+			ja_log("Driving direction restriction applies", 3);
 			return false;
 		}
 
 		//Is turn allowed by other means (e.g. turn restrictions)?
 		if(!s_from.isTurnAllowed(s_to, via_node)) {
-			ja_log("Other restricion applies", 3);
+			ja_log("Other restriction applies", 3);
 			return false;
 		}
 
@@ -1055,10 +1095,11 @@ function run_ja() {
 
 	/**
 	 * From wiki:
-	 * A Cross-match is when the primary name of one segment is identical to the alternate name of an adjacent segment. It had the same priory as a Primary name match.
-	 * In order for a Cross match to work there must be at least one alt name on both involved segments (even though they don't necessarily match each other).
-	 * It will work even if the are no Primary names on those segments.
-	 * It will not work if all three segments at a split have a matching Primary name or a matching Alternate name.
+	 * A Cross-match is when the primary name of one segment is identical to the alternate name of an adjacent segment.
+	 * It had the same priory as a Primary name match. In order for a Cross match to work there must be at least one
+	 * alt name on both involved segments (even though they don't necessarily match each other). It will work even if
+	 * the are no Primary names on those segments. It will not work if all three segments at a split have a matching
+	 * Primary name or a matching Alternate name.
 	 * @param street_in
 	 * @param streets
 	 * @returns {boolean}
@@ -1072,16 +1113,19 @@ function run_ja() {
 			ja_log("CN: Checking element " + index, 2);
 			ja_log(street_n_element, 2);
 			return (street_in.secondary.some(function (street_in_secondary, index2, array2){
-				ja_log("CN2a: checking n.p: " + street_n_element.primary.name + " vs in.s: " + street_in_secondary.name, 2);
+				ja_log("CN2a: checking n.p: " + street_n_element.primary.name
+					+ " vs in.s: " + street_in_secondary.name, 2);
 
-				//wlodek76: CROSS-MATCH works when two compared segments contain at least one ALT NAME - when alt name is empty cross-match does not work
+				//wlodek76: CROSS-MATCH works when two compared segments contain at least one ALT NAME
+				//when alt name is empty cross-match does not work
 				if (street_n_element.secondary.length == 0) return false;
 
 				return street_n_element.primary.name == street_in_secondary.name;
 			}) || street_n_element.secondary.some(function (street_n_secondary, index2, array2) {
 				ja_log("CN2b: checking in.p: " + street_in.primary.name + " vs n.s: " + street_n_secondary.name, 2);
 
-				//wlodek76: CROSS-MATCH works when two compared segments contain at least one ALT NAME - when alt name is empty cross-match does not work
+				//wlodek76: CROSS-MATCH works when two compared segments contain at least one ALT NAME
+				//when alt name is empty cross-match does not work
 				if (street_in.secondary.length == 0) return false;
 
 				//wlodek76: missing return from checking primary name with alternate names
@@ -1103,7 +1147,8 @@ function run_ja() {
 				ja_log("AN2 checking element " + index2, 2);
 				ja_log(street_in_secondary, 2);
 				return street_n_element.secondary.some(function (street_n_secondary_element, index3,  array3) {
-					ja_log("AN3 Checking in.s: " + street_in_secondary.name + " vs n.s." + index3 + ": " + street_n_secondary_element.name, 2);
+					ja_log("AN3 Checking in.s: " + street_in_secondary.name
+						+ " vs n.s." + index3 + ": " + street_n_secondary_element.name, 2);
 					return street_in_secondary.name == street_n_secondary_element.name;
 				});
 			});
@@ -1123,7 +1168,8 @@ function run_ja() {
 	}
 
 	function ja_get_streets(segmentId) {
-		var primary = window.Waze.model.streets.objects[window.Waze.model.segments.objects[segmentId].attributes.primaryStreetID];
+		var primary =
+			window.Waze.model.streets.objects[window.Waze.model.segments.objects[segmentId].attributes.primaryStreetID];
 		var secondary = [];
 		window.Waze.model.segments.objects[segmentId].attributes.streetIDs.forEach(function (element, index, array) {
 			secondary.push(window.Waze.model.streets.objects[element]);
@@ -1179,25 +1225,25 @@ function run_ja() {
 		var junction = window.Waze.model.junctions.get(junctionID);
 		var nodes = {};
 		var numValidExits = 0;
-		junction.segIDs.forEach(function(element, index, array){
+		junction.segIDs.forEach(function (element, index, array) {
 			var s = window.Waze.model.segments.get(element);
 			ja_log("index: " + index, 3);
 			//ja_log(s, 3);
-			if(!nodes.hasOwnProperty(s.attributes.toNodeID)) {
+			if (!nodes.hasOwnProperty(s.attributes.toNodeID)) {
 				ja_log("Adding node id: " + s.attributes.toNodeID, 3);
 				//Check if node has allowed exits
 				var allowed = false;
 				var currNode = window.Waze.model.nodes.get(s.attributes.toNodeID);
 				ja_log(currNode, 3);
-				currNode.attributes.segIDs.forEach(function(element2, index2, array2){
+				currNode.attributes.segIDs.forEach(function (element2, index2, array2) {
 					var s_exit = window.Waze.model.segments.get(element2);
 					ja_log(s_exit, 3);
-					if(s_exit.attributes.junctionID !== null) {
+					if (s_exit.attributes.junctionID !== null) {
 						//part of the junction.. Ignoring
 						ja_log(s_exit.attributes.id + " is in the roundabout. ignoring", 3);
 					} else {
-						ja_log("Checking: " +s_exit.attributes.id, 3);
-						if(currNode.isTurnAllowedBySegDirections(s, s_exit)) {
+						ja_log("Checking: " + s_exit.attributes.id, 3);
+						if (currNode.isTurnAllowedBySegDirections(s, s_exit)) {
 							//Exit possibly allowed
 							ja_log("YAY", 3);
 							allowed = true;
@@ -1206,7 +1252,7 @@ function run_ja() {
 						}
 					}
 				});
-				if(allowed) {
+				if (allowed) {
 					numValidExits++;
 					nodes[s.attributes.toNodeID] = window.Waze.model.nodes.get(s.attributes.toNodeID);
 				}
@@ -1218,40 +1264,43 @@ function run_ja() {
 		ja_log(junction, 3);
 		ja_log(nodes, 3);
 
-		//If we have more than 4 possible exits, the roundabout is non-normal, and we don't want to paint the offending angles.
-		if(numValidExits > 4) return false;
+		//If we have more than 4 possible exits, the roundabout is non-normal, and we don't want to paint the
+		//offending angles.
+		if (numValidExits > 4) return false;
 
-		for(var n in nodes) {
-			ja_log("Checking " + n, 3);
-			if(n == n_in) {
-				ja_log("Not comparing to n_in ;)", 3);
-			} else {
-				var angle = ja_angle_between_points(
-					window.Waze.model.nodes.get(n_in).geometry,
-					ja_coordinates_to_point(junction.geometry.coordinates),
-					window.Waze.model.nodes.get(n).geometry
-				);
-				ja_log("Angle is: " + angle, 3);
-				ja_log("Normalized angle is: " + (angle%90), 3);
-				//angle = Math.abs((angle%90 - 90))
-				angle = Math.abs((angle%90))
-				ja_log("Angle is: " + angle, 3);
-				// 90 +/- 15 is considered "normal"
-				if(angle <= 15 || 90-angle <= 15) {
-					ja_log("turn is normal", 3);
+		for (var n in nodes) {
+			if (nodes.hasOwnProperty(n)) {
+				ja_log("Checking " + n, 3);
+				if (n == n_in) {
+					ja_log("Not comparing to n_in ;)", 3);
 				} else {
-					ja_log("turn is NOT normal", 3);
-					is_normal = false;
-					//Push a marker on the node to show which exit is "not normal"
-					ja_mapLayer.addFeatures([
-							new window.OpenLayers.Feature.Vector(
-								window.Waze.model.nodes.get(n).geometry,
-								{
-									angle: '±' + ja_round(Math.min(angle, 90-angle)),
-									ja_type: ja_routing_type.ROUNDABOUT
-								}
-							)]
+					var angle = ja_angle_between_points(
+						window.Waze.model.nodes.get(n_in).geometry,
+						ja_coordinates_to_point(junction.geometry.coordinates),
+						window.Waze.model.nodes.get(n).geometry
 					);
+					ja_log("Angle is: " + angle, 3);
+					ja_log("Normalized angle is: " + (angle % 90), 3);
+					//angle = Math.abs((angle%90 - 90))
+					angle = Math.abs((angle % 90));
+					ja_log("Angle is: " + angle, 3);
+					// 90 +/- 15 is considered "normal"
+					if (angle <= 15 || 90 - angle <= 15) {
+						ja_log("turn is normal", 3);
+					} else {
+						ja_log("turn is NOT normal", 3);
+						is_normal = false;
+						//Push a marker on the node to show which exit is "not normal"
+						ja_mapLayer.addFeatures([
+								new window.OpenLayers.Feature.Vector(
+									window.Waze.model.nodes.get(n).geometry,
+									{
+										angle: '±' + ja_round(Math.min(angle, 90 - angle)),
+										ja_type: ja_routing_type.ROUNDABOUT
+									}
+								)]
+						);
+					}
 				}
 			}
 		}
@@ -1311,18 +1360,15 @@ function run_ja() {
 	/**
 	 * Decimal adjustment of a number. Borrowed (with some modifications) from
 	 * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round
-	 * ja_round(55.55, -1); // 55.6
-	 * ja_round(55.549, -1); // 55.5
-	 * ja_round(55, 1); // 60
-	 * ja_round(54.9, 1); // 50
+	 * ja_round(55.55); with 1 decimal // 55.6
+	 * ja_round(55.549); with 1 decimal // 55.5
+	 * ja_round(55); with -1 decimals // 60
+	 * ja_round(54.9); with -1 decimals // 50
 	 *
-	 * @param	{String}	type	The type of adjustment.
 	 * @param	{Number}	value	The number.
-	 * @param	{Integer}	exp		The exponent (the 10 logarithm of the adjustment base).
 	 * @returns	{Number}			The adjusted value.
 	 */
 	function ja_round(value) {
-		// If the exp is undefined or zero...
 		var ja_rounding = -parseInt(ja_getOption("decimals"));
 		if (typeof ja_rounding === 'undefined' || +ja_rounding === 0) {
 			return Math.round(value);
@@ -1372,7 +1418,6 @@ function run_ja() {
 					if(setting['group'] && setting['group'] == 'guess') {
 						ja_log(a + ": " + !e.checked , 3);
 						document.getElementById(setting["elementId"]).disabled = !e.checked;
-						//document.getElementById(setting["elementId"]).parentNode.disabled = !e.checked;
 						document.getElementById(setting["elementId"]).parentNode.style.color =
 							e.checked ? "black" : "lightgrey";
 					}
@@ -1384,7 +1429,6 @@ function run_ja() {
 					if(setting['group'] && setting['group'] == 'roundaboutOverlayDisplay') {
 						ja_log(a +": " + e.value, 0);
 						document.getElementById(setting["elementId"]).disabled = e.value == "rOverNever";
-						//document.getElementById(setting["elementId"]).parentNode.disabled = !e.checked;
 						document.getElementById(setting["elementId"]).parentNode.style.color =
 							e.value != "rOverNever" ? "black" : "lightgrey";
 					}
@@ -1543,7 +1587,8 @@ function run_ja() {
 					value: routingType
 				}),
 				symbolizer: {
-					pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+					pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10)
+						+ (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
 					fontSize: "12px",
 					fillColor: ja_getOption(fillColorOption),
 					strokeColor: "#183800"
@@ -1552,14 +1597,16 @@ function run_ja() {
 	}
 
 	function ja_style() {
-		ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10)) + (parseInt(ja_getOption("decimals") > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0)), 2);
+		ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10))
+			+ (parseInt(ja_getOption("decimals") > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0)), 2);
 		return new window.OpenLayers.Style({
 			fillColor: "#ffcc88",
 			strokeColor: "#ff9966",
 			strokeWidth: 2,
 			label: "${angle}",
 			fontWeight: "bold",
-			pointRadius: parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+			pointRadius: parseInt(ja_getOption("pointSize"), 10)
+				+ (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
 			fontSize: "10px"
 		}, {
 			rules: [
@@ -1583,7 +1630,8 @@ function run_ja() {
 							value: "roundaboutoverlay"
 						}),
 						symbolizer: {
-							pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) + (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+							pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10)
+								+ (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
 							fontSize: "12px",
 							fillColor: ja_getOption("roundaboutOverlayColor"),
 							fillOpacity: 0.1,
@@ -1638,7 +1686,7 @@ function run_ja() {
 			pointSize: "Base point size",
 
 			roundaboutnav: "WIKI: Roundabouts",
-			ghissues: "JAI issue tracker",
+			ghissues: "JAI issue tracker"
 		}));
 
 		//Apply
@@ -1667,7 +1715,7 @@ function run_ja() {
 					rOverSelected: "När vald",
 					rOverAlways: "Alltid",
 					decimals: "Decimaler",
-					pointSize: "Cirkelns basstorlek",
+					pointSize: "Cirkelns basstorlek"
 				});
 				break;
 
@@ -1683,8 +1731,8 @@ function run_ja() {
 					angleMode: "Kulmien näyttö",
 					guess: "Arvioi reititysohjeet",
 					noInstructionColor: "ohjeeton \"Suora\"-väri",
-					keepInstructionColor: "\"Poistu\"-ohjeen väri",
-					exitInstructionColor: "\"poistu\"-ohjeen väri",
+					keepInstructionColor: "\"Pysy vasemmalla/oikealla\"-ohjeen väri",
+					exitInstructionColor: "\"Poistu\"-ohjeen väri",
 					turnInstructionColor: "\"Käänny\"-ohjeen väri",
 					problemColor: "Vältettävien kulmien väri",
 					roundaboutColor: "Liikenneympyrän (jolla ei-suoria kulmia) ohjeen väri",
@@ -1694,7 +1742,7 @@ function run_ja() {
 					rOverSelected: "Kun valittu",
 					rOverAlways: "Aina",
 					decimals: "Desimaalien määrä",
-					pointSize: "Ympyrän peruskoko",
+					pointSize: "Ympyrän peruskoko"
 				});
 				break;
 
@@ -1720,7 +1768,7 @@ function run_ja() {
 					rOverSelected: "Gdy zaznaczone",
 					rOverAlways: "Zawsze",
 					decimals: "Ilość cyfr po przecinku",
-					pointSize: "Rozmiar punktów pomiaru",
+					pointSize: "Rozmiar punktów pomiaru"
 				});
 				break;
 
@@ -1753,9 +1801,15 @@ function run_ja() {
 		}
 	}
 
+	/**
+	 * Debug logging.
+	 * @param ja_log_msg
+	 * @param ja_log_level
+	 */
 	function ja_log(ja_log_msg, ja_log_level) {
-
 		//##NO_FF_START##
+		//Firefox addons should not use console.(log|error|debug), so these lines
+		//are removed by the FF addon packaging script.
 		if(typeof ja_log_level === 'undefined') ja_log_level = 1;
 		if (ja_log_level <= junctionangle_debug) {
 			if (typeof ja_log_msg == "object") {
