@@ -89,6 +89,7 @@ function run_ja() {
 
 	var ja_settings = {
 		angleMode: { elementType: "select", elementId: "_jaSelAngleMode", defaultValue: "aAbsolute", options: ["aAbsolute", "aDeparture"]},
+		angleDisplay: { elementType: "select", elementId: "_jaSelAngleDisplay", defaultValue: "displFancy", options: ["displFancy", "displSimple"]},
 		guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false },
 		noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff", group: "guess"},
 		keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84", group: "guess"},
@@ -967,7 +968,7 @@ function run_ja() {
 
 		var anglestring = ja_round(Math.abs(a)) + "°";
 
-		if (true) {
+		if (ja_getOption("angleDisplay") == "displSimple") {
 			if(ja_junction_type != ja_routing_type.BC) {
 				anglestring = a < 0 ? anglestring + ">" : "<" + anglestring;
 			}
@@ -1754,6 +1755,9 @@ function run_ja() {
 			aAbsolute: "Absolute",
 			aDeparture: "Departure",
 			angleMode: "Angle mode",
+			angleDisplay: "Angle display style",
+			displFancy: "Fancy",
+			displSimple: "Simple",
 			guess: "Estimate routing instructions",
 			noInstructionColor: "Color for best continuation",
 			keepInstructionColor: "Color for keep prompt",
