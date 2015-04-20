@@ -28,7 +28,7 @@ function run_ja() {
 	/*
 	 * First some variable and enumeration definitions
 	 */
-	var junctionangle_version = "1.8.4.4";
+	var junctionangle_version = "1.8.4.5";
 	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: verbose debug, 4: insane debug
 	var $;
 
