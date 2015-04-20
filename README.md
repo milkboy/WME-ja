@@ -23,6 +23,7 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 - Fixed several BC routing instriction guessing issues
 - Added Polish translation
 - Added new presentation style for routing instructions
+
 ####1.8.4
 - Fixed (hopefully) date range based restriction detection
 - Fixed best continuation logic segment filtering. DOH.
