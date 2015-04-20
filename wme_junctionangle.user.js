@@ -39,6 +39,8 @@ function run_ja() {
 	var ja_routing_type = {
 		BC: "junction_none",
 		KEEP: "junction_keep",
+		KEEP_LEFT: "junction_keep_left",
+		KEEP_RIGHT: "junction_keep_right",
 		TURN: "junction",
 		EXIT: "junction_exit",
 		PROBLEM: "junction_problem",
@@ -62,7 +64,7 @@ function run_ja() {
 		PARKING_LOT_ROAD: 20,
 		//Non-drivable
 		WALKING_TRAIL: 5,
-		PEDESTRIAL_BOARDWALK: 10,
+		PEDESTRIAN_BOARDWALK: 10,
 		STAIRWAY: 16,
 		RAILROAD: 18,
 		RUNWAY: 19
@@ -407,7 +409,8 @@ function run_ja() {
 					|| (typeof s_n[a[1]] !== 'undefined'
 						&& ja_is_turn_allowed(s_in, node, s_n[a[1]])
 						&& Math.abs(ja_angle_diff(s_in_a, a[0], false)) <= 45 //Any angle above 45 is not eligible
-						&& Math.abs(ja_angle_diff(a[0], s_out_a[0], true)) > 1 //Arbitrarily chosen angle for "overlapping" segments.
+						//&& Math.abs(ja_angle_diff(a[0], s_out_a[0], true)) > 1 //Arbitrarily chosen angle for "overlapping" segments.
+						//wlodek76: this part of code needs to be removed, it filters overlapped segments from angles which are used to take care about overlapped case !!!
 						)) {
 					ja_log(true, 4);
 					return true;
@@ -449,6 +452,10 @@ function run_ja() {
 				ja_log("BC candidates:", 2);
 				ja_log(bc_matches, 2);
 			};
+			
+			//wlodek76: variables for collecting most left angles
+			var mostleftangle  = null, templeftangle  = 0;
+			var mostleftangle2 = null, templeftangle2 = 0;
 
 			//Check each eligible turn against routing rules
 			for(var k=0; k< angles.length; k++) {
@@ -459,6 +466,26 @@ function run_ja() {
 
 				var tmp_angle = ja_angle_diff(s_in_a[0], a[0], false);
 				ja_log(tmp_angle, 2);
+				
+				//wlodek76: getting two most left angles
+				if (mostleftangle == null) {
+						mostleftangle = a;
+						templeftangle = tmp_angle;
+					}
+				else {
+					if (tmp_angle >= templeftangle) {
+						mostleftangle2  = mostleftangle;
+						mostleftangle   = a;
+						templeftangle2  = templeftangle;
+						templeftangle   = tmp_angle;
+					}
+					else {
+						if (tmp_angle >= templeftangle2) {
+							mostleftangle2 = a;
+							templeftangle2 = tmp_angle;
+						}
+					}
+				}
 
 				var tmp_s_out = {};
 				tmp_s_out[a[1]] = s_n[a[1]];
@@ -507,9 +534,28 @@ function run_ja() {
 					return ja_routing_type.EXIT;
 				}
 			}
+			
+			//wlodek76: FIXING KEEP LEFT/RIGHT regarding to left most segment
+			//WIKI WAZE: When there are more than two segments less than 45.04°, only the left most segment will be KEEP LEFT, all the rest will be KEEP RIGHT
+			
+			//wlodek76: KEEP LEFT/RIGHT overlapping case
+			//WIKI WAZE: If the left most segment is overlapping another segment, it will also be KEEP RIGHT.
+			if (mostleftangle!=null && mostleftangle2!=null) {
+				var overlapped_angle = Math.abs(mostleftangle[0] - mostleftangle2[0]);
+				
+				// If two top most left angles are close < 2 degree they are overlapped.
+				// Method of recognizing overlapped segment by server is unknown for me yet, I took this from WME Validator information about this.
+				// TODO: verify overlapping check on the side of routing server.
+				if (overlapped_angle < 2.0) mostleftangle = null;
+			}
+			
+			if (mostleftangle != null && mostleftangle[1] == s_out_id) {
+				ja_log("DEFAULT: keep left", 2);
+				return ja_routing_type.KEEP_LEFT;
+			}
 
-			ja_log("DEFAULT: keep", 2);
-			return ja_routing_type.KEEP;
+			ja_log("DEFAULT: keep right", 2);
+			return ja_routing_type.KEEP_RIGHT;
 		} else if(Math.abs(angle) <= 46) {
 			ja_log("Angle is in gray zone 44-46", 2);
 			return ja_routing_type.PROBLEM;
@@ -902,10 +948,18 @@ function run_ja() {
 		}
 		ja_log("Distance estimation done", 3);
 
+		//wlodek76: drawing angle string '<' '>' accordingly to KEEP LEFT/RIGHT
+		var anglestring = (a>0?"<":"") + ja_round(Math.abs(a)) + "°" + (a<0?">":"");
+		if (ja_junction_type == ja_routing_type.KEEP_LEFT)  anglestring = "<" + ja_round(Math.abs(a)) + "°";
+		if (ja_junction_type == ja_routing_type.KEEP_RIGHT) anglestring =       ja_round(Math.abs(a)) + "°" + ">";
+
+		//wlodek76: do not show left/right direction in best continuation we go only straight here
+		if (ja_junction_type == ja_routing_type.BC)         anglestring =       ja_round(Math.abs(a)) + "°";
+
 		var anglePoint = withRouting ?
 			new window.OpenLayers.Feature.Vector(
 				point
-				, { angle: (a>0?"<":"") + ja_round(Math.abs(a)) + "°" + (a<0?">":""), ja_type: ja_junction_type }
+				, { angle: anglestring, ja_type: ja_junction_type }
 			): new window.OpenLayers.Feature.Vector(
 			point
 			, { angle: ja_round(a) + "°", ja_type: "generic" }
@@ -1616,7 +1670,8 @@ function run_ja() {
 				}),
 				ja_get_style_rule(ja_routing_type.TURN, "turnInstructionColor"),
 				ja_get_style_rule(ja_routing_type.BC, "noInstructionColor"),
-				ja_get_style_rule(ja_routing_type.KEEP, "keepInstructionColor"),
+				ja_get_style_rule(ja_routing_type.KEEP_LEFT,  "keepInstructionColor"),
+				ja_get_style_rule(ja_routing_type.KEEP_RIGHT, "keepInstructionColor"),
 				ja_get_style_rule(ja_routing_type.EXIT, "exitInstructionColor"),
 				ja_get_style_rule(ja_routing_type.PROBLEM, "problemColor"),
 				ja_get_style_rule(ja_routing_type.ERROR, "problemColor"),
