@@ -4,7 +4,7 @@
 // @description			Show the angle between two selected (and connected) segments
 // @include				/^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
 // @updateURL			https://github.com/milkboy/WME-ja/raw/master/wme_junctionangle.user.js
-// @version				1.8.4.4
+// @version				1.8.4.5
 // @grant				none
 // @copyright			2015 Michael Wikberg <waze@wikberg.fi>
 // @license				CC-BY-NC-SA
@@ -174,14 +174,14 @@ function run_ja() {
 					ja_input.setAttribute("max", setting['max']);
 					ja_controls_container.appendChild(ja_input);
 					break;
-                /*
+				/*
 				case 'text':
 					ja_input.id = setting['elementId'];
 					ja_input.size = (setting['max'] ? setting['max'] : 8);
 					ja_input.maxlength = (setting['max'] ? setting['max'] : 7);
 					ja_controls_container.appendChild(ja_input);
 					break;
-		        */
+				*/
 				case 'checkbox':
 					ja_input.id = setting['elementId'];
 					ja_controls_container.appendChild(ja_input);
@@ -199,7 +199,7 @@ function run_ja() {
 					break;
 			}
 
-            ja_input.onchange = function() { ja_onchange(this); };
+			ja_input.onchange = function() { ja_onchange(this); };
 
 			ja_label.setAttribute("for", setting['elementId']);
 			ja_label.appendChild(document.createTextNode(ja_getMessage(a)));
@@ -1497,18 +1497,18 @@ function run_ja() {
 		if(!ja_options.hasOwnProperty(name) || typeof ja_options[name] === 'undefined') {
 			ja_options[name] = ja_settings[name]['defaultValue'];
 		}
-        //Check for invalid values
-        //Select values
-        if(ja_settings[name]["elementType"] == "select" && ja_settings[name]["options"].lastIndexOf(ja_options[name]) < 0) {
-            ja_log(ja_settings[name]["options"], 2);
-            ja_log("Found invalid value for setting " + name + ": " + ja_options[name] + ". Using default.", 2);
-            ja_options[name] = ja_settings[name]['defaultValue'];
-        }
-        //Color values
-        if(ja_settings[name]["elementType"] == "color" && ja_options[name].match(/#[0-9a-f]{6}/) == null) {
-            ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
-            ja_options[name] = ja_settings[name]['defaultValue'];
-        }
+		//Check for invalid values
+		//Select values
+		if(ja_settings[name]["elementType"] == "select" && ja_settings[name]["options"].lastIndexOf(ja_options[name]) < 0) {
+			ja_log(ja_settings[name]["options"], 2);
+			ja_log("Found invalid value for setting " + name + ": " + ja_options[name] + ". Using default.", 2);
+			ja_options[name] = ja_settings[name]['defaultValue'];
+		}
+		//Color values
+		if(ja_settings[name]["elementType"] == "color" && ja_options[name].match(/#[0-9a-f]{6}/) == null) {
+			ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
+			ja_options[name] = ja_settings[name]['defaultValue'];
+		}
 
 		ja_log("Got value: " + ja_options[name], 2);
 		return ja_options[name];
@@ -1524,36 +1524,36 @@ function run_ja() {
 
 	var ja_onchange = function(e) {
 		"use strict";
-        ja_log(e, 3);
-        var applyPending = false;
-        var settingName = Object.getOwnPropertyNames(ja_settings).filter(function(a,b,c){
-            ja_log(ja_settings[a], 4);
-            return ja_settings[a]["elementId"] == e.id;
-        })[0];
-        ja_log(settingName, 3);
-        switch(ja_settings[settingName]["elementType"]) {
-            case "checkbox":
-                ja_log("Checkbox setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.checked);
-                if (ja_options[settingName] != e.checked) applyPending = true;
-                break;
-            case "select":
-                ja_log("Select setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
-                if (ja_options[settingName] != e.value) applyPending = true;
-                break;
-            case "color":
-                ja_log("Color setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
-                if (ja_options[settingName] != e.value) applyPending = true;
-                break;
-            case "number":
-                ja_log("Color setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
-                if (ja_options[settingName] != e.value) applyPending = true;
-                break;
-            default:
-                ja_log("Unknown setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
-        }
-        ja_log("Apply pending? " + applyPending, 2);
+		ja_log(e, 3);
+		var applyPending = false;
+		var settingName = Object.getOwnPropertyNames(ja_settings).filter(function(a,b,c){
+			ja_log(ja_settings[a], 4);
+			return ja_settings[a]["elementId"] == e.id;
+		})[0];
+		ja_log(settingName, 3);
+		switch(ja_settings[settingName]["elementType"]) {
+			case "checkbox":
+				ja_log("Checkbox setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.checked);
+				if (ja_options[settingName] != e.checked) applyPending = true;
+				break;
+			case "select":
+				ja_log("Select setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
+				if (ja_options[settingName] != e.value) applyPending = true;
+				break;
+			case "color":
+				ja_log("Color setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
+				if (ja_options[settingName] != e.value) applyPending = true;
+				break;
+			case "number":
+				ja_log("Color setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
+				if (ja_options[settingName] != e.value) applyPending = true;
+				break;
+			default:
+				ja_log("Unknown setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
+		}
+		ja_log("Apply pending? " + applyPending, 2);
 
-        //Enable|disable certain dependent settings
+		//Enable|disable certain dependent settings
 		switch(e.id) {
 			case ja_settings['guess'].elementId:
 				Object.getOwnPropertyNames(ja_settings).forEach(function (a) {
@@ -1581,13 +1581,13 @@ function run_ja() {
 				ja_log("Nothing to do for " + e.id, 2);
 		}
 
-        if(applyPending) {
-            ja_log("Applying new settings now", 2);
-            setTimeout(function(){ja_save();}, 500);
+		if(applyPending) {
+			ja_log("Applying new settings now", 2);
+			setTimeout(function(){ja_save();}, 500);
 
-        } else {
-            ja_log("No new settings to apply", 2);
-        }
+		} else {
+			ja_log("No new settings to apply", 2);
+		}
 	};
 
 	var ja_load = function loadJAOptions() {
