@@ -18,6 +18,11 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 ![Screenshot](https://github.com/milkboy/WME-ja/raw/master/screenshot1.png)
 
 ###Changelog
+####1.8.5 (unreleased)
+- Improved roundabout routing logic
+- Fixed several BC routing instriction guessing issues
+- Added Polish translation
+- Added new presentation style for routing instructions
 ####1.8.4
 - Fixed (hopefully) date range based restriction detection
 - Fixed best continuation logic segment filtering. DOH.
