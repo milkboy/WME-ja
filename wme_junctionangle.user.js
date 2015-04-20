@@ -4,7 +4,7 @@
 // @description			Show the angle between two selected (and connected) segments
 // @include				/^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
 // @updateURL			https://github.com/milkboy/WME-ja/raw/master/wme_junctionangle.user.js
-// @version				1.8.4.3
+// @version				1.8.4.4
 // @grant				none
 // @copyright			2015 Michael Wikberg <waze@wikberg.fi>
 // @license				CC-BY-NC-SA
@@ -28,7 +28,7 @@ function run_ja() {
 	/*
 	 * First some variable and enumeration definitions
 	 */
-	var junctionangle_version = "1.8.4.3";
+	var junctionangle_version = "1.8.4.4";
 	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: verbose debug, 4: insane debug
 	var $;
 
@@ -42,7 +42,7 @@ function run_ja() {
 		KEEP_LEFT: "junction_keep_left",
 		KEEP_RIGHT: "junction_keep_right",
 		TURN: "junction",
-		EXIT: "junction_exit", //UNUSED?
+		EXIT: "junction_exit", //UNUSED? FZ69617: now we have a display logic implemented for it, but currently I cannot predict whether we'll need it or not
 		EXIT_LEFT: "junction_exit_left",
 		EXIT_RIGHT: "junction_exit_right",
 		PROBLEM: "junction_problem",
@@ -968,18 +968,22 @@ function run_ja() {
 
 		var anglestring = ja_round(Math.abs(a)) + "°";
 
+		//FZ69617: Add direction arrows for turn instructions only
 		if (ja_getOption("angleDisplay") == "displSimple") {
-			if(ja_junction_type != ja_routing_type.BC) {
-				anglestring = a < 0 ? anglestring + ">" : "<" + anglestring;
-			}
-		} else {
-			//FZ69617: Show unicode direction arrows only for turn instructions
 			if (ja_junction_type == ja_routing_type.EXIT
-				|| ja_junction_type == ja_routing_type.KEEP)    anglestring = (a > 0 ? "↖\n" : "↗\n") + anglestring;
+			||  ja_junction_type == ja_routing_type.KEEP
+			||  ja_junction_type == ja_routing_type.TURN)       anglestring = a < 0 ? anglestring + ">" : "<" + anglestring;
+			if (ja_junction_type == ja_routing_type.EXIT_LEFT
+			||  ja_junction_type == ja_routing_type.KEEP_LEFT)  anglestring = "<" + anglestring;
+			if (ja_junction_type == ja_routing_type.EXIT_RIGHT
+			||  ja_junction_type == ja_routing_type.KEEP_RIGHT) anglestring = anglestring + ">";
+		} else {
+			if (ja_junction_type == ja_routing_type.EXIT
+			||  ja_junction_type == ja_routing_type.KEEP)       anglestring = (a > 0 ? "↖\n" : "↗\n") + anglestring;
 			if (ja_junction_type == ja_routing_type.TURN)       anglestring = (a > 0 ? "←\n" : "→\n") + anglestring;
 			if (ja_junction_type == ja_routing_type.EXIT_LEFT)  anglestring = "↖\n" + anglestring;
-			if (ja_junction_type == ja_routing_type.EXIT_RIGHT) anglestring = "↗\n" + anglestring;
 			if (ja_junction_type == ja_routing_type.KEEP_LEFT)  anglestring = "↖\n" + anglestring;
+			if (ja_junction_type == ja_routing_type.EXIT_RIGHT) anglestring = "↗\n" + anglestring;
 			if (ja_junction_type == ja_routing_type.KEEP_RIGHT) anglestring = "↗\n" + anglestring;
 		}
 		var anglePoint = withRouting ?
