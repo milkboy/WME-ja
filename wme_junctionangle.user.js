@@ -174,15 +174,16 @@ function run_ja() {
 					ja_input.setAttribute("max", setting['max']);
 					ja_controls_container.appendChild(ja_input);
 					break;
+                /*
 				case 'text':
 					ja_input.id = setting['elementId'];
 					ja_input.size = (setting['max'] ? setting['max'] : 8);
 					ja_input.maxlength = (setting['max'] ? setting['max'] : 7);
 					ja_controls_container.appendChild(ja_input);
 					break;
+		        */
 				case 'checkbox':
 					ja_input.id = setting['elementId'];
-					ja_input.onchange = function() { ja_onchange(this); };
 					ja_controls_container.appendChild(ja_input);
 					break;
 				case 'select':
@@ -194,10 +195,11 @@ function run_ja() {
 						ja_select_option.appendChild(document.createTextNode(ja_getMessage(setting["options"][i])));
 						ja_input.appendChild(ja_select_option);
 					}
-					ja_input.onchange = function() { ja_onchange(this); };
 					ja_controls_container.appendChild(ja_input);
 					break;
 			}
+
+            ja_input.onchange = function() { ja_onchange(this); };
 
 			ja_label.setAttribute("for", setting['elementId']);
 			ja_label.appendChild(document.createTextNode(ja_getMessage(a)));
@@ -207,20 +209,12 @@ function run_ja() {
 		});
 		section.appendChild(document.createElement('br'));
 
-		var ja_apply_button = document.createElement('button');
-		ja_apply_button.type = "button";
-		ja_apply_button.className = "btn btn-default";
-		ja_apply_button.addEventListener("click", ja_save, true);
-		ja_apply_button.appendChild(document.createTextNode(ja_getMessage("apply")));
-
 		var ja_reset_button = document.createElement('button');
 		ja_reset_button.type = "button";
 		ja_reset_button.className = "btn btn-default";
 		ja_reset_button.addEventListener("click", ja_reset, true);
 		ja_reset_button.appendChild(document.createTextNode(ja_getMessage("resetToDefault")));
 
-		section.appendChild(ja_apply_button);
-		section.appendChild(document.createTextNode(" "));
 		section.appendChild(ja_reset_button);
 
 		form.appendChild(section);
@@ -1530,6 +1524,36 @@ function run_ja() {
 
 	var ja_onchange = function(e) {
 		"use strict";
+        ja_log(e, 3);
+        var applyPending = false;
+        var settingName = Object.getOwnPropertyNames(ja_settings).filter(function(a,b,c){
+            ja_log(ja_settings[a], 4);
+            return ja_settings[a]["elementId"] == e.id;
+        })[0];
+        ja_log(settingName, 3);
+        switch(ja_settings[settingName]["elementType"]) {
+            case "checkbox":
+                ja_log("Checkbox setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.checked);
+                if (ja_options[settingName] != e.checked) applyPending = true;
+                break;
+            case "select":
+                ja_log("Select setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
+                if (ja_options[settingName] != e.value) applyPending = true;
+                break;
+            case "color":
+                ja_log("Color setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
+                if (ja_options[settingName] != e.value) applyPending = true;
+                break;
+            case "number":
+                ja_log("Color setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
+                if (ja_options[settingName] != e.value) applyPending = true;
+                break;
+            default:
+                ja_log("Unknown setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
+        }
+        ja_log("Apply pending? " + applyPending, 2);
+
+        //Enable|disable certain dependent settings
 		switch(e.id) {
 			case ja_settings['guess'].elementId:
 				Object.getOwnPropertyNames(ja_settings).forEach(function (a) {
@@ -1546,7 +1570,7 @@ function run_ja() {
 				Object.getOwnPropertyNames(ja_settings).forEach(function (a) {
 					var setting = ja_settings[a];
 					if(setting['group'] && setting['group'] == 'roundaboutOverlayDisplay') {
-						ja_log(a +": " + e.value, 0);
+						ja_log(a +": " + e.value, 3);
 						document.getElementById(setting["elementId"]).disabled = e.value == "rOverNever";
 						document.getElementById(setting["elementId"]).parentNode.style.color =
 							e.value != "rOverNever" ? "black" : "lightgrey";
@@ -1554,8 +1578,16 @@ function run_ja() {
 				});
 				break;
 			default:
-				ja_log("Nothing to do for " + e.id, 0);
+				ja_log("Nothing to do for " + e.id, 2);
 		}
+
+        if(applyPending) {
+            ja_log("Applying new settings now", 2);
+            setTimeout(function(){ja_save();}, 500);
+
+        } else {
+            ja_log("No new settings to apply", 2);
+        }
 	};
 
 	var ja_load = function loadJAOptions() {
