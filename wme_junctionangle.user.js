@@ -903,7 +903,7 @@ function run_ja() {
 								node.geometry.y + (ja_label_distance * 2 * Math.sin((ha * Math.PI) / 180))
 						);
 						ja_draw_marker(point, node, ja_label_distance, a, ha, true,
-							ja_guess_routing_instruction(node, a_in[1], angle[1], angles));
+							ja_getOption("guess") ? ja_guess_routing_instruction(node, a_in[1], angle[1], angles) : ja_routing_type.TURN);
 					} else {
 						ja_log("Angle between " + angle[1] + " and " + angles[(j + 1) % angles.length][1] + " is "
 							+ a + " and position for label should be at " + ha, 3);
@@ -967,15 +967,20 @@ function run_ja() {
 
 		var anglestring = ja_round(Math.abs(a)) + "°";
 
-		//FZ69617: Show unicode direction arrows only for turn instructions
-		if (ja_junction_type == ja_routing_type.EXIT
-			|| ja_junction_type == ja_routing_type.KEEP)    anglestring = (a>0?"⇖\n":"⇗\n") + anglestring;
-		if (ja_junction_type == ja_routing_type.TURN)       anglestring = (a>0?"⇐\n":"⇒\n") + anglestring;
-		if (ja_junction_type == ja_routing_type.EXIT_LEFT)  anglestring = "⇖\n" + anglestring;
-		if (ja_junction_type == ja_routing_type.EXIT_RIGHT) anglestring = "⇗\n" + anglestring;
-		if (ja_junction_type == ja_routing_type.KEEP_LEFT)  anglestring = "⇖\n" + anglestring;
-		if (ja_junction_type == ja_routing_type.KEEP_RIGHT) anglestring = "⇗\n" + anglestring;
-
+		if (true) {
+			if(ja_junction_type != ja_routing_type.BC) {
+				anglestring = a < 0 ? anglestring + ">" : "<" + anglestring;
+			}
+		} else {
+			//FZ69617: Show unicode direction arrows only for turn instructions
+			if (ja_junction_type == ja_routing_type.EXIT
+				|| ja_junction_type == ja_routing_type.KEEP)    anglestring = (a > 0 ? "↖\n" : "↗\n") + anglestring;
+			if (ja_junction_type == ja_routing_type.TURN)       anglestring = (a > 0 ? "←\n" : "→\n") + anglestring;
+			if (ja_junction_type == ja_routing_type.EXIT_LEFT)  anglestring = "↖\n" + anglestring;
+			if (ja_junction_type == ja_routing_type.EXIT_RIGHT) anglestring = "↗\n" + anglestring;
+			if (ja_junction_type == ja_routing_type.KEEP_LEFT)  anglestring = "↖\n" + anglestring;
+			if (ja_junction_type == ja_routing_type.KEEP_RIGHT) anglestring = "↗\n" + anglestring;
+		}
 		var anglePoint = withRouting ?
 			new window.OpenLayers.Feature.Vector(
 				point
