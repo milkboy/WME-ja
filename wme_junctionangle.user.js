@@ -88,9 +88,9 @@ function run_ja() {
 	};
 
 	var ja_settings = {
-		angleMode: { elementType: "select", elementId: "_jaSelAngleMode", defaultValue: "aAbsolute", options: ["aAbsolute", "aDeparture"]},
+		angleMode: { elementType: "select", elementId: "_jaSelAngleMode", defaultValue: "aDeparture", options: ["aAbsolute", "aDeparture"]},
 		angleDisplay: { elementType: "select", elementId: "_jaSelAngleDisplay", defaultValue: "displayFancy", options: ["displayFancy", "displaySimple"]},
-		guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: false },
+		guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: true },
 		noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff", group: "guess"},
 		keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84", group: "guess"},
 		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600", group: "guess"},
