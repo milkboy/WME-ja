@@ -4,7 +4,7 @@
 // @description			Show the angle between two selected (and connected) segments
 // @include				/^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
 // @updateURL			https://github.com/milkboy/WME-ja/raw/master/wme_junctionangle.user.js
-// @version				1.8.4.3
+// @version				1.8.4.4
 // @grant				none
 // @copyright			2015 Michael Wikberg <waze@wikberg.fi>
 // @license				CC-BY-NC-SA
@@ -28,7 +28,7 @@ function run_ja() {
 	/*
 	 * First some variable and enumeration definitions
 	 */
-	var junctionangle_version = "1.8.4.3";
+	var junctionangle_version = "1.8.4.4";
 	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: verbose debug, 4: insane debug
 	var $;
 
@@ -42,7 +42,7 @@ function run_ja() {
 		KEEP_LEFT: "junction_keep_left",
 		KEEP_RIGHT: "junction_keep_right",
 		TURN: "junction",
-		EXIT: "junction_exit",
+		EXIT: "junction_exit", //UNUSED? FZ69617: now we have a display logic implemented for it, but currently I cannot predict whether we'll need it or not
 		EXIT_LEFT: "junction_exit_left",
 		EXIT_RIGHT: "junction_exit_right",
 		PROBLEM: "junction_problem",
@@ -973,19 +973,41 @@ function run_ja() {
 
 		var angleString = ja_round(Math.abs(a)) + "°";
 
+		//FZ69617: Add direction arrows for turn instructions only
 		if (ja_getOption("angleDisplay") == "displaySimple") {
-			if(ja_junction_type != ja_routing_type.BC) {
-				angleString = a < 0 ? angleString + ">" : "<" + angleString;
+			switch(ja_junction_type) {
+				case ja_routing_type.EXIT:
+				case ja_routing_type.KEEP:
+				case ja_routing_type.TURN:
+					angleString = a < 0 ? angleString + ">" : "<" + angleString;
+					break;
+				case ja_routing_type.EXIT_LEFT:
+				case ja_routing_type.KEEP_LEFT:
+					angleString = "<" + angleString;
+					break;
+				case ja_routing_type.EXIT_RIGHT:
+				case ja_routing_type.KEEP_RIGHT:
+					angleString = angleString + ">";
+					break;
 			}
 		} else {
-			//FZ69617: Show unicode direction arrows only for turn instructions
-			if (ja_junction_type == ja_routing_type.EXIT
-				|| ja_junction_type == ja_routing_type.KEEP)    angleString = (a > 0 ? "↖\n" : "↗\n") + angleString;
-			if (ja_junction_type == ja_routing_type.TURN)       angleString = (a > 0 ? "←\n" : "→\n") + angleString;
-			if (ja_junction_type == ja_routing_type.EXIT_LEFT)  angleString = "↖\n" + angleString;
-			if (ja_junction_type == ja_routing_type.EXIT_RIGHT) angleString = "↗\n" + angleString;
-			if (ja_junction_type == ja_routing_type.KEEP_LEFT)  angleString = "↖\n" + angleString;
-			if (ja_junction_type == ja_routing_type.KEEP_RIGHT) angleString = "↗\n" + angleString;
+			switch(ja_junction_type) {
+				case ja_routing_type.EXIT:
+				case ja_routing_type.KEEP:
+					angleString = (a > 0 ? "↖\n" : "↗\n") + anglestring;
+					break;
+				case ja_routing_type.TURN:
+					angleString = (a > 0 ? "←\n" : "→\n") + angleString;
+					break;
+				case ja_routing_type.EXIT_LEFT:
+				case ja_routing_type.KEEP_LEFT:
+					angleString = "↖\n" + angleString;
+					break;
+				case ja_routing_type.EXIT_RIGHT:
+				case ja_routing_type.KEEP_RIGHT:
+					angleString = "↗\n" + angleString;
+					break;
+			}
 		}
 		var anglePoint = withRouting ?
 			new window.OpenLayers.Feature.Vector(
