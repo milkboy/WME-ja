@@ -1503,6 +1503,18 @@ function run_ja() {
 		if(!ja_options.hasOwnProperty(name) || typeof ja_options[name] === 'undefined') {
 			ja_options[name] = ja_settings[name]['defaultValue'];
 		}
+        //Check for invalid values
+        //Select values
+        if(ja_settings[name]["elementType"] == "select" && ja_settings[name]["options"].lastIndexOf(ja_options[name]) < 0) {
+            ja_log(ja_settings[name]["options"], 2);
+            ja_log("Found invalid value for setting " + name + ": " + ja_options[name] + ". Using default.", 2);
+            ja_options[name] = ja_settings[name]['defaultValue'];
+        }
+        //Color values
+        if(ja_settings[name]["elementType"] == "color" && ja_options[name].match(/#[0-9a-f]{6}/) == null) {
+            ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
+            ja_options[name] = ja_settings[name]['defaultValue'];
+        }
 
 		ja_log("Got value: " + ja_options[name], 2);
 		return ja_options[name];
