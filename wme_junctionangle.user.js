@@ -90,6 +90,7 @@ function run_ja() {
 	var ja_settings = {
 		angleMode: { elementType: "select", elementId: "_jaSelAngleMode", defaultValue: "aDeparture", options: ["aAbsolute", "aDeparture"]},
 		angleDisplay: { elementType: "select", elementId: "_jaSelAngleDisplay", defaultValue: "displayFancy", options: ["displayFancy", "displaySimple"]},
+		angleDisplayArrows: { elementType: "select", elementId: "_jaSelAngleDisplayArrows", defaultValue: "<>", options: ["<>", "⇦⇨", "⇐⇒", "←→", "⇐⇒⇖⇗", "←→↖↗"]},
 		guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: true },
 		noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff", group: "guess"},
 		keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84", group: "guess"},
@@ -103,6 +104,16 @@ function run_ja() {
 		pointSize: { elementType: "number", elementId: "_jaTbPointSize", defaultValue: 12, min: 6, max: 20}
 	};
 
+	var ja_arrow = {
+		get_arrow: function(at) {
+			var arrows = ja_getOption("angleDisplayArrows");
+			return arrows[at % arrows.length];
+		},
+		left: function() { return this.get_arrow(0); },
+		right: function() { return this.get_arrow(1); },
+		left_up: function() { return this.get_arrow(2); },
+		right_up: function() { return this.get_arrow(3); },
+	};
 
 	/*
 	 * Main logic functions
@@ -965,36 +976,38 @@ function run_ja() {
 		//FZ69617: Add direction arrows for turn instructions only
 		if (ja_getOption("angleDisplay") == "displaySimple") {
 			switch(ja_junction_type) {
+				case ja_routing_type.TURN:
+					angleString = a > 0 ? ja_arrow.left() + angleString : angleString + ja_arrow.right();
+					break;
 				case ja_routing_type.EXIT:
 				case ja_routing_type.KEEP:
-				case ja_routing_type.TURN:
-					angleString = a < 0 ? angleString + ">" : "<" + angleString;
+					angleString = a > 0 ? ja_arrow.left_up() + angleString : angleString + ja_arrow.right_up();
 					break;
 				case ja_routing_type.EXIT_LEFT:
 				case ja_routing_type.KEEP_LEFT:
-					angleString = "<" + angleString;
+					angleString = ja_arrow.left_up() + angleString;
 					break;
 				case ja_routing_type.EXIT_RIGHT:
 				case ja_routing_type.KEEP_RIGHT:
-					angleString = angleString + ">";
+					angleString = angleString + ja_arrow.right_up();
 					break;
 			}
 		} else {
 			switch(ja_junction_type) {
+				case ja_routing_type.TURN:
+					angleString = (a > 0 ? ja_arrow.left() : ja_arrow.right()) + "\n" + angleString;
+					break;
 				case ja_routing_type.EXIT:
 				case ja_routing_type.KEEP:
-					angleString = (a > 0 ? "↖\n" : "↗\n") + anglestring;
-					break;
-				case ja_routing_type.TURN:
-					angleString = (a > 0 ? "←\n" : "→\n") + angleString;
+					angleString = (a > 0 ? ja_arrow.left_up() : ja_arrow.right_up()) + "\n" + anglestring;
 					break;
 				case ja_routing_type.EXIT_LEFT:
 				case ja_routing_type.KEEP_LEFT:
-					angleString = "↖\n" + angleString;
+					angleString = ja_arrow.left_up() + "\n" + angleString;
 					break;
 				case ja_routing_type.EXIT_RIGHT:
 				case ja_routing_type.KEEP_RIGHT:
-					angleString = "↗\n" + angleString;
+					angleString = ja_arrow.right_up() + "\n" + angleString;
 					break;
 			}
 		}
@@ -1809,7 +1822,8 @@ function run_ja() {
 	 */
 
 	function ja_getMessage(key) {
-		return I18n.translate('ja.' + key);
+		var tr = I18n.translate('ja.' + key), no_tr = I18n.missingTranslation('ja.' + key);
+		return tr != no_tr ? tr : key;
 	}
 
 	function ja_loadTranslations() {
@@ -1830,6 +1844,7 @@ function run_ja() {
 			aDeparture: "Departure",
 			angleMode: "Angle mode",
 			angleDisplay: "Angle display style",
+			angleDisplayArrows: "Direction arrows",
 			displayFancy: "Fancy",
 			displaySimple: "Simple",
 			guess: "Estimate routing instructions",
@@ -1923,6 +1938,10 @@ function run_ja() {
 					aAbsolute: "Absolutne",
 					aDeparture: "Rozjazdy",
 					angleMode: "Tryb wyświetlania kątów",
+					angleDisplay: "Styl kierunków",
+					displayFancy: "Dwuliniowy",
+					displaySimple: "Prosty",
+					angleDisplayArrows: "Strzałki kierunków",
 					guess: "Szacuj komunikaty trasy",
 					noInstructionColor: "Kolor najlepszej kontynuacji",
 					keepInstructionColor: "Kolor dla \"kieruj się\"",
