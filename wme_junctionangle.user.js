@@ -892,7 +892,7 @@ function run_ja() {
 					}
 					if(ja_getOption("angleMode") == "aDeparture") {
 						if(a_in[1] == angle[1]) {
-							ja_log("in == out. skipping.");
+							ja_log("in == out. skipping.", 2);
 							return;
 						}
 						ja_log("Angle in:",2);
