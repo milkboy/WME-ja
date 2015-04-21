@@ -1509,12 +1509,26 @@ function run_ja() {
 			ja_options[name] = ja_settings[name]['defaultValue'];
 		}
 		//Color values
-		if(ja_settings[name]["elementType"] == "color" && ja_options[name].match(/#[0-9a-f]{6}/) == null) {
+		else if(ja_settings[name]["elementType"] == "color" && ja_options[name].match(/#[0-9a-f]{6}/) == null) {
 			ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
 			ja_options[name] = ja_settings[name]['defaultValue'];
 		}
+        //Numeric values
+        else if(ja_settings[name]["elementType"] == "number") {
+            var minValue = typeof ja_settings[name]['min'] === 'undefined' ? Number.MIN_VALUE : ja_settings[name]['min'];
+            var maxValue = typeof ja_settings[name]['max'] === 'undefined' ? Number.MAX_VALUE : ja_settings[name]['max'];
+            if(isNaN(ja_options[name]) || ja_options[name] < minValue || ja_options[name] > maxValue) {
+                ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
+                ja_options[name] = ja_settings[name]['defaultValue'];
+            }
+        }
+        //Checkboxes
+        else if(ja_settings[name]["elementType"] == "checkbox" && ja_options[name] !== true && ja_options[name] !== false) {
+            ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
+            ja_options[name] = ja_settings[name]['defaultValue'];
+        }
 
-		ja_log("Got value: " + ja_options[name], 2);
+        ja_log("Got value: " + ja_options[name], 2);
 		return ja_options[name];
 	}
 
