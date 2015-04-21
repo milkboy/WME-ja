@@ -1537,25 +1537,18 @@ function run_ja() {
 		ja_log(settingName, 3);
 		switch(ja_settings[settingName]["elementType"]) {
 			case "checkbox":
-				ja_log("Checkbox setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.checked);
+				ja_log("Checkbox setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.checked, 3);
 				if (ja_options[settingName] != e.checked) applyPending = true;
 				break;
 			case "select":
-				ja_log("Select setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
-				if (ja_options[settingName] != e.value) applyPending = true;
-				break;
 			case "color":
-				ja_log("Color setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
-				if (ja_options[settingName] != e.value) applyPending = true;
-				break;
 			case "number":
-				ja_log("Color setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
+				ja_log("Setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value, 3);
 				if (ja_options[settingName] != e.value) applyPending = true;
 				break;
 			default:
-				ja_log("Unknown setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value);
+				ja_log("Unknown setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value, 3);
 		}
-		ja_log("Apply pending? " + applyPending, 2);
 
 		//Enable|disable certain dependent settings
 		switch(e.id) {
@@ -1585,12 +1578,13 @@ function run_ja() {
 				ja_log("Nothing to do for " + e.id, 2);
 		}
 
+		ja_log("Apply pending configuration changes? " + applyPending, 2);
 		if(applyPending) {
-			ja_log("Applying new settings now", 2);
+			ja_log("Applying new settings now", 3);
 			setTimeout(function(){ja_save();}, 500);
 
 		} else {
-			ja_log("No new settings to apply", 2);
+			ja_log("No new settings to apply", 3);
 		}
 	};
 
