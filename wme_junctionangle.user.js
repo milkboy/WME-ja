@@ -107,7 +107,6 @@ function run_ja() {
 	/*
 	 * Main logic functions
 	 */
-
 	function junctionangle_init() {
 
 		//Listen for selected nodes change event
@@ -121,10 +120,6 @@ function run_ja() {
 			"objectschanged": ja_calculate,
 			"objectsremoved": ja_calculate
 		});
-
-
-		//HTML changes after login, even though the page is not reloaded. Better do init again.
-		window.Waze.loginManager.events.register("afterloginchanged", null, junctionangle_init);
 
 		//Recalculate on zoom end also
 		window.Waze.map.events.register("zoomend", null, ja_calculate);
@@ -251,11 +246,7 @@ function run_ja() {
 
 		ja_settings_dom.appendChild(ja_info);
 
-		if(tabContent != null) {
-			tabContent.appendChild(ja_settings_dom);
-		} else {
-			ja_log("Could not append setting to tabContent!?!", 1);
-		}
+		tabContent.appendChild(ja_settings_dom);
 
 		var jatab = document.createElement('li');
 		jatab.innerHTML = '<!--suppress HtmlUnknownAnchorTarget --><a href="#sidepanel-ja" data-toggle="tab">JAI</a>';
@@ -1951,24 +1942,61 @@ function run_ja() {
 	 * Bootstrapping and logging
 	 */
 
+	function ja_registerLoginEvent() {
+		"use strict";
+		ja_log("Registering onLogin event listener", 1);
+		ja_log(window.Waze.loginManager.events, 3);
+		//HTML changes after login, even though the page is not reloaded. Need to defer init until then.
+		window.Waze.loginManager.events.register("login", null, junctionangle_init);
+		ja_log("Registered onLogin event listener", 1);
+	}
+
 	function ja_bootstrap(retries) {
 		retries = retries || 0;
-		//If Waze has not been defined in 10 seconds, it probably won't work anyway.
-		if(retries >= 10) {
-			ja_log("Failed to bootstrap 10 times. Giving up.", 0);
+		//If Waze has not been defined in ~15 seconds, it probably won't work anyway. Might need tuning
+		//for really slow devices?
+		if (retries >= 30) {
+			ja_log("Failed to bootstrap 30 times. Giving up.", 0);
 			return;
 		}
 
 		try {
-			if ((typeof window.Waze.map !== 'undefined') && ('undefined' !== typeof window.Waze.map.events.register) &&
-				('undefined' !== typeof window.Waze.selectionManager.events.register ) &&
-				('undefined' !== typeof window.Waze.loginManager.events.register)) {
-				setTimeout(function(){junctionangle_init();}, 500);
-			} else {
-				setTimeout(function(){ja_bootstrap(++retries);}, 1000);
+			//No current logged in user
+			if (
+				typeof window.Waze.map !== 'undefined' &&
+				'undefined' !== typeof window.Waze.map.events.register &&
+				'undefined' !== typeof window.Waze.selectionManager.events.register &&
+				'undefined' !== typeof window.Waze.loginManager.events.register &&
+				window.Waze.loginManager.user == null
+				) {
+				ja_registerLoginEvent();
+			}
+			//User already logged in and WME ready
+			else if (
+				typeof window.Waze.map !== 'undefined' &&
+				'undefined' !== typeof window.Waze.map.events.register &&
+				'undefined' !== typeof window.Waze.selectionManager.events.register &&
+				'undefined' !== typeof window.Waze.loginManager.events.register &&
+				window.Waze.loginManager.user != null &&
+				null !== document.getElementById('user-info') &&
+				null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0] &&
+				null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0].getElementsByClassName('tab-content')[0]) {
+				//Everything is ready, no need to wait longer than needed
+				setTimeout(function () {
+					junctionangle_init();
+				}, 5);
+			}
+			//Some part of the WME was not yet fully loaded. Retry.
+			else {
+				setTimeout(function () {
+					ja_bootstrap(++retries);
+				}, 500);
 			}
 		} catch (err) {
-			setTimeout(function(){ja_bootstrap(++retries);}, 1000);
+			ja_log(err, 1);
+			setTimeout(function () {
+				ja_bootstrap(++retries);
+			}, 500);
 		}
 	}
 
