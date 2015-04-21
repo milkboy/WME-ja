@@ -4,7 +4,7 @@
 // @description			Show the angle between two selected (and connected) segments
 // @include				/^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
 // @updateURL			https://github.com/milkboy/WME-ja/raw/master/wme_junctionangle.user.js
-// @version				1.8.4.5
+// @version				1.8.4.6
 // @grant				none
 // @copyright			2015 Michael Wikberg <waze@wikberg.fi>
 // @license				CC-BY-NC-SA
@@ -28,7 +28,7 @@ function run_ja() {
 	/*
 	 * First some variable and enumeration definitions
 	 */
-	var junctionangle_version = "1.8.4.5";
+	var junctionangle_version = "1.8.4.6";
 	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: verbose debug, 4: insane debug
 	var $;
 
@@ -730,6 +730,7 @@ function run_ja() {
 			}
 
 			ja_log("Calculating angles for " + ja_current_node_segments.length + " segments", 2);
+			ja_log(ja_current_node_segments, 3);
 
 			var angles = [];
 			var ja_selected_segments_count = 0;
@@ -881,16 +882,19 @@ function run_ja() {
 
 					//Show only one angle for nodes with only 2 connected segments and a single selected segment
 					// (not on both sides). Skipping the one > 180
-					if (
-						(ja_selected_segments_count == 1
-							&& angles.length == 2
-							&& (Math.abs(a) > 180
-								|| (Math.abs(a)%180 == 0 && j == 0 )
-								)
-							)
-						|| (ja_getOption("angleMode") == "aDeparture" && angles[j][1] == a_in[1])) {
+					if (ja_selected_segments_count == 1
+						&& angles.length == 2
+						&& a >=180
+                        && ja_getOption("angleMode") != "aDeparture"
+                        ) {
 						ja_log("Skipping marker, as we need only one of them", 2);
-					} else if(ja_getOption("angleMode") == "aDeparture") {
+						return;
+					}
+					if(ja_getOption("angleMode") == "aDeparture") {
+						if(a_in[1] == angle[1]) {
+							ja_log("in == out. skipping.");
+							return;
+						}
 						ja_log("Angle in:",2);
 						ja_log(a_in,2);
 						ja_log(ja_guess_routing_instruction(node, a_in[1], angle[1], angles), 2);
