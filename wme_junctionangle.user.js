@@ -1743,7 +1743,7 @@ function run_ja() {
 				symbolizer: {
 					pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10)
 						+ (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
-					fontSize: "12px",
+					fontSize: (parseInt(ja_getOption("pointSize")) - 1) + "px",
 					fillColor: ja_getOption(fillColorOption),
 					strokeColor: "#183800"
 				}
@@ -1987,10 +1987,9 @@ function run_ja() {
 				null !== document.getElementById('user-info') &&
 				null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0] &&
 				null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0].getElementsByClassName('tab-content')[0]) {
-				//Everything is ready, no need to wait longer than needed
 				setTimeout(function () {
 					junctionangle_init();
-				}, 5);
+				}, 500);
 			}
 			//Some part of the WME was not yet fully loaded. Retry.
 			else {
