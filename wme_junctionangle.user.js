@@ -885,12 +885,12 @@ function run_ja() {
 					if (ja_selected_segments_count == 1
 						&& angles.length == 2
 						&& a >=180
-                        && ja_getOption("angleMode") != "aDeparture"
-                        ) {
+						&& ja_getOption("angleMode") != "aDeparture"
+						) {
 						ja_log("Skipping marker, as we need only one of them", 2);
 						return;
 					}
-					if(ja_getOption("angleMode") == "aDeparture") {
+					if(ja_getOption("angleMode") == "aDeparture" && ja_selected_segments_count > 0) {
 						if(a_in[1] == angle[1]) {
 							ja_log("in == out. skipping.", 2);
 							return;
@@ -1513,22 +1513,22 @@ function run_ja() {
 			ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
 			ja_options[name] = ja_settings[name]['defaultValue'];
 		}
-        //Numeric values
-        else if(ja_settings[name]["elementType"] == "number") {
-            var minValue = typeof ja_settings[name]['min'] === 'undefined' ? Number.MIN_VALUE : ja_settings[name]['min'];
-            var maxValue = typeof ja_settings[name]['max'] === 'undefined' ? Number.MAX_VALUE : ja_settings[name]['max'];
-            if(isNaN(ja_options[name]) || ja_options[name] < minValue || ja_options[name] > maxValue) {
-                ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
-                ja_options[name] = ja_settings[name]['defaultValue'];
-            }
-        }
-        //Checkboxes
-        else if(ja_settings[name]["elementType"] == "checkbox" && ja_options[name] !== true && ja_options[name] !== false) {
-            ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
-            ja_options[name] = ja_settings[name]['defaultValue'];
-        }
+		//Numeric values
+		else if(ja_settings[name]["elementType"] == "number") {
+			var minValue = typeof ja_settings[name]['min'] === 'undefined' ? Number.MIN_VALUE : ja_settings[name]['min'];
+			var maxValue = typeof ja_settings[name]['max'] === 'undefined' ? Number.MAX_VALUE : ja_settings[name]['max'];
+			if(isNaN(ja_options[name]) || ja_options[name] < minValue || ja_options[name] > maxValue) {
+				ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
+				ja_options[name] = ja_settings[name]['defaultValue'];
+			}
+		}
+		//Checkboxes
+		else if(ja_settings[name]["elementType"] == "checkbox" && ja_options[name] !== true && ja_options[name] !== false) {
+			ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
+			ja_options[name] = ja_settings[name]['defaultValue'];
+		}
 
-        ja_log("Got value: " + ja_options[name], 2);
+		ja_log("Got value: " + ja_options[name], 2);
 		return ja_options[name];
 	}
 
