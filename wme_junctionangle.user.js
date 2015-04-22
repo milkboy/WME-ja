@@ -41,7 +41,9 @@ function run_ja() {
 		KEEP_LEFT: "junction_keep_left",
 		KEEP_RIGHT: "junction_keep_right",
 		TURN: "junction",
-		EXIT: "junction_exit", //UNUSED? FZ69617: now we have a display logic implemented for it, but currently I cannot predict whether we'll need it or not
+		// UNUSED? FZ69617: now we have a display logic implemented for it, but currently I cannot predict whether
+		// we'll need it or not
+		EXIT: "junction_exit",
 		EXIT_LEFT: "junction_exit_left",
 		EXIT_RIGHT: "junction_exit_right",
 		PROBLEM: "junction_problem",
@@ -375,7 +377,8 @@ function run_ja() {
 				return ja_routing_type.BC;
 			} else {
 				ja_log("Roundabout exit - no instruction", 2);
-				return ja_routing_type.ROUNDABOUT_EXIT;  //exit just to visually distinguish from roundabout continuation
+				//exit just to visually distinguish from roundabout continuation
+				return ja_routing_type.ROUNDABOUT_EXIT;
 			}
 		} else if (s_out[s_out_id].attributes.junctionID) {
 			ja_log("Roundabout entry - no instruction", 2);
@@ -496,15 +499,18 @@ function run_ja() {
 
 			ja_log("BC logic did not apply; using old default rules instead.", 2);
 
-			//wlodek76: FIXING KEEP LEFT/RIGHT regarding to left most segment
-			//WIKI WAZE: When there are more than two segments less than 45.04°, only the left most segment will be KEEP LEFT, all the rest will be KEEP RIGHT
+			// wlodek76: FIXING KEEP LEFT/RIGHT regarding to left most segment
+			// WIKI WAZE: When there are more than two segments less than 45.04°, only the left most segment will be
+			// KEEP LEFT, all the rest will be KEEP RIGHT
 			if (true || angles.length > 2) { //FZ69617: "more than two..."
 						//FIXME: 'true' added to temporarily ignore this condition
 						//without this many "keep left"s changed into "exit right"
 						//but I'm finally not sure whether we can safely ignore the precondition from Wiki?
 
 				//FZ69617: Sort angles in left most first order
-				angles.sort(function(a, b) { return ja_normalize_angle(s_in_a[0][0] - a[0]) - ja_normalize_angle(s_in_a[0][0] - b[0]); });
+				angles.sort(function(a, b) {
+					return ja_normalize_angle(s_in_a[0][0] - a[0]) - ja_normalize_angle(s_in_a[0][0] - b[0]); }
+				);
 
 				if (angles[0][1] == s_out_id) { //s-out is left most segment
 
@@ -871,7 +877,8 @@ function run_ja() {
 								node.geometry.y + (ja_label_distance * 2 * Math.sin((ha * Math.PI) / 180))
 						);
 						ja_draw_marker(point, node, ja_label_distance, a, ha, true,
-							ja_getOption("guess") ? ja_guess_routing_instruction(node, a_in[1], angle[1], angles) : ja_routing_type.TURN);
+							ja_getOption("guess") ?
+								ja_guess_routing_instruction(node, a_in[1], angle[1], angles) : ja_routing_type.TURN);
 					} else {
 						ja_log("Angle between " + angle[1] + " and " + angles[(j + 1) % angles.length][1] + " is " +
 							a + " and position for label should be at " + ha, 3);
@@ -1256,10 +1263,12 @@ function run_ja() {
 	 * @param a2 Angle of the 2nd segment
 	 */
 	function ja_overlapping_angles(a1, a2) {
-		var a = Math.abs(ja_normalize_angle(a1) - ja_normalize_angle(a2)); //FZ69617: angles must be normalized before subtraction!
+		// FZ69617: angles must be normalized before subtraction!
+		var a = Math.abs(ja_normalize_angle(a1) - ja_normalize_angle(a2));
 
 		// If two angles are close < 2 degree they are overlapped.
-		// Method of recognizing overlapped segment by server is unknown for me yet, I took this from WME Validator information about this.
+		// Method of recognizing overlapped segment by server is unknown for me yet, I took this from WME Validator
+		// information about this.
 		// TODO: verify overlapping check on the side of routing server.
 		return a < 2.0;
 	}
