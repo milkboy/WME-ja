@@ -23,6 +23,12 @@
  *	2015 "wlodek76" <?>
  */
 
+/*jshint eqnull:true, nonew:true, nomen:true, curly:true, latedef:true, unused:strict, noarg:true, loopfunc:true */
+/*jshint trailing:true, forin:true, noempty:true, maxparams:7, maxerr:100, eqeqeq:true, strict:true, undef:true */
+/*jshint bitwise:true, newcap:true, immed:true, onevar:true, browser:true, nonbsp:true, freeze:true */
+/*global I18n, console*/
+
+
 function run_ja() {
 	"use strict";
 
@@ -319,24 +325,24 @@ function run_ja() {
 		var s_out_id = s_out_a;
 
 		s_in_a = window.$.grep(angles, function(element){
-			return element[1] == s_in_a;
+			return element[1] === s_in_a;
 		});
 		s_out_a = window.$.grep(angles, function(element){
-			return element[1] == s_out_a;
+			return element[1] === s_out_a;
 		});
 
 		var s_n = {}, s_in = null, s_out = {}, street_n = {}, street_in = null;
 		node.attributes.segIDs.forEach(function(element) {
-			if (element == s_in_id) {
+			if (element === s_in_id) {
 				s_in = node.model.segments.get(element);
 				street_in = ja_get_streets(element);
 				//Set empty name for streets if not defined
 				if(typeof street_in.primary === 'undefined') { street_in.primary = {}; }
 				if(typeof street_in.primary.name === 'undefined') {
-					street_in.primary['name'] = "";
+					street_in.primary.name = "";
 				}
 			} else {
-				if(element == s_out_id) {
+				if(element === s_out_id) {
 					//store for later use
 					s_out[element] = node.model.segments.get(element);
 					//Set empty name for streets if not defined
@@ -410,7 +416,7 @@ function run_ja() {
 			ja_log(s_n, 2);
 			angles = angles.filter(function (a) {
 				ja_log("Filtering angle: " + ja_angle_diff(s_in_a, a[0], false), 2);
-				if(s_out_id == a[1] ||
+				if(s_out_id === a[1] ||
 					(typeof s_n[a[1]] !== 'undefined' &&
 						ja_is_turn_allowed(s_in, node, s_n[a[1]]) &&
 						Math.abs(ja_angle_diff(s_in_a, a[0], false)) <= 45 //Any angle above 45 is not eligible
@@ -448,7 +454,7 @@ function run_ja() {
 					bc_prio = prio;
 					bc_count = 0;
 				}
-				if (prio == bc_prio) {
+				if (prio === bc_prio) {
 					bc_matches[a[1]] = a;
 					bc_count++;
 				}
@@ -470,7 +476,6 @@ function run_ja() {
 				tmp_s_out[a[1]] = s_n[a[1]];
 				var tmp_street_out = {};
 				tmp_street_out[a[1]] = street_n[a[1]];
-				var overlapped_angle;
 
 				if(ja_primary_name_match(street_in, tmp_street_out) && ja_segment_type_match(s_in, tmp_s_out)) {
 					ja_log("BC primary name and type match", 2);
@@ -492,7 +497,7 @@ function run_ja() {
 			}
 
 			//If s-out is the only BC, that's it.
-			if (bc_matches[s_out_id] !== undefined && bc_count == 1) {
+			if (bc_matches[s_out_id] !== undefined && bc_count === 1) {
 				ja_log("\"straight\": no instruction", 2);
 				return ja_routing_type.BC;
 			}
@@ -512,7 +517,7 @@ function run_ja() {
 					return ja_normalize_angle(s_in_a[0][0] - a[0]) - ja_normalize_angle(s_in_a[0][0] - b[0]); }
 				);
 
-				if (angles[0][1] == s_out_id) { //s-out is left most segment
+				if (angles[0][1] === s_out_id) { //s-out is left most segment
 
 					//wlodek76: KEEP LEFT/RIGHT overlapping case
 					//WIKI WAZE: If the left most segment is overlapping another segment, it will also be KEEP RIGHT.
@@ -564,7 +569,7 @@ function run_ja() {
 		//clear old info
 		ja_mapLayer.destroyFeatures();
 
-		if (ja_getOption("roundaboutOverlayDisplay") == "rOverAlways") {
+		if (ja_getOption("roundaboutOverlayDisplay") === "rOverAlways") {
 			ja_draw_roundabout_overlay();
 		}
 
@@ -652,7 +657,7 @@ function run_ja() {
 				}
 
 				//Draw circle overlay for this roundabout
-				if(ja_getOption("roundaboutOverlayDisplay") == "rOverSelected") {
+				if(ja_getOption("roundaboutOverlayDisplay") === "rOverSelected") {
 					ja_draw_roundabout_overlay(tmp_roundabout);
 				}
 
@@ -737,7 +742,7 @@ function run_ja() {
 					ja_log("It is!", 4);
 					//find the angle
 					for(var j=0; j < angles.length; j++) {
-						if(angles[j][1] == selectedSegmentId) {
+						if(angles[j][1] === selectedSegmentId) {
 							ja_selected_angles.push(angles[j]);
 							break;
 						}
@@ -855,13 +860,13 @@ function run_ja() {
 					if (ja_selected_segments_count === 1 &&
 						angles.length === 2 &&
 						a >=180 &&
-						ja_getOption("angleMode") != "aDeparture"
+						ja_getOption("angleMode") !== "aDeparture"
 						) {
 						ja_log("Skipping marker, as we need only one of them", 2);
 						return;
 					}
-					if(ja_getOption("angleMode") == "aDeparture" && ja_selected_segments_count > 0) {
-						if(a_in[1] == angle[1]) {
+					if(ja_getOption("angleMode") === "aDeparture" && ja_selected_segments_count > 0) {
+						if(a_in[1] === angle[1]) {
 							ja_log("in == out. skipping.", 2);
 							return;
 						}
@@ -941,7 +946,7 @@ function run_ja() {
 		var angleString = ja_round(Math.abs(a)) + "°";
 
 		//FZ69617: Add direction arrows for turn instructions only
-		if (ja_getOption("angleDisplay") == "displaySimple") {
+		if (ja_getOption("angleDisplay") === "displaySimple") {
 			switch(ja_junction_type) {
 				case ja_routing_type.TURN:
 					angleString = a > 0 ? ja_arrow.left() + angleString : angleString + ja_arrow.right();
@@ -966,7 +971,7 @@ function run_ja() {
 					break;
 				case ja_routing_type.EXIT:
 				case ja_routing_type.KEEP:
-					angleString = (a > 0 ? ja_arrow.left_up() : ja_arrow.right_up()) + "\n" + anglestring;
+					angleString = (a > 0 ? ja_arrow.left_up() : ja_arrow.right_up()) + "\n" + angleString;
 					break;
 				case ja_routing_type.EXIT_LEFT:
 				case ja_routing_type.KEEP_LEFT:
@@ -983,8 +988,8 @@ function run_ja() {
 				point,
 				{ angle: angleString, ja_type: ja_junction_type }
 			): new window.OpenLayers.Feature.Vector(
-			point
-			, { angle: ja_round(a) + "°", ja_type: "generic" }
+			point,
+			{ angle: ja_round(a) + "°", ja_type: "generic" }
 		);
 		ja_log(anglePoint, 3);
 
@@ -1015,7 +1020,7 @@ function run_ja() {
 			ja_log(element, 3);
 			//Check if we want a specific junction.
 			//FIXME: this should actually be done by a direct select, instead of looping through all..
-			if(typeof junctionId !== "undefined" && junctionId != element.id) {
+			if(typeof junctionId !== "undefined" && junctionId !== element.id) {
 				return;
 			}
 			var nodes = {};
@@ -1075,18 +1080,18 @@ function run_ja() {
 			if(segment_n.attributes.id === segment_in.attributes.id) { return false; }
 			ja_log("PT checking sn.rt " + segment_n.attributes.roadType +
 				" vs i.pt: " + segment_in.attributes.roadType, 2);
-			return (segment_n.attributes.roadType == segment_in.attributes.roadType);
+			return (segment_n.attributes.roadType === segment_in.attributes.roadType);
 		});
 	}
 
 	function ja_is_primary_road(seg) {
 		var t = seg.attributes.roadType;
-		return t == ja_road_type.FREEWAY || t == ja_road_type.MAJOR_HIGHWAY || t == ja_road_type.MINOR_HIGHWAY;
+		return t === ja_road_type.FREEWAY || t === ja_road_type.MAJOR_HIGHWAY || t === ja_road_type.MINOR_HIGHWAY;
 	}
 
 	function ja_is_ramp(seg) {
 		var t = seg.attributes.roadType;
-		return t == ja_road_type.RAMP;
+		return t === ja_road_type.RAMP;
 	}
 
 	function ja_is_turn_allowed(s_from, via_node, s_to) {
@@ -1125,6 +1130,7 @@ function run_ja() {
 		ja_log(restrictions, 3);
 
 		return !restrictions.some(function(element) {
+            /*jshint bitwise: false*/
 			ja_log("Checking restriction " + element, 3);
 			var ret = element.allDay &&             //All day restriction
 				element.days === 127 &&	            //Every week day
@@ -1198,7 +1204,7 @@ function run_ja() {
 				//when alt name is empty cross-match does not work
 				if (street_n_element.secondary.length === 0) { return false; }
 
-				return street_n_element.primary.name == street_in_secondary.name;
+				return street_n_element.primary.name === street_in_secondary.name;
 			}) || street_n_element.secondary.some(function (street_n_secondary) {
 				ja_log("CN2b: checking in.p: " + street_in.primary.name + " vs n.s: " + street_n_secondary.name, 2);
 
@@ -1207,7 +1213,7 @@ function run_ja() {
 				if (street_in.secondary.length === 0) { return false; }
 
 				//wlodek76: missing return from checking primary name with alternate names
-				return street_in.primary.name == street_n_secondary.name;
+				return street_in.primary.name === street_n_secondary.name;
 			}));
 		});
 	}
@@ -1227,7 +1233,7 @@ function run_ja() {
 				return street_n_element.secondary.some(function (street_n_secondary_element, index3) {
 					ja_log("AN3 Checking in.s: " + street_in_secondary.name +
 						" vs n.s." + index3 + ": " + street_n_secondary_element.name, 2);
-					return street_in_secondary.name == street_n_secondary_element.name;
+					return street_in_secondary.name === street_n_secondary_element.name;
 				});
 			});
 		});
@@ -1241,7 +1247,7 @@ function run_ja() {
 			var element = streets[id];
 			ja_log("PN Checking element " + index + " of " + array.length, 2);
 			ja_log(element, 2);
-			return (element.primary.name == street_in.primary.name);
+			return (element.primary.name === street_in.primary.name);
 		});
 	}
 
@@ -1371,7 +1377,7 @@ function run_ja() {
 		for (var n in nodes) {
 			if (nodes.hasOwnProperty(n)) {
 				ja_log("Checking " + n, 3);
-				if (n == n_in) {
+				if (String(n) === String(n_in)) {
 					ja_log("Not comparing to n_in ;)", 3);
 				} else {
 					var angle = ja_angle_between_points(
@@ -1445,7 +1451,7 @@ function run_ja() {
 		ja_log("segment: " + ja_segment, 2);
 		if (ja_node == null || ja_segment == null) { return null; }
 		var ja_dx, ja_dy;
-		if (ja_segment.attributes.fromNodeID == ja_node) {
+		if (ja_segment.attributes.fromNodeID === ja_node) {
 			ja_dx = ja_get_second_point(ja_segment).x - ja_get_first_point(ja_segment).x;
 			ja_dy = ja_get_second_point(ja_segment).y - ja_get_first_point(ja_segment).y;
 		} else {
@@ -1536,24 +1542,23 @@ function run_ja() {
 	}
 
 	var ja_onchange = function(e) {
-		"use strict";
 		ja_log(e, 3);
 		var applyPending = false;
-		var settingName = Object.getOwnPropertyNames(ja_settings).filter(function(a,b,c){
+		var settingName = Object.getOwnPropertyNames(ja_settings).filter(function(a){
 			ja_log(ja_settings[a], 4);
-			return ja_settings[a].elementId == e.id;
+			return ja_settings[a].elementId === e.id;
 		})[0];
 		ja_log(settingName, 3);
 		switch(ja_settings[settingName].elementType) {
 			case "checkbox":
 				ja_log("Checkbox setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.checked, 3);
-				if (ja_options[settingName] != e.checked) { applyPending = true; }
+				if (ja_options[settingName] !== e.checked) { applyPending = true; }
 				break;
 			case "select":
 			case "color":
 			case "number":
 				ja_log("Setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value, 3);
-				if (ja_options[settingName] != e.value) { applyPending = true; }
+				if (String(ja_options[settingName]) !== String(e.value)) { applyPending = true; }
 				break;
 			default:
 				ja_log("Unknown setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value, 3);
@@ -1763,8 +1768,8 @@ function run_ja() {
 			strokeWidth: 2,
 			label: "${angle}",
 			fontWeight: "bold",
-			pointRadius: parseInt(ja_getOption("pointSize"), 10)
-				+ (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+			pointRadius: parseInt(ja_getOption("pointSize"), 10) +
+				(parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
 			fontSize: "10px"
 		}, {
 			rules: [
@@ -2025,7 +2030,7 @@ function run_ja() {
 		//##NO_FF_START##
 		//Firefox addons should not use console.(log|error|debug), so these lines
 		//are removed by the FF addon packaging script.
-		if(typeof ja_log_level === 'undefined') ja_log_level = 1;
+		if(typeof ja_log_level === 'undefined') { ja_log_level = 1; }
 		if (ja_log_level <= junctionangle_debug) {
 			if (typeof ja_log_msg === "object") {
 				console.debug(ja_log_msg);
