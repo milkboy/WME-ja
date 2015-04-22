@@ -436,7 +436,7 @@ function run_ja() {
 			} //No instruction
 
 			/*
-			 * Apply simplified BC check
+			 * Apply simplified BC logic
 			 */
 			var bc_matches = {}, bc_prio = 0, bc_count = 0;
 			var bc_collect = function(a, prio) {
@@ -455,10 +455,6 @@ function run_ja() {
 				ja_log(bc_matches, 2);
 			};
 
-			//wlodek76: variables for collecting most left angles
-			var leftmostAngle  = null, tempLeftAngle  = 0;
-			var leftmostAngle2 = null, tempLeftAngle2 = 0;
-
 			//Check each eligible turn against routing rules
 			for(var k=0; k< angles.length; k++) {
 				var a = angles[k];
@@ -468,26 +464,6 @@ function run_ja() {
 
 				var tmp_angle = ja_angle_diff(s_in_a[0], a[0], false);
 				ja_log(tmp_angle, 2);
-
-				//wlodek76: getting two most left angles
-				if (leftmostAngle == null) {
-						leftmostAngle = a;
-						tempLeftAngle = tmp_angle;
-					}
-				else {
-					if (tmp_angle >= tempLeftAngle) {
-						leftmostAngle2  = leftmostAngle;
-						leftmostAngle   = a;
-						tempLeftAngle2  = tempLeftAngle;
-						tempLeftAngle   = tmp_angle;
-					}
-					else {
-						if (tmp_angle >= tempLeftAngle2) {
-							leftmostAngle2 = a;
-							tempLeftAngle2 = tmp_angle;
-						}
-					}
-				}
 
 				var tmp_s_out = {};
 				tmp_s_out[a[1]] = s_n[a[1]];
@@ -526,39 +502,29 @@ function run_ja() {
 			//wlodek76: FIXING KEEP LEFT/RIGHT regarding to left most segment
 			//WIKI WAZE: When there are more than two segments less than 45.04°, only the left most segment will be KEEP LEFT, all the rest will be KEEP RIGHT
 			if (true || angles.length > 2) { //FZ69617: "more than two..."
-						//FIXME: true added to temporarily ignore this condition
-						//without it many "keep left"s changed into "exit right"
+						//FIXME: 'true' added to temporarily ignore this condition
+						//without this many "keep left"s changed into "exit right"
 						//but I'm finally not sure whether we can safely ignore the precondition from Wiki?
 
-				//wlodek76: KEEP LEFT/RIGHT overlapping case
-				//WIKI WAZE: If the left most segment is overlapping another segment, it will also be KEEP RIGHT.
-				if (leftmostAngle!=null && leftmostAngle2!=null) {
-					overlapped_angle = Math.abs(leftmostAngle[0] - leftmostAngle2[0]);
+				//FZ69617: Sort angles in left most first order
+				angles.sort(function(a, b) { return ja_normalize_angle(s_in_a[0][0] - a[0]) - ja_normalize_angle(s_in_a[0][0] - b[0]); });
 
-					// If two top most left angles are close < 2 degree they are overlapped.
-					// Method of recognizing overlapped segment by server is unknown for me yet, I took this from WME Validator information about this.
-					// TODO: verify overlapping check on the side of routing server.
-					if (overlapped_angle < 2.0) {
-						leftmostAngle = null;
+				if (angles[0][1] == s_out_id) { //s-out is left most segment
+
+					//wlodek76: KEEP LEFT/RIGHT overlapping case
+					//WIKI WAZE: If the left most segment is overlapping another segment, it will also be KEEP RIGHT.
+					if (!ja_overlapping_angles(angles[0][0], angles[1][0])) {
+						ja_log("Left most <45 segment: keep left", 2);
+						return ja_routing_type.KEEP_LEFT;
 					}
-				}
-
-				if (leftmostAngle != null && leftmostAngle[1] == s_out_id) {
-					ja_log("Left most <45 segment: keep left", 2);
-					return ja_routing_type.KEEP_LEFT;
 				}
 			}
 
 			//FZ69617: Two overlapping sements logic
 			//WAZE WIKI: If the only two segments less than 45.04° overlap each other, neither will get an instruction.
-			if (angles.length == 2) {
-				overlapped_angle = Math.abs(angles[0][0] - angles[1][0]);
-
-				// TODO: verify overlapping check on the side of routing server.
-				if (overlapped_angle < 2.0) {
-					ja_log("Two overlapping segments: no instruction", 2);
-					return ja_routing_type.BC;  //PROBLEM?
-				}
+			if (angles.length == 2 && ja_overlapping_angles(angles[0][0], angles[1][0])) {
+				ja_log("Two overlapping segments: no instruction", 2);
+				return ja_routing_type.BC;  //PROBLEM?
 			}
 
 			//Primary to non-primary
@@ -1288,11 +1254,31 @@ function run_ja() {
 		return { primary: primary, secondary: secondary };
 	}
 
+	/**
+	 * Checks whether the two segments (connected at the same node) overlap each other.
+	 * @param a1 Angle of the 1st segment
+	 * @param a2 Angle of the 2nd segment
+	 */
+	function ja_overlapping_angles(a1, a2) {
+		var a = Math.abs(ja_normalize_angle(a1) - ja_normalize_angle(a2)); //FZ69617: angles must be normalized before subtraction!
+
+		// If two angles are close < 2 degree they are overlapped.
+		// Method of recognizing overlapped segment by server is unknown for me yet, I took this from WME Validator information about this.
+		// TODO: verify overlapping check on the side of routing server.
+		return a < 2.0;
+	}
 
 
 	/*
 	 * Misc math and map element functions
 	 */
+
+	/**
+	 * Returns normalized angle value [0, 360).
+	 */
+	function ja_normalize_angle(a) {
+		return (a % 360 + 360) % 360;
+	}
 
 	/**
 	 *
