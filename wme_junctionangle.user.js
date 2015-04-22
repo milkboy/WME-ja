@@ -24,17 +24,16 @@
  */
 
 function run_ja() {
+	"use strict";
 
 	/*
 	 * First some variable and enumeration definitions
 	 */
 	var junctionangle_version = "1.9.0-b1";
-	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: verbose debug, 4: insane debug
-	var $;
 
-	var ja_last_restart = 0;
-	var ja_roundabout_points = [];
-	var ja_options = {};
+	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: verbose debug, 4: insane debug
+
+	var ja_last_restart = 0, ja_roundabout_points = [], ja_options = {}, ja_mapLayer;
 
 	var ja_routing_type = {
 		BC: "junction_none",
@@ -112,7 +111,7 @@ function run_ja() {
 		left: function() { return this.get_arrow(0); },
 		right: function() { return this.get_arrow(1); },
 		left_up: function() { return this.get_arrow(2); },
-		right_up: function() { return this.get_arrow(3); },
+		right_up: function() { return this.get_arrow(3); }
 	};
 
 	/*
@@ -151,9 +150,9 @@ function run_ja() {
 		ja_settings_dom_content.appendChild(ja_settings_header);
 
 		var style = document.createElement('style');
-		style.appendChild(document.createTextNode(''
-				+ '#jaOptions label { display: inline; }\n'
-				+ '#jaOptions input, select { margin-right: 5px; }\n'
+		style.appendChild(document.createTextNode(
+				'#jaOptions label { display: inline; }\n' +
+				'#jaOptions input, select { margin-right: 5px; }\n'
 		));
 
 		var form = document.createElement('form');
@@ -168,37 +167,37 @@ function run_ja() {
 			var ja_input = document.createElement('input');
 			var ja_label = document.createElement('label');
 			ja_controls_container.className = "controls-container";
-			ja_input.type = setting['elementType'];
-			switch (setting['elementType']) {
+			ja_input.type = setting.elementType;
+			switch (setting.elementType) {
 				case 'color':
-					ja_input.id = setting['elementId'];
+					ja_input.id = setting.elementId;
 					ja_controls_container.appendChild(ja_input);
 					break;
 				case 'number':
-					ja_input.id = setting['elementId'];
-					ja_input.setAttribute("min", setting['min']);
-					ja_input.setAttribute("max", setting['max']);
+					ja_input.id = setting.elementId;
+					ja_input.setAttribute("min", setting.min);
+					ja_input.setAttribute("max", setting.max);
 					ja_controls_container.appendChild(ja_input);
 					break;
 				/*
 				case 'text':
-					ja_input.id = setting['elementId'];
-					ja_input.size = (setting['max'] ? setting['max'] : 8);
-					ja_input.maxlength = (setting['max'] ? setting['max'] : 7);
+					ja_input.id = setting.elementId;
+					ja_input.size = (setting.max ? setting.max : 8);
+					ja_input.maxlength = (setting.max ? setting.max : 7);
 					ja_controls_container.appendChild(ja_input);
 					break;
 				*/
 				case 'checkbox':
-					ja_input.id = setting['elementId'];
+					ja_input.id = setting.elementId;
 					ja_controls_container.appendChild(ja_input);
 					break;
 				case 'select':
 					ja_input = document.createElement('select'); //Override <input> with <select>
-					ja_input.id = setting['elementId'];
-					for(var i = 0; i < setting["options"].length; i++) {
+					ja_input.id = setting.elementId;
+					for(var i = 0; i < setting.options.length; i++) {
 						var ja_select_option = document.createElement('option');
-						ja_select_option.value = setting["options"][i];
-						ja_select_option.appendChild(document.createTextNode(ja_getMessage(setting["options"][i])));
+						ja_select_option.value = setting.options[i];
+						ja_select_option.appendChild(document.createTextNode(ja_getMessage(setting.options[i])));
 						ja_input.appendChild(ja_select_option);
 					}
 					ja_controls_container.appendChild(ja_input);
@@ -207,7 +206,7 @@ function run_ja() {
 
 			ja_input.onchange = function() { ja_onchange(this); };
 
-			ja_label.setAttribute("for", setting['elementId']);
+			ja_label.setAttribute("for", setting.elementId);
 			ja_label.appendChild(document.createTextNode(ja_getMessage(a)));
 			ja_controls_container.appendChild(ja_label);
 
@@ -261,18 +260,17 @@ function run_ja() {
 
 		var jatab = document.createElement('li');
 		jatab.innerHTML = '<!--suppress HtmlUnknownAnchorTarget --><a href="#sidepanel-ja" data-toggle="tab">JAI</a>';
-		if(navTabs != null)
-			navTabs.appendChild(jatab);
+		if(navTabs != null) { navTabs.appendChild(jatab); }
 
 		//Add support for translations. Default (and fallback) is "en".
 		//Note, don't make typos in "acceleratorName", as it has to match the layer name (with whitespace removed)
 		// to actually work. Took me a while to figure that out...
-		I18n.translations[window.I18n.locale].layers.name["junction_angles"] = ja_getMessage("name");
+		I18n.translations[window.I18n.locale].layers.name.junction_angles = ja_getMessage("name");
 
 		/**
 		 * Initialize JAI OpenLayers vector layer
 		 */
-		if (window.Waze.map.getLayersBy("uniqueName","junction_angles").length == 0) {
+		if (window.Waze.map.getLayersBy("uniqueName","junction_angles").length === 0) {
 
 			// Create a vector layer and give it your style map.
 			ja_mapLayer = new window.OpenLayers.Layer.Vector(ja_getMessage("name"), {
@@ -341,13 +339,13 @@ function run_ja() {
 					s_out[element] = node.model.segments.get(element);
 					//Set empty name for streets if not defined
 					if(typeof s_out[element].primary === 'undefined') {
-						s_out[element]['primary'] = { name: "" };
+						s_out[element].primary = { name: "" };
 					}
 				}
 				s_n[element] = node.model.segments.get(element);
 				street_n[element] = ja_get_streets(element);
 				if(typeof street_n[element].primary === 'undefined') {
-					street_n[element]['primary'] = { name: ""};
+					street_n[element].primary = { name: ""};
 				}
 			}
 		});
@@ -409,10 +407,10 @@ function run_ja() {
 			ja_log(s_n, 2);
 			angles = angles.filter(function (a) {
 				ja_log("Filtering angle: " + ja_angle_diff(s_in_a, a[0], false), 2);
-				if(s_out_id == a[1]
-					|| (typeof s_n[a[1]] !== 'undefined'
-						&& ja_is_turn_allowed(s_in, node, s_n[a[1]])
-						&& Math.abs(ja_angle_diff(s_in_a, a[0], false)) <= 45 //Any angle above 45 is not eligible
+				if(s_out_id == a[1] ||
+					(typeof s_n[a[1]] !== 'undefined' &&
+						ja_is_turn_allowed(s_in, node, s_n[a[1]]) &&
+						Math.abs(ja_angle_diff(s_in_a, a[0], false)) <= 45 //Any angle above 45 is not eligible
 						)) {
 					ja_log(true, 4);
 					return true;
@@ -486,15 +484,14 @@ function run_ja() {
 				} else if(ja_segment_type_match(s_in, tmp_s_out)) {
 					ja_log("BC type match", 2);
 					bc_collect(a, 1);
-				} else {
-					//Non-BC
 				}
+				//Else: Non-BC
 			}
 
 			//If s-out is the only BC, that's it.
 			if (bc_matches[s_out_id] !== undefined && bc_count == 1) {
 				ja_log("\"straight\": no instruction", 2);
-				return ja_routing_type.BC
+				return ja_routing_type.BC;
 			}
 
 			ja_log("BC logic did not apply; using old default rules instead.", 2);
@@ -522,7 +519,7 @@ function run_ja() {
 
 			//FZ69617: Two overlapping sements logic
 			//WAZE WIKI: If the only two segments less than 45.04° overlap each other, neither will get an instruction.
-			if (angles.length == 2 && ja_overlapping_angles(angles[0][0], angles[1][0])) {
+			if (angles.length === 2 && ja_overlapping_angles(angles[0][0], angles[1][0])) {
 				ja_log("Two overlapping segments: no instruction", 2);
 				return ja_routing_type.BC;  //PROBLEM?
 			}
@@ -566,7 +563,7 @@ function run_ja() {
 		}
 
 		//try to show all angles for all selected segments
-		if (window.Waze.selectionManager.selectedItems.length == 0) return 1;
+		if (window.Waze.selectionManager.selectedItems.length === 0) { return 1; }
 		ja_log("Checking junctions for " + window.Waze.selectionManager.selectedItems.length + " segments", 2);
 		var ja_nodes = [];
 
@@ -579,11 +576,11 @@ function run_ja() {
 				case "segment":
 					//segments selected?
 					if (element.model.attributes.fromNodeID != null &&
-						ja_nodes.indexOf(element.model.attributes.fromNodeID) == -1) {
+						ja_nodes.indexOf(element.model.attributes.fromNodeID) === -1) {
 						ja_nodes.push(element.model.attributes.fromNodeID);
 					}
 					if (element.model.attributes.toNodeID != null &&
-						ja_nodes.indexOf(element.model.attributes.toNodeID) == -1) {
+						ja_nodes.indexOf(element.model.attributes.toNodeID) === -1) {
 						ja_nodes.push(element.model.attributes.toNodeID);
 					}
 					break;
@@ -620,7 +617,7 @@ function run_ja() {
 				ja_log("tmp_s: " + (tmp_s === null ? 'null' : tmp_s), 3);
 			});
 			ja_log("final tmp_s: " + (tmp_s === null ? 'null' : tmp_s), 3);
-			if(tmp_junctionID === null) return;
+			if(tmp_junctionID === null) { return; }
 			if(!ja_selected_roundabouts.hasOwnProperty(tmp_junctionID)) {
 				ja_selected_roundabouts[tmp_junctionID] = {
 					'in_s': tmp_s,
@@ -692,8 +689,8 @@ function run_ja() {
 
 			//ignore of we have less than 2 segments
 			if (ja_current_node_segments.length <= 1) {
-				ja_log("Found only " + ja_current_node_segments.length + " connected segments at " + ja_nodes[i]
-					+ ", not calculating anything...", 2);
+				ja_log("Found only " + ja_current_node_segments.length + " connected segments at " + ja_nodes[i] +
+					", not calculating anything...", 2);
 				continue;
 			}
 
@@ -711,7 +708,7 @@ function run_ja() {
 					//Meh. Something went wrong, and we lost track of the segment. This needs a proper fix, but for now
 					// it should be sufficient to just restart the calculation
 					ja_log("Failed to read segment data from model. Restarting calculations.", 1);
-					if(ja_last_restart == 0) {
+					if(ja_last_restart === 0) {
 						ja_last_restart = new Date().getTime();
 						setTimeout(function(){ja_calculate();}, 500);
 					}
@@ -790,18 +787,18 @@ function run_ja() {
 
 			var ha, point;
 			//if we have two connected segments selected, do some magic to get the turn angle only =)
-			if (ja_selected_segments_count == 2) {
+			if (ja_selected_segments_count === 2) {
 				var ja_extra_space_multiplier = 1;
 
 				a = ja_angle_diff(ja_selected_angles[0][0], ja_selected_angles[1][0], false);
 
 				ha = (parseFloat(ja_selected_angles[0][0]) + parseFloat(ja_selected_angles[1][0]))/2;
-				if(
-					(Math.abs(ja_selected_angles[0][0]) + Math.abs(ja_selected_angles[1][0])) > 180
-					&& (
-					(ja_selected_angles[0][0] < 0 && ja_selected_angles[1][0] > 0)
-					|| (ja_selected_angles[0][0] > 0 && ja_selected_angles[1][0] < 0))
-					) ha += 180;
+				if((Math.abs(ja_selected_angles[0][0]) + Math.abs(ja_selected_angles[1][0])) > 180 &&
+					((ja_selected_angles[0][0] < 0 && ja_selected_angles[1][0] > 0) ||
+						(ja_selected_angles[0][0] > 0 && ja_selected_angles[1][0] < 0))
+					) {
+					ha += 180;
+				}
 
 				if (Math.abs(a) > 120) {
 					ja_log("Sharp angle", 2);
@@ -809,10 +806,10 @@ function run_ja() {
 				}
 
 				//Move point a bit if it's on the top (Bridge icon will obscure it otherwise)
-				if(ha > 40 && ha < 120) ja_extra_space_multiplier = 2;
+				if(ha > 40 && ha < 120) { ja_extra_space_multiplier = 2; }
 
-				ja_log("Angle between " + ja_selected_angles[0][1] + " and " + ja_selected_angles[1][1] + " is "
-					+ a + " and position for label should be at " + ha, 3);
+				ja_log("Angle between " + ja_selected_angles[0][1] + " and " + ja_selected_angles[1][1] + " is " +
+					a + " and position for label should be at " + ha, 3);
 
 				//Guess some routing instructions based on segment types, angles etc
 				var ja_junction_type = ja_routing_type.TURN; //Default to old behavior
@@ -834,7 +831,7 @@ function run_ja() {
 			else {
 				//sort angle data (ascending)
 				angles.sort(function (a, b) {
-					return a[0] - b[0]
+					return a[0] - b[0];
 				});
 				ja_log(angles, 3);
 				ja_log(ja_selected_segments_count, 3);
@@ -844,16 +841,15 @@ function run_ja() {
 					a = (360 + (angles[(j + 1) % angles.length][0] - angle[0])) % 360;
 					ha = (360 + ((a / 2) + angle[0])) % 360;
 					var a_in = angles.filter(function(a) {
-						"use strict";
-						if(a[2]) return true;
+						if(a[2]) { return true; }
 					})[0];
 
 					//Show only one angle for nodes with only 2 connected segments and a single selected segment
 					// (not on both sides). Skipping the one > 180
-					if (ja_selected_segments_count == 1
-						&& angles.length == 2
-						&& a >=180
-						&& ja_getOption("angleMode") != "aDeparture"
+					if (ja_selected_segments_count === 1 &&
+						angles.length === 2 &&
+						a >=180 &&
+						ja_getOption("angleMode") != "aDeparture"
 						) {
 						ja_log("Skipping marker, as we need only one of them", 2);
 						return;
@@ -877,8 +873,8 @@ function run_ja() {
 						ja_draw_marker(point, node, ja_label_distance, a, ha, true,
 							ja_getOption("guess") ? ja_guess_routing_instruction(node, a_in[1], angle[1], angles) : ja_routing_type.TURN);
 					} else {
-						ja_log("Angle between " + angle[1] + " and " + angles[(j + 1) % angles.length][1] + " is "
-							+ a + " and position for label should be at " + ha, 3);
+						ja_log("Angle between " + angle[1] + " and " + angles[(j + 1) % angles.length][1] + " is " +
+							a + " and position for label should be at " + ha, 3);
 						point = new window.OpenLayers.Geometry.Point(
 								node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)),
 								node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
@@ -909,8 +905,6 @@ function run_ja() {
 	 * @param ja_junction_type If using routing, this needs to be set to the desired type
 	 */
 	function ja_draw_marker(point, node, ja_label_distance, a, ha, withRouting, ja_junction_type) {
-		"use strict";
-
 
 		//Try to estimate of the point is "too close" to another point
 		//(or maybe something else in the future; like turn restriction arrows or something)
@@ -979,8 +973,8 @@ function run_ja() {
 		}
 		var anglePoint = withRouting ?
 			new window.OpenLayers.Feature.Vector(
-				point
-				, { angle: angleString, ja_type: ja_junction_type }
+				point,
+				{ angle: angleString, ja_type: ja_junction_type }
 			): new window.OpenLayers.Feature.Vector(
 			point
 			, { angle: ja_round(a) + "°", ja_type: "generic" }
@@ -990,7 +984,9 @@ function run_ja() {
 		//Don't paint points inside an overlaid roundabout
 		if(ja_roundabout_points.some(function (roundaboutPoint){
 			return roundaboutPoint.containsPoint(point);
-		})) return;
+		})) {
+			return;
+		}
 
 		//Draw a line to the point
 		ja_mapLayer.addFeatures([
@@ -1069,7 +1065,7 @@ function run_ja() {
 			var segment_n = segments[segment_n_id];
 			ja_log("PT Checking element " + index, 2);
 			ja_log(segment_n, 2);
-			if(segment_n.attributes.id == segment_in.attributes.id) return false;
+			if(segment_n.attributes.id === segment_in.attributes.id) { return false; }
 			ja_log("PT checking sn.rt " + segment_n.attributes.roadType +
 				" vs i.pt: " + segment_in.attributes.roadType, 2);
 			return (segment_n.attributes.roadType == segment_in.attributes.roadType);
@@ -1087,10 +1083,10 @@ function run_ja() {
 	}
 
 	function ja_is_turn_allowed(s_from, via_node, s_to) {
-		ja_log("Allow from " + s_from.attributes.id
-			+ " to " + s_to.attributes.id
-			+ " via " + via_node.attributes.id + "? "
-			+ via_node.isTurnAllowedBySegDirections(s_from, s_to) + " | " + s_from.isTurnAllowed(s_to, via_node), 2);
+		ja_log("Allow from " + s_from.attributes.id +
+			" to " + s_to.attributes.id +
+			" via " + via_node.attributes.id + "? " +
+			via_node.isTurnAllowedBySegDirections(s_from, s_to) + " | " + s_from.isTurnAllowed(s_to, via_node), 2);
 
 		//Is there a driving direction restriction?
 		if(!via_node.isTurnAllowedBySegDirections(s_from, s_to)) {
@@ -1104,7 +1100,7 @@ function run_ja() {
 			return false;
 		}
 
-		if(s_to.attributes.fromNodeID == via_node.attributes.id) {
+		if(s_to.attributes.fromNodeID === via_node.attributes.id) {
 			ja_log("FWD direction",3);
 			return ja_is_car_allowed_by_restrictions(s_to.attributes.fwdRestrictions);
 		} else {
@@ -1115,7 +1111,7 @@ function run_ja() {
 
 	function ja_is_car_allowed_by_restrictions(restrictions) {
 		ja_log("Checking restrictions for cars", 2);
-		if(typeof restrictions === 'undefined' || restrictions == null || restrictions.length == 0) {
+		if(typeof restrictions === 'undefined' || restrictions == null || restrictions.length === 0) {
 			ja_log("No car type restrictions to check...", 3);
 			return true;
 		}
@@ -1123,10 +1119,10 @@ function run_ja() {
 
 		return !restrictions.some(function(element) {
 			ja_log("Checking restriction " + element, 3);
-			var ret = element.allDay //All day restriction
-				&& element.days == 127	//Every week day
-				&& ( element.vehicleTypes == -1 //All vehicle types
-					|| element.vehicleTypes & ja_vehicle_types.PRIVATE //or at least private cars
+			var ret = element.allDay &&             //All day restriction
+				element.days === 127 &&	            //Every week day
+				( element.vehicleTypes === -1 ||    //All vehicle types
+					element.vehicleTypes & ja_vehicle_types.PRIVATE //or at least private cars
 					);
 			if (ret) {
 				ja_log("There is an all-day-all-week restriction", 3);
@@ -1188,12 +1184,12 @@ function run_ja() {
 			ja_log("CN: Checking element " + index, 2);
 			ja_log(street_n_element, 2);
 			return (street_in.secondary.some(function (street_in_secondary){
-				ja_log("CN2a: checking n.p: " + street_n_element.primary.name
-					+ " vs in.s: " + street_in_secondary.name, 2);
+				ja_log("CN2a: checking n.p: " + street_n_element.primary.name +
+					" vs in.s: " + street_in_secondary.name, 2);
 
 				//wlodek76: CROSS-MATCH works when two compared segments contain at least one ALT NAME
 				//when alt name is empty cross-match does not work
-				if (street_n_element.secondary.length == 0) return false;
+				if (street_n_element.secondary.length === 0) { return false; }
 
 				return street_n_element.primary.name == street_in_secondary.name;
 			}) || street_n_element.secondary.some(function (street_n_secondary) {
@@ -1201,7 +1197,7 @@ function run_ja() {
 
 				//wlodek76: CROSS-MATCH works when two compared segments contain at least one ALT NAME
 				//when alt name is empty cross-match does not work
-				if (street_in.secondary.length == 0) return false;
+				if (street_in.secondary.length === 0) { return false; }
 
 				//wlodek76: missing return from checking primary name with alternate names
 				return street_in.primary.name == street_n_secondary.name;
@@ -1215,15 +1211,15 @@ function run_ja() {
 			ja_log("AN alt name check: Checking element " + index, 2);
 			ja_log(street_n_element, 2);
 
-			if(street_in.secondary.length == 0) return false;
-			if(street_n_element.secondary.length == 0) return false;
+			if(street_in.secondary.length === 0) { return false; }
+			if(street_n_element.secondary.length === 0) { return false; }
 
 			return street_in.secondary.some(function (street_in_secondary, index2) {
 				ja_log("AN2 checking element " + index2, 2);
 				ja_log(street_in_secondary, 2);
 				return street_n_element.secondary.some(function (street_n_secondary_element, index3) {
-					ja_log("AN3 Checking in.s: " + street_in_secondary.name
-						+ " vs n.s." + index3 + ": " + street_n_secondary_element.name, 2);
+					ja_log("AN3 Checking in.s: " + street_in_secondary.name +
+						" vs n.s." + index3 + ": " + street_n_secondary_element.name, 2);
 					return street_in_secondary.name == street_n_secondary_element.name;
 				});
 			});
@@ -1310,8 +1306,8 @@ function run_ja() {
 	 */
 	function ja_angle_diff(aIn, aOut, absolute) {
 		var a = parseFloat(aOut) - parseFloat(aIn);
-		if(a > 180) a -= 360;
-		if(a < -180) a+= 360;
+		if(a > 180) { a -= 360; }
+		if(a < -180) { a+= 360; }
 		return absolute ? a : (a > 0 ? a - 180 : a + 180);
 	}
 
@@ -1361,7 +1357,7 @@ function run_ja() {
 
 		//If we have more than 4 possible exits, the roundabout is non-normal, and we don't want to paint the
 		//offending angles.
-		if (numValidExits > 4) return false;
+		if (numValidExits > 4) { return false; }
 
 		for (var n in nodes) {
 			if (nodes.hasOwnProperty(n)) {
@@ -1438,7 +1434,7 @@ function run_ja() {
 	function ja_getAngle(ja_node, ja_segment) {
 		ja_log("node: " + ja_node, 2);
 		ja_log("segment: " + ja_segment, 2);
-		if (ja_node == null || ja_segment == null) return null;
+		if (ja_node == null || ja_segment == null) { return null; }
 		var ja_dx, ja_dy;
 		if (ja_segment.attributes.fromNodeID == ja_node) {
 			ja_dx = ja_get_second_point(ja_segment).x - ja_get_first_point(ja_segment).x;
@@ -1489,33 +1485,33 @@ function run_ja() {
 	function ja_getOption(name) {
 		ja_log("Loading option: " + name, 2);
 		if(!ja_options.hasOwnProperty(name) || typeof ja_options[name] === 'undefined') {
-			ja_options[name] = ja_settings[name]['defaultValue'];
+			ja_options[name] = ja_settings[name].defaultValue;
 		}
 		//Check for invalid values
 		//Select values
-		if(ja_settings[name]["elementType"] == "select" && ja_settings[name]["options"].lastIndexOf(ja_options[name]) < 0) {
-			ja_log(ja_settings[name]["options"], 2);
+		if(ja_settings[name].elementType === "select" && ja_settings[name].options.lastIndexOf(ja_options[name]) < 0) {
+			ja_log(ja_settings[name].options, 2);
 			ja_log("Found invalid value for setting " + name + ": " + ja_options[name] + ". Using default.", 2);
-			ja_options[name] = ja_settings[name]['defaultValue'];
+			ja_options[name] = ja_settings[name].defaultValue;
 		}
 		//Color values
-		else if(ja_settings[name]["elementType"] == "color" && ja_options[name].match(/#[0-9a-f]{6}/) == null) {
+		else if(ja_settings[name].elementType === "color" && String(ja_options[name]).match(/#[0-9a-f]{6}/) == null) {
 			ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
-			ja_options[name] = ja_settings[name]['defaultValue'];
+			ja_options[name] = ja_settings[name].defaultValue;
 		}
 		//Numeric values
-		else if(ja_settings[name]["elementType"] == "number") {
-			var minValue = typeof ja_settings[name]['min'] === 'undefined' ? Number.MIN_VALUE : ja_settings[name]['min'];
-			var maxValue = typeof ja_settings[name]['max'] === 'undefined' ? Number.MAX_VALUE : ja_settings[name]['max'];
+		else if(ja_settings[name].elementType === "number") {
+			var minValue = typeof ja_settings[name].min === 'undefined' ? Number.MIN_VALUE : ja_settings[name].min;
+			var maxValue = typeof ja_settings[name].max === 'undefined' ? Number.MAX_VALUE : ja_settings[name].max;
 			if(isNaN(ja_options[name]) || ja_options[name] < minValue || ja_options[name] > maxValue) {
 				ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
-				ja_options[name] = ja_settings[name]['defaultValue'];
+				ja_options[name] = ja_settings[name].defaultValue;
 			}
 		}
 		//Checkboxes
-		else if(ja_settings[name]["elementType"] == "checkbox" && ja_options[name] !== true && ja_options[name] !== false) {
+		else if(ja_settings[name].elementType === "checkbox" && ja_options[name] !== true && ja_options[name] !== false) {
 			ja_log("Found invalid value for setting " + name + ": \"" + ja_options[name] + "\". Using default.", 2);
-			ja_options[name] = ja_settings[name]['defaultValue'];
+			ja_options[name] = ja_settings[name].defaultValue;
 		}
 
 		ja_log("Got value: " + ja_options[name], 2);
@@ -1536,19 +1532,19 @@ function run_ja() {
 		var applyPending = false;
 		var settingName = Object.getOwnPropertyNames(ja_settings).filter(function(a,b,c){
 			ja_log(ja_settings[a], 4);
-			return ja_settings[a]["elementId"] == e.id;
+			return ja_settings[a].elementId == e.id;
 		})[0];
 		ja_log(settingName, 3);
-		switch(ja_settings[settingName]["elementType"]) {
+		switch(ja_settings[settingName].elementType) {
 			case "checkbox":
 				ja_log("Checkbox setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.checked, 3);
-				if (ja_options[settingName] != e.checked) applyPending = true;
+				if (ja_options[settingName] != e.checked) { applyPending = true; }
 				break;
 			case "select":
 			case "color":
 			case "number":
 				ja_log("Setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value, 3);
-				if (ja_options[settingName] != e.value) applyPending = true;
+				if (ja_options[settingName] != e.value) { applyPending = true; }
 				break;
 			default:
 				ja_log("Unknown setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value, 3);
@@ -1556,25 +1552,25 @@ function run_ja() {
 
 		//Enable|disable certain dependent settings
 		switch(e.id) {
-			case ja_settings['guess'].elementId:
+			case ja_settings.guess.elementId:
 				Object.getOwnPropertyNames(ja_settings).forEach(function (a) {
 					var setting = ja_settings[a];
-					if(setting['group'] && setting['group'] == 'guess') {
+					if(setting.group && setting.group === 'guess') {
 						ja_log(a + ": " + !e.checked , 3);
-						document.getElementById(setting["elementId"]).disabled = !e.checked;
-						document.getElementById(setting["elementId"]).parentNode.style.color =
+						document.getElementById(setting.elementId).disabled = !e.checked;
+						document.getElementById(setting.elementId).parentNode.style.color =
 							e.checked ? "black" : "lightgrey";
 					}
 				});
 				break;
-			case ja_settings['roundaboutOverlayDisplay'].elementId:
+			case ja_settings.roundaboutOverlayDisplay.elementId:
 				Object.getOwnPropertyNames(ja_settings).forEach(function (a) {
 					var setting = ja_settings[a];
-					if(setting['group'] && setting['group'] == 'roundaboutOverlayDisplay') {
+					if(setting.group && setting.group === 'roundaboutOverlayDisplay') {
 						ja_log(a +": " + e.value, 3);
-						document.getElementById(setting["elementId"]).disabled = e.value == "rOverNever";
-						document.getElementById(setting["elementId"]).parentNode.style.color =
-							e.value != "rOverNever" ? "black" : "lightgrey";
+						document.getElementById(setting.elementId).disabled = e.value === "rOverNever";
+						document.getElementById(setting.elementId).parentNode.style.color =
+							e.value !== "rOverNever" ? "black" : "lightgrey";
 					}
 				});
 				break;
@@ -1616,29 +1612,29 @@ function run_ja() {
 		Object.getOwnPropertyNames(ja_settings).forEach(function (a) {
 			var setting = ja_settings[a];
 			ja_log(setting, 2);
-			switch (setting['elementType']) {
+			switch (setting.elementType) {
 				case "checkbox":
-					ja_setOption(a, document.getElementById(setting['elementId']).checked);
+					ja_setOption(a, document.getElementById(setting.elementId).checked);
 					break;
 				case "color":
 					var re = /^#[0-9a-f]{6}$/;
-					if(re.test(document.getElementById(setting['elementId']).value)) {
-						ja_setOption(a, document.getElementById(setting['elementId']).value);
+					if(re.test(document.getElementById(setting.elementId).value)) {
+						ja_setOption(a, document.getElementById(setting.elementId).value);
 					} else {
 						ja_setOption(a, ja_settings[a]['default']);
 					}
 					break;
 				case "number":
-					var val = document.getElementById(setting['elementId']).value;
-					if(!isNaN(val) && val == parseInt(val) && val >= setting['min'] && val <= setting['max']) {
-						ja_setOption(a, document.getElementById(setting['elementId']).value);
+					var val = parseInt(document.getElementById(setting.elementId).value);
+					if(!isNaN(val) && val === parseInt(val) && val >= setting.min && val <= setting.max) {
+						ja_setOption(a, document.getElementById(setting.elementId).value);
 					} else {
 						ja_setOption(a, ja_settings[a]['default']);
 					}
 					break;
 				case "text":
 				case "select":
-					ja_setOption(a, document.getElementById(setting['elementId']).value);
+					ja_setOption(a, document.getElementById(setting.elementId).value);
 					break;
 			}
 		});
@@ -1659,20 +1655,20 @@ function run_ja() {
 				var setting = ja_settings[a];
 				ja_log(a, 2);
 				ja_log(setting, 2);
-				ja_log(document.getElementById(setting['elementId']), 2);
-				switch (setting['elementType']) {
+				ja_log(document.getElementById(setting.elementId), 2);
+				switch (setting.elementType) {
 					case "checkbox":
-						document.getElementById(setting['elementId']).checked = ja_getOption(a);
-						document.getElementById(setting['elementId']).onchange(null);
+						document.getElementById(setting.elementId).checked = ja_getOption(a);
+						document.getElementById(setting.elementId).onchange(null);
 						break;
 					case "color":
 					case "number":
 					case "text":
-						document.getElementById(setting['elementId']).value = ja_getOption(a);
+						document.getElementById(setting.elementId).value = ja_getOption(a);
 						break;
 					case "select":
-						document.getElementById(setting['elementId']).value = ja_getOption(a);
-						document.getElementById(setting['elementId']).onchange(null);
+						document.getElementById(setting.elementId).value = ja_getOption(a);
+						document.getElementById(setting.elementId).onchange(null);
 						break;
 				}
 			});
@@ -1718,7 +1714,7 @@ function run_ja() {
 		},
 
 		cancel: function() {
-			if(typeof this.timeoutID == "number") {
+			if(typeof this.timeoutID === "number") {
 				window.clearTimeout(this.timeoutID);
 				ja_log("Cleared timeout ID" + this.timeoutID, 2);
 				delete this.timeoutID;
@@ -1740,18 +1736,18 @@ function run_ja() {
 					value: routingType
 				}),
 				symbolizer: {
-					pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10)
-						+ (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+					pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) +
+						(parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
 					fontSize: (parseInt(ja_getOption("pointSize")) - 1) + "px",
 					fillColor: ja_getOption(fillColorOption),
 					strokeColor: "#183800"
 				}
-			})
+			});
 	}
 
 	function ja_style() {
-		ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10))
-			+ (parseInt(ja_getOption("decimals") > 0 ? (5 * parseInt(ja_getOption("decimals"))).toString() : "0")), 2);
+		ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10)) +
+			(parseInt(ja_getOption("decimals") > 0 ? (5 * parseInt(ja_getOption("decimals"))).toString() : "0")), 2);
 		return new window.OpenLayers.Style({
 			fillColor: "#ffcc88",
 			strokeColor: "#ff9966",
@@ -1788,8 +1784,8 @@ function run_ja() {
 							value: "roundaboutOverlay"
 						}),
 						symbolizer: {
-							pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10)
-								+ (parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+							pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) +
+								(parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
 							fontSize: "12px",
 							fillColor: ja_getOption("roundaboutOverlayColor"),
 							fillOpacity: 0.1,
@@ -1809,14 +1805,14 @@ function run_ja() {
 
 	function ja_getMessage(key) {
 		var tr = I18n.translate('ja.' + key), no_tr = I18n.missingTranslation('ja.' + key);
-		return tr != no_tr ? tr : key;
+		return tr !== no_tr ? tr : key;
 	}
 
 	function ja_loadTranslations() {
 		ja_log("Loading translations",2);
 
 		var set_trans = function(loc, def) {
-			return I18n.translations[loc].ja = def;
+			I18n.translations[loc].ja = def;
 		};
 
 		//Default language (English)
@@ -1956,7 +1952,6 @@ function run_ja() {
 	 */
 
 	function ja_registerLoginEvent() {
-		"use strict";
 		ja_log("Registering onLogin event listener", 1);
 		ja_log(window.Waze.loginManager.events, 3);
 		//HTML changes after login, even though the page is not reloaded. Need to defer init until then.
@@ -2023,7 +2018,7 @@ function run_ja() {
 		//are removed by the FF addon packaging script.
 		if(typeof ja_log_level === 'undefined') ja_log_level = 1;
 		if (ja_log_level <= junctionangle_debug) {
-			if (typeof ja_log_msg == "object") {
+			if (typeof ja_log_msg === "object") {
 				console.debug(ja_log_msg);
 			}
 			else {
