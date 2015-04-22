@@ -112,7 +112,7 @@ function run_ja() {
 		left: function() { return this.get_arrow(0); },
 		right: function() { return this.get_arrow(1); },
 		left_up: function() { return this.get_arrow(2); },
-		right_up: function() { return this.get_arrow(3); },
+		right_up: function() { return this.get_arrow(3); }
 	};
 
 	/*
