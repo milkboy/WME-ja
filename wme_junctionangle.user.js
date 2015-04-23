@@ -513,9 +513,11 @@ function run_ja() {
 						//but I'm finally not sure whether we can safely ignore the precondition from Wiki?
 
 				//FZ69617: Sort angles in left most first order
-				angles.sort(function(a, b) {
-					return ja_normalize_angle(s_in_a[0][0] - a[0]) - ja_normalize_angle(s_in_a[0][0] - b[0]); }
-				);
+				function angle_to_s_in(a) {
+					var diff = ja_angle_diff(a, s_in_a[0][0], true);
+					return diff < 0 ? diff + 360 : diff;
+				};
+				angles.sort(function(a, b) { return angle_to_s_in(a[0]) - angle_to_s_in(b[0]); });
 
 				if (angles[0][1] === s_out_id) { //s-out is left most segment
 
@@ -1269,27 +1271,17 @@ function run_ja() {
 	 * @param a2 Angle of the 2nd segment
 	 */
 	function ja_overlapping_angles(a1, a2) {
-		// FZ69617: angles must be normalized before subtraction!
-		var a = Math.abs(ja_normalize_angle(a1) - ja_normalize_angle(a2));
-
 		// If two angles are close < 2 degree they are overlapped.
 		// Method of recognizing overlapped segment by server is unknown for me yet, I took this from WME Validator
 		// information about this.
 		// TODO: verify overlapping check on the side of routing server.
-		return a < 2.0;
+		return Math.abs(ja_angle_diff(a1, a2, true)) < 2.0;
 	}
 
 
 	/*
 	 * Misc math and map element functions
 	 */
-
-	/**
-	 * Returns normalized angle value [0, 360).
-	 */
-	function ja_normalize_angle(a) {
-		return (a % 360 + 360) % 360;
-	}
 
 	/**
 	 *
@@ -1826,7 +1818,7 @@ function run_ja() {
 		ja_log("Loading translations",2);
 
 		var set_trans = function(loc, def) {
-			I18n.translations[loc].ja = def;
+			return I18n.translations[loc].ja = def;
 		};
 
 		//Default language (English)
