@@ -1825,6 +1825,7 @@ function run_ja() {
 		ja_log("Loading translations",2);
 
 		var set_trans = function(loc, def) {
+            /*jshint -W093*/
 			return I18n.translations[loc].ja = def;
 		};
 
