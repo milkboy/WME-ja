@@ -513,9 +513,11 @@ function run_ja() {
 						//but I'm finally not sure whether we can safely ignore the precondition from Wiki?
 
 				//FZ69617: Sort angles in left most first order
-				angles.sort(function(a, b) {
-					return ja_normalize_angle(s_in_a[0][0] - a[0]) - ja_normalize_angle(s_in_a[0][0] - b[0]); }
-				);
+				ja_log("Unsorted angles", 4);
+				ja_log(angles, 4);
+				angles.sort(function(a, b) { return angle_to_s_in(a[0], s_in_a[0][0]) - angle_to_s_in(b[0],s_in_a[0][0]); });
+				ja_log("Sorted angles", 4);
+				ja_log(angles, 4);
 
 				if (angles[0][1] === s_out_id) { //s-out is left most segment
 
@@ -528,7 +530,7 @@ function run_ja() {
 				}
 			}
 
-			//FZ69617: Two overlapping sements logic
+			//FZ69617: Two overlapping segments logic
 			//WAZE WIKI: If the only two segments less than 45.04° overlap each other, neither will get an instruction.
 			if (angles.length === 2 && ja_overlapping_angles(angles[0][0], angles[1][0])) {
 				ja_log("Two overlapping segments: no instruction", 2);
@@ -1130,7 +1132,7 @@ function run_ja() {
 		ja_log(restrictions, 3);
 
 		return !restrictions.some(function(element) {
-            /*jshint bitwise: false*/
+			/*jshint bitwise: false*/
 			ja_log("Checking restriction " + element, 3);
 			var ret = element.allDay &&             //All day restriction
 				element.days === 127 &&	            //Every week day
@@ -1269,27 +1271,17 @@ function run_ja() {
 	 * @param a2 Angle of the 2nd segment
 	 */
 	function ja_overlapping_angles(a1, a2) {
-		// FZ69617: angles must be normalized before subtraction!
-		var a = Math.abs(ja_normalize_angle(a1) - ja_normalize_angle(a2));
-
 		// If two angles are close < 2 degree they are overlapped.
 		// Method of recognizing overlapped segment by server is unknown for me yet, I took this from WME Validator
 		// information about this.
 		// TODO: verify overlapping check on the side of routing server.
-		return a < 2.0;
+		return Math.abs(ja_angle_diff(a1, a2, true)) < 2.0;
 	}
 
 
 	/*
 	 * Misc math and map element functions
 	 */
-
-	/**
-	 * Returns normalized angle value [0, 360).
-	 */
-	function ja_normalize_angle(a) {
-		return (a % 360 + 360) % 360;
-	}
 
 	/**
 	 *
@@ -1324,6 +1316,13 @@ function run_ja() {
 		if(a > 180) { a -= 360; }
 		if(a < -180) { a+= 360; }
 		return absolute ? a : (a > 0 ? a - 180 : a + 180);
+	}
+
+	function angle_to_s_in(a, s_in_angle) {
+		ja_log("Comparing out-angle " + a + " to in-angle " + s_in_angle, 4);
+		var diff = ja_angle_diff(a, s_in_angle, true);
+		ja_log("Diff is " + diff + ", returning: " + (diff < 0 ? diff + 360 : diff), 4);
+		return diff < 0 ? diff + 360 : diff;
 	}
 
 	function ja_is_roundabout_normal(junctionID, n_in) {
@@ -1826,7 +1825,8 @@ function run_ja() {
 		ja_log("Loading translations",2);
 
 		var set_trans = function(loc, def) {
-			I18n.translations[loc].ja = def;
+            /*jshint -W093*/
+			return I18n.translations[loc].ja = def;
 		};
 
 		//Default language (English)
