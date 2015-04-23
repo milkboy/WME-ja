@@ -513,11 +513,11 @@ function run_ja() {
 						//but I'm finally not sure whether we can safely ignore the precondition from Wiki?
 
 				//FZ69617: Sort angles in left most first order
-				function angle_to_s_in(a) {
-					var diff = ja_angle_diff(a, s_in_a[0][0], true);
-					return diff < 0 ? diff + 360 : diff;
-				};
-				angles.sort(function(a, b) { return angle_to_s_in(a[0]) - angle_to_s_in(b[0]); });
+				ja_log("Unsorted angles", 4);
+				ja_log(angles, 4);
+				angles.sort(function(a, b) { return angle_to_s_in(a[0], s_in_a[0][0]) - angle_to_s_in(b[0],s_in_a[0][0]); });
+				ja_log("Sorted angles", 4);
+				ja_log(angles, 4);
 
 				if (angles[0][1] === s_out_id) { //s-out is left most segment
 
@@ -1316,6 +1316,13 @@ function run_ja() {
 		if(a > 180) { a -= 360; }
 		if(a < -180) { a+= 360; }
 		return absolute ? a : (a > 0 ? a - 180 : a + 180);
+	}
+
+	function angle_to_s_in(a, s_in_angle) {
+		ja_log("Comparing out-angle " + a + " to in-angle " + s_in_angle, 4);
+		var diff = ja_angle_diff(a, s_in_angle, true);
+		ja_log("Diff is " + diff + ", returning: " + (diff < 0 ? diff + 360 : diff), 4);
+		return diff < 0 ? diff + 360 : diff;
 	}
 
 	function ja_is_roundabout_normal(junctionID, n_in) {
