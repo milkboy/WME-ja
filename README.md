@@ -18,7 +18,9 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 ![Screenshot](https://github.com/milkboy/WME-ja/raw/master/screenshot1.png)
 
 ###Changelog
-####1.9.0-b1
+####1.9.1 (unreleased)
+
+####1.9.0
 - Improved roundabout routing logic
 - Fixed several BC routing instruction guessing issues
 - Added Polish translation
