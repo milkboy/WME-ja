@@ -530,7 +530,7 @@ function run_ja() {
 				}
 			}
 
-			//FZ69617: Two overlapping sements logic
+			//FZ69617: Two overlapping segments logic
 			//WAZE WIKI: If the only two segments less than 45.04° overlap each other, neither will get an instruction.
 			if (angles.length === 2 && ja_overlapping_angles(angles[0][0], angles[1][0])) {
 				ja_log("Two overlapping segments: no instruction", 2);
@@ -1132,7 +1132,7 @@ function run_ja() {
 		ja_log(restrictions, 3);
 
 		return !restrictions.some(function(element) {
-            /*jshint bitwise: false*/
+			/*jshint bitwise: false*/
 			ja_log("Checking restriction " + element, 3);
 			var ret = element.allDay &&             //All day restriction
 				element.days === 127 &&	            //Every week day
