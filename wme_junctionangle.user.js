@@ -537,6 +537,13 @@ function run_ja() {
 				return ja_routing_type.BC;  //PROBLEM?
 			}
 
+			//wlodek76: Three overlapping segments logic
+			//MISSING IN WIKI: If the ONLY THREE segments less than 45.04° overlap each other, neither will get an instruction.
+			if (angles.length === 3 && ja_overlapping_angles(angles[0][0], angles[1][0]) && ja_overlapping_angles(angles[0][0], angles[2][0])) {
+				ja_log("Three overlapping segments: no instruction", 2);
+				return ja_routing_type.BC;  //PROBLEM?
+			}
+
 			//Primary to non-primary
 			if(ja_is_primary_road(s_in) && !ja_is_primary_road(s_out[s_out_id])) {
 				ja_log("Primary to non-primary = exit", 2);
