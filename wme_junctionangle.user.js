@@ -41,14 +41,16 @@ function run_ja() {
 
 	var ja_last_restart = 0, ja_roundabout_points = [], ja_options = {}, ja_mapLayer;
 
+	var TURN_ANGLE = 45.04;  //Turn vs. keep angle specified in Wiki.
+	var GRAY_ZONE = 0.0;  //0 since there is no mention of a "gray zone" in Wiki. TODO: verify on map
+	var OVERLAPPING_ANGLE = 0.5;  //Experimentally measured overlapping angle.
+
 	var ja_routing_type = {
 		BC: "junction_none",
 		KEEP: "junction_keep",
 		KEEP_LEFT: "junction_keep_left",
 		KEEP_RIGHT: "junction_keep_right",
 		TURN: "junction",
-		// UNUSED? FZ69617: now we have a display logic implemented for it, but currently I cannot predict whether
-		// we'll need it or not
 		EXIT: "junction_exit",
 		EXIT_LEFT: "junction_exit_left",
 		EXIT_RIGHT: "junction_exit_right",
@@ -112,14 +114,14 @@ function run_ja() {
 	};
 
 	var ja_arrow = {
-		get_arrow: function(at) {
+		get: function(at) {
 			var arrows = ja_getOption("angleDisplayArrows");
 			return arrows[at % arrows.length];
 		},
-		left: function() { return this.get_arrow(0); },
-		right: function() { return this.get_arrow(1); },
-		left_up: function() { return this.get_arrow(2); },
-		right_up: function() { return this.get_arrow(3); }
+		left: function() { return this.get(0); },
+		right: function() { return this.get(1); },
+		left_up: function() { return this.get(2); },
+		right_up: function() { return this.get(3); }
 	};
 
 	/*
@@ -404,7 +406,7 @@ function run_ja() {
 		 * Here be dragons!
 		 *
 		 */
-		if(Math.abs(angle) <= 44) {
+		if(Math.abs(angle) < TURN_ANGLE - GRAY_ZONE) {
 			ja_log("Turn is <= 44", 2);
 
 			/*
@@ -419,7 +421,7 @@ function run_ja() {
 				if(s_out_id === a[1] ||
 					(typeof s_n[a[1]] !== 'undefined' &&
 						ja_is_turn_allowed(s_in, node, s_n[a[1]]) &&
-						Math.abs(ja_angle_diff(s_in_a, a[0], false)) <= 45 //Any angle above 45 is not eligible
+						Math.abs(ja_angle_diff(s_in_a, a[0], false)) < TURN_ANGLE //Any angle above 45 is not eligible
 						)) {
 					ja_log(true, 4);
 					return true;
@@ -504,43 +506,41 @@ function run_ja() {
 
 			ja_log("BC logic did not apply; using old default rules instead.", 2);
 
-			// wlodek76: FIXING KEEP LEFT/RIGHT regarding to left most segment
-			// WIKI WAZE: When there are more than two segments less than 45.04°, only the left most segment will be
+			//FZ69617: Sort angles in left most first order
+			ja_log("Unsorted angles", 4);
+			ja_log(angles, 4);
+			angles.sort(function(a, b) { return ja_angle_dist(a[0], s_in_a[0][0]) - ja_angle_dist(b[0], s_in_a[0][0]); });
+			ja_log("Sorted angles", 4);
+			ja_log(angles, 4);
+
+			//wlodek76: FIXING KEEP LEFT/RIGHT regarding to left most segment
+			//WIKI WAZE: When there are more than two segments less than 45.04°, only the left most segment will be
 			// KEEP LEFT, all the rest will be KEEP RIGHT
-			if (true || angles.length > 2) { //FZ69617: "more than two..."
-						//FIXME: 'true' added to temporarily ignore this condition
-						//without this many "keep left"s changed into "exit right"
-						//but I'm finally not sure whether we can safely ignore the precondition from Wiki?
+			//FZ69617: Wiki seems to be wrong here - experiments shows that "more than two" must be read as "at least two"
+			if (angles[0][1] === s_out_id) { //s-out is left most segment
 
-				//FZ69617: Sort angles in left most first order
-				ja_log("Unsorted angles", 4);
-				ja_log(angles, 4);
-				angles.sort(function(a, b) { return angle_to_s_in(a[0], s_in_a[0][0]) - angle_to_s_in(b[0],s_in_a[0][0]); });
-				ja_log("Sorted angles", 4);
-				ja_log(angles, 4);
-
-				if (angles[0][1] === s_out_id) { //s-out is left most segment
-
-					//wlodek76: KEEP LEFT/RIGHT overlapping case
-					//WIKI WAZE: If the left most segment is overlapping another segment, it will also be KEEP RIGHT.
-					if (!ja_overlapping_angles(angles[0][0], angles[1][0])) {
-						ja_log("Left most <45 segment: keep left", 2);
-						return ja_routing_type.KEEP_LEFT;
-					}
+				//wlodek76: KEEP LEFT/RIGHT overlapping case
+				//WIKI WAZE: If the left most segment is overlapping another segment, it will also be KEEP RIGHT.
+				if (!ja_overlapping_angles(angles[0][0], angles[1][0])) {
+					ja_log("Left most <45 segment: keep left", 2);
+					return ja_routing_type.KEEP_LEFT;
 				}
 			}
 
 			//FZ69617: Two overlapping segments logic
 			//WAZE WIKI: If the only two segments less than 45.04° overlap each other, neither will get an instruction.
-			if (angles.length === 2 && ja_overlapping_angles(angles[0][0], angles[1][0])) {
-				ja_log("Two overlapping segments: no instruction", 2);
-				return ja_routing_type.BC;  //PROBLEM?
-			}
-
+			//...
 			//wlodek76: Three overlapping segments logic
 			//MISSING IN WIKI: If the ONLY THREE segments less than 45.04° overlap each other, neither will get an instruction.
-			if (angles.length === 3 && ja_overlapping_angles(angles[0][0], angles[1][0]) && ja_overlapping_angles(angles[0][0], angles[2][0])) {
-				ja_log("Three overlapping segments: no instruction", 2);
+			//...
+			//FZ69617: Two or more overlapping segments logic
+			//MISSING IN WIKI: If there are two or more segments less than 45.04° and all these segmentes overlap each other,
+			// neither will get an instruction.
+			var overlap_i = 1;
+			while(overlap_i < angles.length &&
+					ja_overlapping_angles(angles[0][0], angles[overlap_i][0])) ++overlap_i;
+			if(overlap_i > 1 && overlap_i === angles.length) {
+				ja_log("Two or more overlapping segments only: no instruction", 2);
 				return ja_routing_type.BC;  //PROBLEM?
 			}
 
@@ -558,7 +558,7 @@ function run_ja() {
 
 			ja_log("DEFAULT: keep right", 2);
 			return ja_routing_type.KEEP_RIGHT;
-		} else if(Math.abs(angle) <= 46) {
+		} else if (Math.abs(angle) < TURN_ANGLE + GRAY_ZONE) {
 			ja_log("Angle is in gray zone 44-46", 2);
 			return ja_routing_type.PROBLEM;
 		} else {
@@ -1282,7 +1282,7 @@ function run_ja() {
 		// Method of recognizing overlapped segment by server is unknown for me yet, I took this from WME Validator
 		// information about this.
 		// TODO: verify overlapping check on the side of routing server.
-		return Math.abs(ja_angle_diff(a1, a2, true)) < 2.0;
+		return Math.abs(ja_angle_diff(a1, a2, true)) < OVERLAPPING_ANGLE;
 	}
 
 
@@ -1325,8 +1325,8 @@ function run_ja() {
 		return absolute ? a : (a > 0 ? a - 180 : a + 180);
 	}
 
-	function angle_to_s_in(a, s_in_angle) {
-		ja_log("Comparing out-angle " + a + " to in-angle " + s_in_angle, 4);
+	function ja_angle_dist(a, s_in_angle) {
+		ja_log("Computing out-angle distance " + a + " to in-angle " + s_in_angle, 4);
 		var diff = ja_angle_diff(a, s_in_angle, true);
 		ja_log("Diff is " + diff + ", returning: " + (diff < 0 ? diff + 360 : diff), 4);
 		return diff < 0 ? diff + 360 : diff;
@@ -1832,7 +1832,7 @@ function run_ja() {
 		ja_log("Loading translations",2);
 
 		var set_trans = function(loc, def) {
-            /*jshint -W093*/
+			/*jshint -W093*/
 			return I18n.translations[loc].ja = def;
 		};
 
