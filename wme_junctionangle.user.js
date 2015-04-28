@@ -1025,13 +1025,10 @@ function run_ja() {
 	}
 
 	function ja_draw_roundabout_overlay(junctionId) {
-		window.Waze.model.junctions.getObjectArray().forEach(function (element){
+		(junctionId !== undefined ? (function (junction) { return junction !== undefined ? [ junction ] : []; })
+				(window.Waze.model.junctions.get(junctionId)) :
+				(window.Waze.model.junctions.getObjectArray())).forEach(function (element) {
 			ja_log(element, 3);
-			//Check if we want a specific junction.
-			//FIXME: this should actually be done by a direct select, instead of looping through all..
-			if(typeof junctionId !== "undefined" && junctionId !== element.id) {
-				return;
-			}
 			var nodes = {};
 			element.segIDs.forEach(function(s) {
 				var seg = window.Waze.model.segments.get(s);
