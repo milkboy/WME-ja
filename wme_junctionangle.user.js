@@ -586,7 +586,9 @@ function run_ja() {
 			// neither will get an instruction.
 			var overlap_i = 1;
 			while(overlap_i < angles.length &&
-					ja_overlapping_angles(angles[0][0], angles[overlap_i][0])) ++overlap_i;
+					ja_overlapping_angles(angles[0][0], angles[overlap_i][0])) {
+				++overlap_i;
+			}
 			if(overlap_i > 1 && overlap_i === angles.length) {
 				ja_log("Two or more overlapping segments only: no instruction", 2);
 				return ja_routing_type.BC;  //PROBLEM?
@@ -623,7 +625,7 @@ function run_ja() {
 		ja_roundabout_points = [];
 		ja_log(window.Waze.map, 3);
 		if (typeof ja_mapLayer === 'undefined') {
-			return 1;
+			return;
 		}
 		//clear old info
 		ja_mapLayer.destroyFeatures();
@@ -687,7 +689,10 @@ function run_ja() {
 			});
 			ja_log("final tmp_s: " + (tmp_s === null ? 'null' : tmp_s), 3);
 			if(tmp_junctionID === null) { return; }
-			if(!ja_selected_roundabouts.hasOwnProperty(tmp_junctionID)) {
+			if (ja_selected_roundabouts.hasOwnProperty(tmp_junctionID)) {
+				ja_selected_roundabouts[tmp_junctionID].out_s = tmp_s;
+				ja_selected_roundabouts[tmp_junctionID].out_n = node;
+			} else {
 				ja_selected_roundabouts[tmp_junctionID] = {
 					'in_s': tmp_s,
 					'in_n': tmp_n,
@@ -695,9 +700,6 @@ function run_ja() {
 					'out_n': null,
 					'p': window.Waze.model.junctions.get(tmp_junctionID).geometry
 				};
-			} else {
-				ja_selected_roundabouts[tmp_junctionID].out_s = tmp_s;
-				ja_selected_roundabouts[tmp_junctionID].out_n = node;
 			}
 		});
 
@@ -781,15 +783,17 @@ function run_ja() {
 						ja_last_restart = new Date().getTime();
 						setTimeout(function(){ja_calculate();}, 500);
 					}
-					return 4;
+					restart = true;
 				}
 				a = ja_getAngle(ja_nodes[i], s);
 				ja_log("Segment " + nodeSegment + " angle is " + a, 2);
-				angles[j] = [a, nodeSegment, s != null ? s.isSelected() : false];
-				if (s != null ? s.isSelected() : false) {
+				angles[j] = [a, nodeSegment, s == null ? false : s.isSelected()];
+				if (s == null ? false : s.isSelected()) {
 					ja_selected_segments_count++;
 				}
 			});
+
+			if(restart) { return; }
 
 			//make sure we have the selected angles in correct order
 			ja_log(ja_current_node_segments, 3);
@@ -852,7 +856,7 @@ function run_ja() {
 					ja_log("Unsupported zoom level: " + window.Waze.map.zoom + "!", 2);
 			}
 
-			ja_label_distance = ja_label_distance * (1+(0.2*parseInt(ja_getOption("decimals"))));
+			ja_label_distance *= (1 + (0.2 * parseInt(ja_getOption("decimals"))));
 
 			ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
 
@@ -912,7 +916,7 @@ function run_ja() {
 					a = (360 + (angles[(j + 1) % angles.length][0] - angle[0])) % 360;
 					ha = (360 + ((a / 2) + angle[0])) % 360;
 					var a_in = angles.filter(function(a) {
-						if(a[2]) { return true; }
+						return !!a[2];
 					})[0];
 
 					//Show only one angle for nodes with only 2 connected segments and a single selected segment
@@ -994,7 +998,7 @@ function run_ja() {
 			return false;
 		})) {
 			//add 1/4 of the original distance and hope for the best =)
-			ja_tmp_distance = ja_tmp_distance + ja_label_distance / 4;
+			ja_tmp_distance += ja_label_distance / 4;
 			ja_log("setting distance to " + ja_tmp_distance, 2);
 			point = new window.OpenLayers.Geometry.Point(
 					node.geometry.x + (ja_tmp_distance * Math.cos((ha * Math.PI) / 180)),
@@ -1021,7 +1025,7 @@ function run_ja() {
 					break;
 				case ja_routing_type.EXIT_RIGHT:
 				case ja_routing_type.KEEP_RIGHT:
-					angleString = angleString + ja_arrow.right_up();
+					angleString += ja_arrow.right_up();
 					break;
 				default:
 					ja_log("Unknown junction type: " + ja_junction_type, 2);
@@ -1080,9 +1084,10 @@ function run_ja() {
 	}
 
 	function ja_draw_roundabout_overlay(junctionId) {
-		(junctionId !== undefined ? (function (junction) { return junction !== undefined ? [ junction ] : []; })
-				(window.Waze.model.junctions.get(junctionId)) :
-				(window.Waze.model.junctions.getObjectArray())).forEach(function (element) {
+		(junctionId === undefined ? (window.Waze.model.junctions.getObjectArray()) : (function (junction) {
+			return junction === undefined ? [] : [ junction ];
+		})
+		(window.Waze.model.junctions.get(junctionId))).forEach(function (element) {
 			ja_log(element, 3);
 			var nodes = {};
 			element.segIDs.forEach(function(s) {
@@ -1402,10 +1407,7 @@ function run_ja() {
 				currNode.attributes.segIDs.forEach(function (element2) {
 					var s_exit = window.Waze.model.segments.get(element2);
 					ja_log(s_exit, 3);
-					if (s_exit.attributes.junctionID !== null) {
-						//part of the junction.. Ignoring
-						ja_log(s_exit.attributes.id + " is in the roundabout. ignoring", 3);
-					} else {
+					if (s_exit.attributes.junctionID === null) {
 						ja_log("Checking: " + s_exit.attributes.id, 3);
 						if (currNode.isTurnAllowedBySegDirections(s, s_exit)) {
 							//Exit possibly allowed
@@ -1414,6 +1416,9 @@ function run_ja() {
 						} else {
 							ja_log("Exit not allowed", 3);
 						}
+					} else {
+						//part of the junction.. Ignoring
+						ja_log(s_exit.attributes.id + " is in the roundabout. ignoring", 3);
 					}
 				});
 				if (allowed) {
@@ -1704,7 +1709,7 @@ function run_ja() {
 					break;
 				case "number":
 					var val = parseInt(document.getElementById(setting.elementId).value);
-					if(!isNaN(val) && val === parseInt(val) && val >= setting.min && val <= setting.max) {
+					if(!isNaN(val) && val === parseInt(val) && setting.min <= val && val <= setting.max) {
 						ja_setOption(a, document.getElementById(setting.elementId).value);
 					} else {
 						ja_setOption(a, ja_settings[a]['default']);
@@ -1729,7 +1734,9 @@ function run_ja() {
 			setTimeout(function(){ja_apply();}, 400);
 			return;
 		}
-		if(document.getElementById("sidepanel-ja") != null) {
+		if (document.getElementById("sidepanel-ja") == null) {
+			ja_log("WME not ready (no settings tab)", 2);
+		} else {
 			ja_log(Object.getOwnPropertyNames(ja_settings), 2);
 			Object.getOwnPropertyNames(ja_settings).forEach(function (a) {
 				var setting = ja_settings[a];
@@ -1754,8 +1761,6 @@ function run_ja() {
 						ja_log("Unknown setting type " + setting.elementType, 2);
 				}
 			});
-		} else {
-			ja_log("WME not ready (no settings tab)", 2);
 		}
 		window.Waze.map.getLayersBy("uniqueName","junction_angles")[0].styleMap = ja_style();
 		ja_calculate_real();
@@ -1887,7 +1892,7 @@ function run_ja() {
 
 	function ja_getMessage(key) {
 		var tr = I18n.translate('ja.' + key), no_tr = I18n.missingTranslation('ja.' + key);
-		return tr !== no_tr ? tr : key;
+		return tr === no_tr ? key : tr;
 	}
 
 	function ja_loadTranslations() {
