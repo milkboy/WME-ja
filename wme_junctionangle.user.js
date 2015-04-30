@@ -128,6 +128,19 @@ function run_ja() {
 	 * Main logic functions
 	 */
 	function junctionangle_init() {
+		var i, ja_select_option, navTabs, tabContent;
+		var ja_settings_dom = document.createElement("div");
+		var ja_settings_dom_panel = document.createElement("div");
+		var ja_settings_dom_content = document.createElement("div");
+		var ja_settings_header = document.createElement('h4');
+		var style = document.createElement('style');
+		var form = document.createElement('form');
+		var section = document.createElement('div');
+		var ja_reset_button = document.createElement('button');
+		var userTabs = document.getElementById('user-info');
+		var ja_info = document.createElement('ul');
+		var ja_version_elem = document.createElement('li');
+		var jatab = document.createElement('li');
 
 		//Listen for selected nodes change event
 		window.Waze.selectionManager.events.register("selectionchanged", null, ja_calculate);
@@ -150,16 +163,11 @@ function run_ja() {
 		/**
 		 * Add JAI tab configuration options
 		 */
-		var ja_settings_dom = document.createElement("div");
-		var ja_settings_dom_panel = document.createElement("div");
-		var ja_settings_dom_content = document.createElement("div");
 		ja_settings_dom_panel.className = "side-panel-section";
 		ja_settings_dom_content.className = "tab-content";
-		var ja_settings_header = document.createElement('h4');
 		ja_settings_header.appendChild(document.createTextNode(ja_getMessage("settingsTitle")));
 		ja_settings_dom_content.appendChild(ja_settings_header);
 
-		var style = document.createElement('style');
 		style.appendChild(document.createTextNode(function () {/*
 			#jaOptions > *:first-child {
 				margin-top: 1em;
@@ -208,8 +216,6 @@ function run_ja() {
 			}
 			*/}.toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1]));
 
-		var form = document.createElement('form');
-		var section = document.createElement('div');
 		section.className = "form-group";
 		form.className = "attributes-form side-panel-section";
 		section.id = "jaOptions";
@@ -247,8 +253,8 @@ function run_ja() {
 				case 'select':
 					ja_input = document.createElement('select'); //Override <input> with <select>
 					ja_input.id = setting.elementId;
-					for(var i = 0; i < setting.options.length; i++) {
-						var ja_select_option = document.createElement('option');
+					for(i = 0; i < setting.options.length; i++) {
+						ja_select_option = document.createElement('option');
 						ja_select_option.value = setting.options[i];
 						ja_select_option.appendChild(document.createTextNode(ja_getMessage(setting.options[i])));
 						ja_input.appendChild(ja_select_option);
@@ -269,7 +275,6 @@ function run_ja() {
 		});
 		section.appendChild(document.createElement('br'));
 
-		var ja_reset_button = document.createElement('button');
 		ja_reset_button.type = "button";
 		ja_reset_button.className = "btn btn-default";
 		ja_reset_button.addEventListener("click", ja_reset, true);
@@ -281,9 +286,8 @@ function run_ja() {
 		form.appendChild(section);
 		ja_settings_dom_content.appendChild(form);
 
-		var userTabs = document.getElementById('user-info');
-		var navTabs = userTabs.getElementsByClassName('nav-tabs')[0];
-		var tabContent = userTabs.getElementsByClassName('tab-content')[0];
+		navTabs = userTabs.getElementsByClassName('nav-tabs')[0];
+		tabContent = userTabs.getElementsByClassName('tab-content')[0];
 
 		ja_settings_dom.id = "sidepanel-ja";
 		ja_settings_dom.className = "tab-pane";
@@ -296,11 +300,9 @@ function run_ja() {
 		ja_settings_dom.appendChild(ja_settings_dom_panel);
 
 		//Add some version info etc
-		var ja_info = document.createElement('ul');
 		ja_info.className = "list-unstyled -side-panel-section";
 		ja_info.style.fontSize = "11px";
 
-		var ja_version_elem = document.createElement('li');
 		ja_version_elem.appendChild(document.createTextNode(ja_getMessage("name") + ": v" + junctionangle_version));
 		ja_info.appendChild(ja_version_elem);
 
@@ -314,7 +316,6 @@ function run_ja() {
 
 		tabContent.appendChild(ja_settings_dom);
 
-		var jatab = document.createElement('li');
 		jatab.innerHTML = '<!--suppress HtmlUnknownAnchorTarget --><a href="#sidepanel-ja" data-toggle="tab">JAI</a>';
 		if(navTabs != null) { navTabs.appendChild(jatab); }
 
@@ -364,13 +365,15 @@ function run_ja() {
 	 * @returns {string}
 	 */
 	function ja_guess_routing_instruction(node, s_in_a, s_out_a, angles) {
+		var s_n = {}, s_in = null, s_out = {}, street_n = {}, street_in = null, angle;
+		var s_in_id = s_in_a;
+		var s_out_id = s_out_a;
+
 		ja_log("Guessing routing instructions from " + s_in_a + " via node " + node.attributes.id + " to " + s_out_a,2);
 		ja_log(node, 4);
 		ja_log(s_in_a, 4);
 		ja_log(s_out_a, 4);
 		ja_log(angles, 3);
-		var s_in_id = s_in_a;
-		var s_out_id = s_out_a;
 
 		s_in_a = window.$.grep(angles, function(element){
 			return element[1] === s_in_a;
@@ -379,7 +382,6 @@ function run_ja() {
 			return element[1] === s_out_a;
 		});
 
-		var s_n = {}, s_in = null, s_out = {}, street_n = {}, street_in = null;
 		node.attributes.segIDs.forEach(function(element) {
 			if (element === s_in_id) {
 				s_in = node.model.segments.get(element);
@@ -415,7 +417,7 @@ function run_ja() {
 			return ja_routing_type.PROBLEM;
 		}
 
-		var angle = ja_angle_diff(s_in_a[0], (s_out_a[0]), false);
+		angle = ja_angle_diff(s_in_a[0], (s_out_a[0]), false);
 		ja_log("turn angle is: " + angle, 2);
 
 		//Check turn possibility first
@@ -614,8 +616,10 @@ function run_ja() {
 	}
 
 	function ja_calculate_real() {
-		ja_log("Actually calculating now", 2);
 		var ja_start_time = Date.now();
+		var ja_nodes = [];
+		var restart = false;
+		ja_log("Actually calculating now", 2);
 		ja_roundabout_points = [];
 		ja_log(window.Waze.map, 3);
 		if (typeof ja_mapLayer === 'undefined') {
@@ -631,7 +635,6 @@ function run_ja() {
 		//try to show all angles for all selected segments
 		if (window.Waze.selectionManager.selectedItems.length === 0) { return 1; }
 		ja_log("Checking junctions for " + window.Waze.selectionManager.selectedItems.length + " segments", 2);
-		var ja_nodes = [];
 
 		window.Waze.selectionManager.selectedItems.forEach(function(element) {
 			ja_log(element, 3);
@@ -740,6 +743,11 @@ function run_ja() {
 		//Start looping through selected nodes
 		for (var i = 0; i < ja_nodes.length; i++) {
 			var node = window.Waze.model.nodes.get(ja_nodes[i]);
+			var angles = [];
+			var ja_selected_segments_count = 0;
+			var ja_selected_angles = [];
+			var a;
+
 			if (node == null || !node.hasOwnProperty('attributes')) {
 				//Oh oh.. should not happen? We want to use a node that does not exist
 				ja_log("Oh oh.. should not happen?",2);
@@ -762,11 +770,6 @@ function run_ja() {
 
 			ja_log("Calculating angles for " + ja_current_node_segments.length + " segments", 2);
 			ja_log(ja_current_node_segments, 3);
-
-			var angles = [];
-			var ja_selected_segments_count = 0;
-			var ja_selected_angles = [];
-			var a;
 
 			ja_current_node_segments.forEach(function (nodeSegment, j) {
 				var s = window.Waze.model.segments.objects[nodeSegment];
@@ -1531,6 +1534,7 @@ function run_ja() {
 	 */
 	function ja_round(value) {
 		var ja_rounding = -parseInt(ja_getOption("decimals"));
+		var valueArray;
 		if (typeof ja_rounding === 'undefined' || +ja_rounding === 0) {
 			return Math.round(value);
 		}
@@ -1540,7 +1544,7 @@ function run_ja() {
 			return NaN;
 		}
 		// Shift
-		var valueArray = value.toString().split('e');
+		valueArray = value.toString().split('e');
 		value = Math.round(+(valueArray[0] + 'e' + (valueArray[1] ? (+valueArray[1] - ja_rounding) : -ja_rounding)));
 		// Shift back
 		valueArray = value.toString().split('e');
@@ -1597,12 +1601,12 @@ function run_ja() {
 	}
 
 	var ja_onchange = function(e) {
-		ja_log(e, 3);
 		var applyPending = false;
 		var settingName = Object.getOwnPropertyNames(ja_settings).filter(function(a){
 			ja_log(ja_settings[a], 4);
 			return ja_settings[a].elementId === e.id;
 		})[0];
+		ja_log(e, 3);
 		ja_log(settingName, 3);
 		switch(ja_settings[settingName].elementType) {
 			case "checkbox":
@@ -1746,6 +1750,8 @@ function run_ja() {
 						document.getElementById(setting.elementId).value = ja_getOption(a);
 						document.getElementById(setting.elementId).onchange(null);
 						break;
+					default:
+						ja_log("Unknown setting type " + setting.elementType, 2);
 				}
 			});
 		} else {
@@ -1885,12 +1891,12 @@ function run_ja() {
 	}
 
 	function ja_loadTranslations() {
-		ja_log("Loading translations",2);
-
 		var set_trans = function(loc, def) {
 			/*jshint -W093*/
 			return I18n.translations[loc].ja = def;
 		};
+
+		ja_log("Loading translations",2);
 
 		//Default language (English)
 		set_trans(window.I18n.defaultLocale,
@@ -2019,7 +2025,6 @@ function run_ja() {
 					pointSize: "Rozmiar punktów pomiaru"
 				});
 				break;
-
 			default:
 				ja_log("No translations for: " + I18n.locale, 2);
 		}
