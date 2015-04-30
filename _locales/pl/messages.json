@@ -1,0 +1,10 @@
+{
+"extName": {
+	"message": "WME-JunctionAngle",
+	"description": ""
+},
+"extDesc": {
+	"message": "Rozszerzenie dostarcza inforamcji na podstawie kątów połączeń w edytorze map Waze (WME).",
+	"description": ""
+}
+}

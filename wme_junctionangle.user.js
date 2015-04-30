@@ -107,8 +107,8 @@ function run_ja() {
 		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff", group: "guess"},
 		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0", group: "guess"},
 		roundaboutOverlayDisplay: { elementType: "select", elementId: "_jaSelRoundaboutOverlayDisplay", defaultValue: "rOverNever", options: ["rOverNever","rOverSelected","rOverAlways"]},
-		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000", group: "roundaboutOverlayDisplay"},
 		roundaboutOverlayColor: { elementType: "color", elementId: "_jaTbRoundaboutOverlayColor", defaultValue: "#aa0000", group: "roundaboutOverlayDisplay"},
+		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000", group: "roundaboutOverlayDisplay"},
 		decimals: { elementType: "number", elementId: "_jaTbDecimals", defaultValue: 0, min: 0, max: 2},
 		pointSize: { elementType: "number", elementId: "_jaTbPointSize", defaultValue: 12, min: 6, max: 20}
 	};
@@ -160,10 +160,53 @@ function run_ja() {
 		ja_settings_dom_content.appendChild(ja_settings_header);
 
 		var style = document.createElement('style');
-		style.appendChild(document.createTextNode(
-				'#jaOptions label { display: inline; }\n' +
-				'#jaOptions input, select { margin-right: 5px; }\n'
-		));
+		style.appendChild(document.createTextNode(function () {/*
+			#jaOptions > *:first-child {
+				margin-top: 1em;
+			}
+			#jaOptions * {
+				vertical-align: middle;
+			}
+			#jaOptions label {
+				display: inline;
+			}
+			#jaOptions input, select {
+				display: inline;
+				margin-right: 7px;
+				box-sizing: border-box;
+				border: 1px solid #cccccc;
+				border-radius: 5px;
+				padding: 3px;
+			}
+			#jaOptions input[type="number"] {
+				width: 4em;
+				padding: 6px;
+			}
+			#jaOptions input[type="color"] {
+				width: 15%;
+				height: 24px;
+				padding: 4px;
+			}
+			@supports (-webkit-appearance:none) {
+				#jaOptions input[type="color"] {
+					padding: 0px 2px 0px 2px;
+				}
+			}
+			#jaOptions .disabled {
+				position: relative;
+			}
+			#jaOptions .disabled:after {
+				content: " ";
+				z-index: 10;
+				display: block;
+				position: absolute;
+				height: 100%;
+				top: 0;
+				left: 0;
+				right: 0;
+				background: rgba(255, 255, 255, 0.5);
+			}
+			*/}.toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1]));
 
 		var form = document.createElement('form');
 		var section = document.createElement('div');
@@ -230,6 +273,7 @@ function run_ja() {
 		ja_reset_button.addEventListener("click", ja_reset, true);
 		ja_reset_button.appendChild(document.createTextNode(ja_getMessage("resetToDefault")));
 
+		section.appendChild(document.createElement('div'));
 		section.appendChild(ja_reset_button);
 
 		form.appendChild(section);
@@ -1567,6 +1611,15 @@ function run_ja() {
 				ja_log("Unknown setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value, 3);
 		}
 
+		function disable_input(element, disable) {
+			element.disabled = disable;
+			if (disable) {
+				$(element.parentNode).addClass("disabled");
+			} else {
+				$(element.parentNode).removeClass("disabled");
+			}
+		}
+
 		//Enable|disable certain dependent settings
 		switch(e.id) {
 			case ja_settings.guess.elementId:
@@ -1574,9 +1627,7 @@ function run_ja() {
 					var setting = ja_settings[a];
 					if(setting.group && setting.group === 'guess') {
 						ja_log(a + ": " + !e.checked , 3);
-						document.getElementById(setting.elementId).disabled = !e.checked;
-						document.getElementById(setting.elementId).parentNode.style.color =
-							e.checked ? "black" : "lightgrey";
+						disable_input(document.getElementById(setting.elementId), !e.checked);
 					}
 				});
 				break;
@@ -1585,9 +1636,7 @@ function run_ja() {
 					var setting = ja_settings[a];
 					if(setting.group && setting.group === 'roundaboutOverlayDisplay') {
 						ja_log(a +": " + e.value, 3);
-						document.getElementById(setting.elementId).disabled = e.value === "rOverNever";
-						document.getElementById(setting.elementId).parentNode.style.color =
-							e.value !== "rOverNever" ? "black" : "lightgrey";
+						disable_input(document.getElementById(setting.elementId), e.value === "rOverNever");
 					}
 				});
 				break;
@@ -1754,7 +1803,7 @@ function run_ja() {
 				}),
 				symbolizer: {
 					pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) +
-						(parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+						(parseInt(ja_getOption("decimals")) > 0 ? 4 * parseInt(ja_getOption("decimals")) : 0),
 					fontSize: (parseInt(ja_getOption("pointSize")) - 1) + "px",
 					fillColor: ja_getOption(fillColorOption),
 					strokeColor: "#183800"
@@ -1764,7 +1813,7 @@ function run_ja() {
 
 	function ja_style() {
 		ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10)) +
-			(parseInt(ja_getOption("decimals") > 0 ? (5 * parseInt(ja_getOption("decimals"))).toString() : "0")), 2);
+			(parseInt(ja_getOption("decimals") > 0 ? (4 * parseInt(ja_getOption("decimals"))).toString() : "0")), 2);
 		return new window.OpenLayers.Style({
 			fillColor: "#ffcc88",
 			strokeColor: "#ff9966",
@@ -1772,7 +1821,7 @@ function run_ja() {
 			label: "${angle}",
 			fontWeight: "bold",
 			pointRadius: parseInt(ja_getOption("pointSize"), 10) +
-				(parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+				(parseInt(ja_getOption("decimals")) > 0 ? 4 * parseInt(ja_getOption("decimals")) : 0),
 			fontSize: "10px"
 		}, {
 			rules: [
@@ -1802,7 +1851,7 @@ function run_ja() {
 						}),
 						symbolizer: {
 							pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) +
-								(parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+								(parseInt(ja_getOption("decimals")) > 0 ? 4 * parseInt(ja_getOption("decimals")) : 0),
 							fontSize: "12px",
 							fillColor: ja_getOption("roundaboutOverlayColor"),
 							fillOpacity: 0.1,
@@ -1837,7 +1886,7 @@ function run_ja() {
 		set_trans(window.I18n.defaultLocale,
 		set_trans('en', {
 			name: "Junction Angle Info",
-			settingsTitle: "Junction Angle settings",
+			settingsTitle: "Junction Angle Info settings",
 			apply: "Apply",
 			resetToDefault: "Reset to default",
 			aAbsolute: "Absolute",
@@ -1852,10 +1901,10 @@ function run_ja() {
 			keepInstructionColor: "Color for keep prompt",
 			exitInstructionColor: "Color for exit prompt",
 			turnInstructionColor: "Color for turn prompt",
-			problemColor: "Color for angles to avoid",
-			roundaboutColor: "Color for roundabouts (with non-straight exits)",
+			problemColor: "Color for disallowed turns",
+			roundaboutColor: "Color for non-normal roundabouts",
 			roundaboutOverlayColor: "Color for roundabout overlay",
-			roundaboutOverlayDisplay: "Show roundabout circle",
+			roundaboutOverlayDisplay: "Show roundabout",
 			rOverNever: "Never",
 			rOverSelected: "When selected",
 			rOverAlways: "Always",
@@ -1885,10 +1934,10 @@ function run_ja() {
 					displaySimple: "Simpel",
 					guess: "Gissa navigeringsinstruktioner",
 					noInstructionColor: "Färg för \"ingen instruktion\"",
-					keepInstructionColor: "Färg för\"håll höger/vänster\"-instruktion",
+					keepInstructionColor: "Färg för \"håll höger/vänster\"-instruktion",
 					exitInstructionColor: "Färg för \"ta av\"-instruktion",
 					turnInstructionColor: "Färg för \"sväng\"-instruktion",
-					problemColor: "Färg för vinklar att undvika",
+					problemColor: "Färg illegala manövrer",
 					roundaboutColor: "Färg för rondell (med icke-räta vinklar)",
 					roundaboutOverlayColor: "Färg för rondellcirkel",
 					roundaboutOverlayDisplay: "Visa cirkel på rondell",
@@ -1919,7 +1968,7 @@ function run_ja() {
 					keepInstructionColor: "\"Pysy vasemmalla/oikealla\"-ohjeen väri",
 					exitInstructionColor: "\"Poistu\"-ohjeen väri",
 					turnInstructionColor: "\"Käänny\"-ohjeen väri",
-					problemColor: "Vältettävien kulmien väri",
+					problemColor: "Väri laitonta sotaharjoitukset",
 					roundaboutColor: "Liikenneympyrän (jolla ei-suoria kulmia) ohjeen väri",
 					roundaboutOverlayColor: "Liikenneympyrän korostusväri",
 					roundaboutOverlayDisplay: "Korosta liikenneympyrä",
@@ -1949,10 +1998,10 @@ function run_ja() {
 					keepInstructionColor: "Kolor dla \"kieruj się\"",
 					exitInstructionColor: "Kolor dla \"zjedź\"",
 					turnInstructionColor: "Kolor dla \"skręć\"",
-					problemColor: "Kolor niedozwolonych manewrów lub niejednoznacznych kątów",
-					roundaboutColor: "Kolor numerowanych zjazdów na rondzie",
-					roundaboutOverlayColor: "Kolor markera ronda",
-					roundaboutOverlayDisplay: "Pokazuj marker ronda",
+					problemColor: "Kolor niedozwolonych manewrów",
+					roundaboutColor: "Kolor rond niestandardowych",
+					roundaboutOverlayColor: "Kolor znacznika rond",
+					roundaboutOverlayDisplay: "Pokazuj ronda",
 					rOverNever: "Nigdy",
 					rOverSelected: "Gdy zaznaczone",
 					rOverAlways: "Zawsze",
