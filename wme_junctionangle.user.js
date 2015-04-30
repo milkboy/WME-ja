@@ -26,7 +26,7 @@
 /*jshint eqnull:true, nonew:true, nomen:true, curly:true, latedef:true, unused:strict, noarg:true, loopfunc:true */
 /*jshint trailing:true, forin:true, noempty:true, maxparams:7, maxerr:100, eqeqeq:true, strict:true, undef:true */
 /*jshint bitwise:true, newcap:true, immed:true, onevar:true, browser:true, nonbsp:true, freeze:true */
-/*global I18n, console*/
+/*global I18n, console, $*/
 
 
 function run_ja() {
@@ -255,6 +255,8 @@ function run_ja() {
 					}
 					ja_controls_container.appendChild(ja_input);
 					break;
+				default:
+					ja_log("Unknown setting type " + setting.elementType, 2);
 			}
 
 			ja_input.onchange = function() { ja_onchange(this); };
@@ -843,6 +845,8 @@ function run_ja() {
 				case 1:
 					ja_label_distance = 400;
 					break;
+				default:
+					ja_log("Unsupported zoom level: " + window.Waze.map.zoom + "!", 2);
 			}
 
 			ja_label_distance = ja_label_distance * (1+(0.2*parseInt(ja_getOption("decimals"))));
@@ -1016,6 +1020,8 @@ function run_ja() {
 				case ja_routing_type.KEEP_RIGHT:
 					angleString = angleString + ja_arrow.right_up();
 					break;
+				default:
+					ja_log("Unknown junction type: " + ja_junction_type, 2);
 			}
 		} else {
 			switch(ja_junction_type) {
@@ -1034,6 +1040,8 @@ function run_ja() {
 				case ja_routing_type.KEEP_RIGHT:
 					angleString = ja_arrow.right_up() + "\n" + angleString;
 					break;
+				default:
+					ja_log("Unknown junction type: " + ja_junction_type, 2);
 			}
 		}
 		var anglePoint = withRouting ?
@@ -1702,6 +1710,8 @@ function run_ja() {
 				case "select":
 					ja_setOption(a, document.getElementById(setting.elementId).value);
 					break;
+				default:
+					ja_log("Unknown setting type " + setting.elementType, 2);
 			}
 		});
 		ja_apply();
@@ -2010,6 +2020,8 @@ function run_ja() {
 				});
 				break;
 
+			default:
+				ja_log("No translations for: " + I18n.locale, 2);
 		}
 	}
 
