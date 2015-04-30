@@ -26,7 +26,7 @@
 /*jshint eqnull:true, nonew:true, nomen:true, curly:true, latedef:true, unused:strict, noarg:true, loopfunc:true */
 /*jshint trailing:true, forin:true, noempty:true, maxparams:7, maxerr:100, eqeqeq:true, strict:true, undef:true */
 /*jshint bitwise:true, newcap:true, immed:true, onevar:true, browser:true, nonbsp:true, freeze:true */
-/*global I18n, console*/
+/*global I18n, console, $*/
 
 
 function run_ja() {
@@ -107,8 +107,8 @@ function run_ja() {
 		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff", group: "guess"},
 		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0", group: "guess"},
 		roundaboutOverlayDisplay: { elementType: "select", elementId: "_jaSelRoundaboutOverlayDisplay", defaultValue: "rOverNever", options: ["rOverNever","rOverSelected","rOverAlways"]},
-		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000", group: "roundaboutOverlayDisplay"},
 		roundaboutOverlayColor: { elementType: "color", elementId: "_jaTbRoundaboutOverlayColor", defaultValue: "#aa0000", group: "roundaboutOverlayDisplay"},
+		roundaboutColor: { elementType: "color", elementId: "_jaTbRoundaboutColor", defaultValue: "#ff8000", group: "roundaboutOverlayDisplay"},
 		decimals: { elementType: "number", elementId: "_jaTbDecimals", defaultValue: 0, min: 0, max: 2},
 		pointSize: { elementType: "number", elementId: "_jaTbPointSize", defaultValue: 12, min: 6, max: 20}
 	};
@@ -128,6 +128,19 @@ function run_ja() {
 	 * Main logic functions
 	 */
 	function junctionangle_init() {
+		var i, ja_select_option, navTabs, tabContent;
+		var ja_settings_dom = document.createElement("div");
+		var ja_settings_dom_panel = document.createElement("div");
+		var ja_settings_dom_content = document.createElement("div");
+		var ja_settings_header = document.createElement('h4');
+		var style = document.createElement('style');
+		var form = document.createElement('form');
+		var section = document.createElement('div');
+		var ja_reset_button = document.createElement('button');
+		var userTabs = document.getElementById('user-info');
+		var ja_info = document.createElement('ul');
+		var ja_version_elem = document.createElement('li');
+		var jatab = document.createElement('li');
 
 		//Listen for selected nodes change event
 		window.Waze.selectionManager.events.register("selectionchanged", null, ja_calculate);
@@ -150,23 +163,59 @@ function run_ja() {
 		/**
 		 * Add JAI tab configuration options
 		 */
-		var ja_settings_dom = document.createElement("div");
-		var ja_settings_dom_panel = document.createElement("div");
-		var ja_settings_dom_content = document.createElement("div");
 		ja_settings_dom_panel.className = "side-panel-section";
 		ja_settings_dom_content.className = "tab-content";
-		var ja_settings_header = document.createElement('h4');
 		ja_settings_header.appendChild(document.createTextNode(ja_getMessage("settingsTitle")));
 		ja_settings_dom_content.appendChild(ja_settings_header);
 
-		var style = document.createElement('style');
-		style.appendChild(document.createTextNode(
-				'#jaOptions label { display: inline; }\n' +
-				'#jaOptions input, select { margin-right: 5px; }\n'
-		));
+		style.appendChild(document.createTextNode(function () {/*
+			#jaOptions > *:first-child {
+				margin-top: 1em;
+			}
+			#jaOptions * {
+				vertical-align: middle;
+			}
+			#jaOptions label {
+				display: inline;
+			}
+			#jaOptions input, select {
+				display: inline;
+				margin-right: 7px;
+				box-sizing: border-box;
+				border: 1px solid #cccccc;
+				border-radius: 5px;
+				padding: 3px;
+			}
+			#jaOptions input[type="number"] {
+				width: 4em;
+				padding: 6px;
+			}
+			#jaOptions input[type="color"] {
+				width: 15%;
+				height: 24px;
+				padding: 4px;
+			}
+			@supports (-webkit-appearance:none) {
+				#jaOptions input[type="color"] {
+					padding: 0px 2px 0px 2px;
+				}
+			}
+			#jaOptions .disabled {
+				position: relative;
+			}
+			#jaOptions .disabled:after {
+				content: " ";
+				z-index: 10;
+				display: block;
+				position: absolute;
+				height: 100%;
+				top: 0;
+				left: 0;
+				right: 0;
+				background: rgba(255, 255, 255, 0.5);
+			}
+			*/}.toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1]));
 
-		var form = document.createElement('form');
-		var section = document.createElement('div');
 		section.className = "form-group";
 		form.className = "attributes-form side-panel-section";
 		section.id = "jaOptions";
@@ -204,14 +253,16 @@ function run_ja() {
 				case 'select':
 					ja_input = document.createElement('select'); //Override <input> with <select>
 					ja_input.id = setting.elementId;
-					for(var i = 0; i < setting.options.length; i++) {
-						var ja_select_option = document.createElement('option');
+					for(i = 0; i < setting.options.length; i++) {
+						ja_select_option = document.createElement('option');
 						ja_select_option.value = setting.options[i];
 						ja_select_option.appendChild(document.createTextNode(ja_getMessage(setting.options[i])));
 						ja_input.appendChild(ja_select_option);
 					}
 					ja_controls_container.appendChild(ja_input);
 					break;
+				default:
+					ja_log("Unknown setting type " + setting.elementType, 2);
 			}
 
 			ja_input.onchange = function() { ja_onchange(this); };
@@ -224,20 +275,19 @@ function run_ja() {
 		});
 		section.appendChild(document.createElement('br'));
 
-		var ja_reset_button = document.createElement('button');
 		ja_reset_button.type = "button";
 		ja_reset_button.className = "btn btn-default";
 		ja_reset_button.addEventListener("click", ja_reset, true);
 		ja_reset_button.appendChild(document.createTextNode(ja_getMessage("resetToDefault")));
 
+		section.appendChild(document.createElement('div'));
 		section.appendChild(ja_reset_button);
 
 		form.appendChild(section);
 		ja_settings_dom_content.appendChild(form);
 
-		var userTabs = document.getElementById('user-info');
-		var navTabs = userTabs.getElementsByClassName('nav-tabs')[0];
-		var tabContent = userTabs.getElementsByClassName('tab-content')[0];
+		navTabs = userTabs.getElementsByClassName('nav-tabs')[0];
+		tabContent = userTabs.getElementsByClassName('tab-content')[0];
 
 		ja_settings_dom.id = "sidepanel-ja";
 		ja_settings_dom.className = "tab-pane";
@@ -250,11 +300,9 @@ function run_ja() {
 		ja_settings_dom.appendChild(ja_settings_dom_panel);
 
 		//Add some version info etc
-		var ja_info = document.createElement('ul');
 		ja_info.className = "list-unstyled -side-panel-section";
 		ja_info.style.fontSize = "11px";
 
-		var ja_version_elem = document.createElement('li');
 		ja_version_elem.appendChild(document.createTextNode(ja_getMessage("name") + ": v" + junctionangle_version));
 		ja_info.appendChild(ja_version_elem);
 
@@ -268,7 +316,6 @@ function run_ja() {
 
 		tabContent.appendChild(ja_settings_dom);
 
-		var jatab = document.createElement('li');
 		jatab.innerHTML = '<!--suppress HtmlUnknownAnchorTarget --><a href="#sidepanel-ja" data-toggle="tab">JAI</a>';
 		if(navTabs != null) { navTabs.appendChild(jatab); }
 
@@ -318,13 +365,15 @@ function run_ja() {
 	 * @returns {string}
 	 */
 	function ja_guess_routing_instruction(node, s_in_a, s_out_a, angles) {
+		var s_n = {}, s_in = null, s_out = {}, street_n = {}, street_in = null, angle;
+		var s_in_id = s_in_a;
+		var s_out_id = s_out_a;
+
 		ja_log("Guessing routing instructions from " + s_in_a + " via node " + node.attributes.id + " to " + s_out_a,2);
 		ja_log(node, 4);
 		ja_log(s_in_a, 4);
 		ja_log(s_out_a, 4);
 		ja_log(angles, 3);
-		var s_in_id = s_in_a;
-		var s_out_id = s_out_a;
 
 		s_in_a = window.$.grep(angles, function(element){
 			return element[1] === s_in_a;
@@ -333,7 +382,6 @@ function run_ja() {
 			return element[1] === s_out_a;
 		});
 
-		var s_n = {}, s_in = null, s_out = {}, street_n = {}, street_in = null;
 		node.attributes.segIDs.forEach(function(element) {
 			if (element === s_in_id) {
 				s_in = node.model.segments.get(element);
@@ -369,7 +417,7 @@ function run_ja() {
 			return ja_routing_type.PROBLEM;
 		}
 
-		var angle = ja_angle_diff(s_in_a[0], (s_out_a[0]), false);
+		angle = ja_angle_diff(s_in_a[0], (s_out_a[0]), false);
 		ja_log("turn angle is: " + angle, 2);
 
 		//Check turn possibility first
@@ -538,7 +586,9 @@ function run_ja() {
 			// neither will get an instruction.
 			var overlap_i = 1;
 			while(overlap_i < angles.length &&
-					ja_overlapping_angles(angles[0][0], angles[overlap_i][0])) ++overlap_i;
+					ja_overlapping_angles(angles[0][0], angles[overlap_i][0])) {
+				++overlap_i;
+			}
 			if(overlap_i > 1 && overlap_i === angles.length) {
 				ja_log("Two or more overlapping segments only: no instruction", 2);
 				return ja_routing_type.BC;  //PROBLEM?
@@ -568,12 +618,14 @@ function run_ja() {
 	}
 
 	function ja_calculate_real() {
-		ja_log("Actually calculating now", 2);
 		var ja_start_time = Date.now();
+		var ja_nodes = [];
+		var restart = false;
+		ja_log("Actually calculating now", 2);
 		ja_roundabout_points = [];
 		ja_log(window.Waze.map, 3);
 		if (typeof ja_mapLayer === 'undefined') {
-			return 1;
+			return;
 		}
 		//clear old info
 		ja_mapLayer.destroyFeatures();
@@ -585,7 +637,6 @@ function run_ja() {
 		//try to show all angles for all selected segments
 		if (window.Waze.selectionManager.selectedItems.length === 0) { return 1; }
 		ja_log("Checking junctions for " + window.Waze.selectionManager.selectedItems.length + " segments", 2);
-		var ja_nodes = [];
 
 		window.Waze.selectionManager.selectedItems.forEach(function(element) {
 			ja_log(element, 3);
@@ -638,7 +689,10 @@ function run_ja() {
 			});
 			ja_log("final tmp_s: " + (tmp_s === null ? 'null' : tmp_s), 3);
 			if(tmp_junctionID === null) { return; }
-			if(!ja_selected_roundabouts.hasOwnProperty(tmp_junctionID)) {
+			if (ja_selected_roundabouts.hasOwnProperty(tmp_junctionID)) {
+				ja_selected_roundabouts[tmp_junctionID].out_s = tmp_s;
+				ja_selected_roundabouts[tmp_junctionID].out_n = node;
+			} else {
 				ja_selected_roundabouts[tmp_junctionID] = {
 					'in_s': tmp_s,
 					'in_n': tmp_n,
@@ -646,9 +700,6 @@ function run_ja() {
 					'out_n': null,
 					'p': window.Waze.model.junctions.get(tmp_junctionID).geometry
 				};
-			} else {
-				ja_selected_roundabouts[tmp_junctionID].out_s = tmp_s;
-				ja_selected_roundabouts[tmp_junctionID].out_n = node;
 			}
 		});
 
@@ -694,6 +745,11 @@ function run_ja() {
 		//Start looping through selected nodes
 		for (var i = 0; i < ja_nodes.length; i++) {
 			var node = window.Waze.model.nodes.get(ja_nodes[i]);
+			var angles = [];
+			var ja_selected_segments_count = 0;
+			var ja_selected_angles = [];
+			var a;
+
 			if (node == null || !node.hasOwnProperty('attributes')) {
 				//Oh oh.. should not happen? We want to use a node that does not exist
 				ja_log("Oh oh.. should not happen?",2);
@@ -717,11 +773,6 @@ function run_ja() {
 			ja_log("Calculating angles for " + ja_current_node_segments.length + " segments", 2);
 			ja_log(ja_current_node_segments, 3);
 
-			var angles = [];
-			var ja_selected_segments_count = 0;
-			var ja_selected_angles = [];
-			var a;
-
 			ja_current_node_segments.forEach(function (nodeSegment, j) {
 				var s = window.Waze.model.segments.objects[nodeSegment];
 				if(typeof s === 'undefined') {
@@ -732,15 +783,17 @@ function run_ja() {
 						ja_last_restart = new Date().getTime();
 						setTimeout(function(){ja_calculate();}, 500);
 					}
-					return 4;
+					restart = true;
 				}
 				a = ja_getAngle(ja_nodes[i], s);
 				ja_log("Segment " + nodeSegment + " angle is " + a, 2);
-				angles[j] = [a, nodeSegment, s != null ? s.isSelected() : false];
-				if (s != null ? s.isSelected() : false) {
+				angles[j] = [a, nodeSegment, s == null ? false : s.isSelected()];
+				if (s == null ? false : s.isSelected()) {
 					ja_selected_segments_count++;
 				}
 			});
+
+			if(restart) { return; }
 
 			//make sure we have the selected angles in correct order
 			ja_log(ja_current_node_segments, 3);
@@ -799,9 +852,11 @@ function run_ja() {
 				case 1:
 					ja_label_distance = 400;
 					break;
+				default:
+					ja_log("Unsupported zoom level: " + window.Waze.map.zoom + "!", 2);
 			}
 
-			ja_label_distance = ja_label_distance * (1+(0.2*parseInt(ja_getOption("decimals"))));
+			ja_label_distance *= (1 + (0.2 * parseInt(ja_getOption("decimals"))));
 
 			ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
 
@@ -861,7 +916,7 @@ function run_ja() {
 					a = (360 + (angles[(j + 1) % angles.length][0] - angle[0])) % 360;
 					ha = (360 + ((a / 2) + angle[0])) % 360;
 					var a_in = angles.filter(function(a) {
-						if(a[2]) { return true; }
+						return !!a[2];
 					})[0];
 
 					//Show only one angle for nodes with only 2 connected segments and a single selected segment
@@ -943,7 +998,7 @@ function run_ja() {
 			return false;
 		})) {
 			//add 1/4 of the original distance and hope for the best =)
-			ja_tmp_distance = ja_tmp_distance + ja_label_distance / 4;
+			ja_tmp_distance += ja_label_distance / 4;
 			ja_log("setting distance to " + ja_tmp_distance, 2);
 			point = new window.OpenLayers.Geometry.Point(
 					node.geometry.x + (ja_tmp_distance * Math.cos((ha * Math.PI) / 180)),
@@ -970,8 +1025,10 @@ function run_ja() {
 					break;
 				case ja_routing_type.EXIT_RIGHT:
 				case ja_routing_type.KEEP_RIGHT:
-					angleString = angleString + ja_arrow.right_up();
+					angleString += ja_arrow.right_up();
 					break;
+				default:
+					ja_log("Unknown junction type: " + ja_junction_type, 2);
 			}
 		} else {
 			switch(ja_junction_type) {
@@ -990,6 +1047,8 @@ function run_ja() {
 				case ja_routing_type.KEEP_RIGHT:
 					angleString = ja_arrow.right_up() + "\n" + angleString;
 					break;
+				default:
+					ja_log("Unknown junction type: " + ja_junction_type, 2);
 			}
 		}
 		var anglePoint = withRouting ?
@@ -1025,13 +1084,11 @@ function run_ja() {
 	}
 
 	function ja_draw_roundabout_overlay(junctionId) {
-		window.Waze.model.junctions.getObjectArray().forEach(function (element){
+		(junctionId === undefined ? (window.Waze.model.junctions.getObjectArray()) : (function (junction) {
+			return junction === undefined ? [] : [ junction ];
+		})
+		(window.Waze.model.junctions.get(junctionId))).forEach(function (element) {
 			ja_log(element, 3);
-			//Check if we want a specific junction.
-			//FIXME: this should actually be done by a direct select, instead of looping through all..
-			if(typeof junctionId !== "undefined" && junctionId !== element.id) {
-				return;
-			}
 			var nodes = {};
 			element.segIDs.forEach(function(s) {
 				var seg = window.Waze.model.segments.get(s);
@@ -1350,10 +1407,7 @@ function run_ja() {
 				currNode.attributes.segIDs.forEach(function (element2) {
 					var s_exit = window.Waze.model.segments.get(element2);
 					ja_log(s_exit, 3);
-					if (s_exit.attributes.junctionID !== null) {
-						//part of the junction.. Ignoring
-						ja_log(s_exit.attributes.id + " is in the roundabout. ignoring", 3);
-					} else {
+					if (s_exit.attributes.junctionID === null) {
 						ja_log("Checking: " + s_exit.attributes.id, 3);
 						if (currNode.isTurnAllowedBySegDirections(s, s_exit)) {
 							//Exit possibly allowed
@@ -1362,6 +1416,9 @@ function run_ja() {
 						} else {
 							ja_log("Exit not allowed", 3);
 						}
+					} else {
+						//part of the junction.. Ignoring
+						ja_log(s_exit.attributes.id + " is in the roundabout. ignoring", 3);
 					}
 				});
 				if (allowed) {
@@ -1482,6 +1539,7 @@ function run_ja() {
 	 */
 	function ja_round(value) {
 		var ja_rounding = -parseInt(ja_getOption("decimals"));
+		var valueArray;
 		if (typeof ja_rounding === 'undefined' || +ja_rounding === 0) {
 			return Math.round(value);
 		}
@@ -1491,7 +1549,7 @@ function run_ja() {
 			return NaN;
 		}
 		// Shift
-		var valueArray = value.toString().split('e');
+		valueArray = value.toString().split('e');
 		value = Math.round(+(valueArray[0] + 'e' + (valueArray[1] ? (+valueArray[1] - ja_rounding) : -ja_rounding)));
 		// Shift back
 		valueArray = value.toString().split('e');
@@ -1548,12 +1606,12 @@ function run_ja() {
 	}
 
 	var ja_onchange = function(e) {
-		ja_log(e, 3);
 		var applyPending = false;
 		var settingName = Object.getOwnPropertyNames(ja_settings).filter(function(a){
 			ja_log(ja_settings[a], 4);
 			return ja_settings[a].elementId === e.id;
 		})[0];
+		ja_log(e, 3);
 		ja_log(settingName, 3);
 		switch(ja_settings[settingName].elementType) {
 			case "checkbox":
@@ -1570,6 +1628,15 @@ function run_ja() {
 				ja_log("Unknown setting " + e.id + ": stored value is: " + ja_options[settingName] + ", new value: " + e.value, 3);
 		}
 
+		function disable_input(element, disable) {
+			element.disabled = disable;
+			if (disable) {
+				$(element.parentNode).addClass("disabled");
+			} else {
+				$(element.parentNode).removeClass("disabled");
+			}
+		}
+
 		//Enable|disable certain dependent settings
 		switch(e.id) {
 			case ja_settings.guess.elementId:
@@ -1577,9 +1644,7 @@ function run_ja() {
 					var setting = ja_settings[a];
 					if(setting.group && setting.group === 'guess') {
 						ja_log(a + ": " + !e.checked , 3);
-						document.getElementById(setting.elementId).disabled = !e.checked;
-						document.getElementById(setting.elementId).parentNode.style.color =
-							e.checked ? "black" : "lightgrey";
+						disable_input(document.getElementById(setting.elementId), !e.checked);
 					}
 				});
 				break;
@@ -1588,9 +1653,7 @@ function run_ja() {
 					var setting = ja_settings[a];
 					if(setting.group && setting.group === 'roundaboutOverlayDisplay') {
 						ja_log(a +": " + e.value, 3);
-						document.getElementById(setting.elementId).disabled = e.value === "rOverNever";
-						document.getElementById(setting.elementId).parentNode.style.color =
-							e.value !== "rOverNever" ? "black" : "lightgrey";
+						disable_input(document.getElementById(setting.elementId), e.value === "rOverNever");
 					}
 				});
 				break;
@@ -1646,7 +1709,7 @@ function run_ja() {
 					break;
 				case "number":
 					var val = parseInt(document.getElementById(setting.elementId).value);
-					if(!isNaN(val) && val === parseInt(val) && val >= setting.min && val <= setting.max) {
+					if(!isNaN(val) && val === parseInt(val) && setting.min <= val && val <= setting.max) {
 						ja_setOption(a, document.getElementById(setting.elementId).value);
 					} else {
 						ja_setOption(a, ja_settings[a]['default']);
@@ -1656,6 +1719,8 @@ function run_ja() {
 				case "select":
 					ja_setOption(a, document.getElementById(setting.elementId).value);
 					break;
+				default:
+					ja_log("Unknown setting type " + setting.elementType, 2);
 			}
 		});
 		ja_apply();
@@ -1669,7 +1734,9 @@ function run_ja() {
 			setTimeout(function(){ja_apply();}, 400);
 			return;
 		}
-		if(document.getElementById("sidepanel-ja") != null) {
+		if (document.getElementById("sidepanel-ja") == null) {
+			ja_log("WME not ready (no settings tab)", 2);
+		} else {
 			ja_log(Object.getOwnPropertyNames(ja_settings), 2);
 			Object.getOwnPropertyNames(ja_settings).forEach(function (a) {
 				var setting = ja_settings[a];
@@ -1690,10 +1757,10 @@ function run_ja() {
 						document.getElementById(setting.elementId).value = ja_getOption(a);
 						document.getElementById(setting.elementId).onchange(null);
 						break;
+					default:
+						ja_log("Unknown setting type " + setting.elementType, 2);
 				}
 			});
-		} else {
-			ja_log("WME not ready (no settings tab)", 2);
 		}
 		window.Waze.map.getLayersBy("uniqueName","junction_angles")[0].styleMap = ja_style();
 		ja_calculate_real();
@@ -1757,7 +1824,7 @@ function run_ja() {
 				}),
 				symbolizer: {
 					pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) +
-						(parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+						(parseInt(ja_getOption("decimals")) > 0 ? 4 * parseInt(ja_getOption("decimals")) : 0),
 					fontSize: (parseInt(ja_getOption("pointSize")) - 1) + "px",
 					fillColor: ja_getOption(fillColorOption),
 					strokeColor: "#183800"
@@ -1767,7 +1834,7 @@ function run_ja() {
 
 	function ja_style() {
 		ja_log("Point radius will be: " + (parseInt(ja_getOption("pointSize"), 10)) +
-			(parseInt(ja_getOption("decimals") > 0 ? (5 * parseInt(ja_getOption("decimals"))).toString() : "0")), 2);
+			(parseInt(ja_getOption("decimals") > 0 ? (4 * parseInt(ja_getOption("decimals"))).toString() : "0")), 2);
 		return new window.OpenLayers.Style({
 			fillColor: "#ffcc88",
 			strokeColor: "#ff9966",
@@ -1775,7 +1842,7 @@ function run_ja() {
 			label: "${angle}",
 			fontWeight: "bold",
 			pointRadius: parseInt(ja_getOption("pointSize"), 10) +
-				(parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+				(parseInt(ja_getOption("decimals")) > 0 ? 4 * parseInt(ja_getOption("decimals")) : 0),
 			fontSize: "10px"
 		}, {
 			rules: [
@@ -1805,7 +1872,7 @@ function run_ja() {
 						}),
 						symbolizer: {
 							pointRadius: 3 + parseInt(ja_getOption("pointSize"), 10) +
-								(parseInt(ja_getOption("decimals")) > 0 ? 5 * parseInt(ja_getOption("decimals")) : 0),
+								(parseInt(ja_getOption("decimals")) > 0 ? 4 * parseInt(ja_getOption("decimals")) : 0),
 							fontSize: "12px",
 							fillColor: ja_getOption("roundaboutOverlayColor"),
 							fillOpacity: 0.1,
@@ -1825,22 +1892,22 @@ function run_ja() {
 
 	function ja_getMessage(key) {
 		var tr = I18n.translate('ja.' + key), no_tr = I18n.missingTranslation('ja.' + key);
-		return tr !== no_tr ? tr : key;
+		return tr === no_tr ? key : tr;
 	}
 
 	function ja_loadTranslations() {
-		ja_log("Loading translations",2);
-
 		var set_trans = function(loc, def) {
 			/*jshint -W093*/
 			return I18n.translations[loc].ja = def;
 		};
 
+		ja_log("Loading translations",2);
+
 		//Default language (English)
 		set_trans(window.I18n.defaultLocale,
 		set_trans('en', {
 			name: "Junction Angle Info",
-			settingsTitle: "Junction Angle settings",
+			settingsTitle: "Junction Angle Info settings",
 			apply: "Apply",
 			resetToDefault: "Reset to default",
 			aAbsolute: "Absolute",
@@ -1855,10 +1922,10 @@ function run_ja() {
 			keepInstructionColor: "Color for keep prompt",
 			exitInstructionColor: "Color for exit prompt",
 			turnInstructionColor: "Color for turn prompt",
-			problemColor: "Color for angles to avoid",
-			roundaboutColor: "Color for roundabouts (with non-straight exits)",
+			problemColor: "Color for disallowed turns",
+			roundaboutColor: "Color for non-normal roundabouts",
 			roundaboutOverlayColor: "Color for roundabout overlay",
-			roundaboutOverlayDisplay: "Show roundabout circle",
+			roundaboutOverlayDisplay: "Show roundabout",
 			rOverNever: "Never",
 			rOverSelected: "When selected",
 			rOverAlways: "Always",
@@ -1888,10 +1955,10 @@ function run_ja() {
 					displaySimple: "Simpel",
 					guess: "Gissa navigeringsinstruktioner",
 					noInstructionColor: "Färg för \"ingen instruktion\"",
-					keepInstructionColor: "Färg för\"håll höger/vänster\"-instruktion",
+					keepInstructionColor: "Färg för \"håll höger/vänster\"-instruktion",
 					exitInstructionColor: "Färg för \"ta av\"-instruktion",
 					turnInstructionColor: "Färg för \"sväng\"-instruktion",
-					problemColor: "Färg för vinklar att undvika",
+					problemColor: "Färg förbjuden sväng",
 					roundaboutColor: "Färg för rondell (med icke-räta vinklar)",
 					roundaboutOverlayColor: "Färg för rondellcirkel",
 					roundaboutOverlayDisplay: "Visa cirkel på rondell",
@@ -1922,7 +1989,7 @@ function run_ja() {
 					keepInstructionColor: "\"Pysy vasemmalla/oikealla\"-ohjeen väri",
 					exitInstructionColor: "\"Poistu\"-ohjeen väri",
 					turnInstructionColor: "\"Käänny\"-ohjeen väri",
-					problemColor: "Vältettävien kulmien väri",
+					problemColor: "Kielletyn käännöksen väri",
 					roundaboutColor: "Liikenneympyrän (jolla ei-suoria kulmia) ohjeen väri",
 					roundaboutOverlayColor: "Liikenneympyrän korostusväri",
 					roundaboutOverlayDisplay: "Korosta liikenneympyrä",
@@ -1952,10 +2019,10 @@ function run_ja() {
 					keepInstructionColor: "Kolor dla \"kieruj się\"",
 					exitInstructionColor: "Kolor dla \"zjedź\"",
 					turnInstructionColor: "Kolor dla \"skręć\"",
-					problemColor: "Kolor niedozwolonych manewrów lub niejednoznacznych kątów",
-					roundaboutColor: "Kolor numerowanych zjazdów na rondzie",
-					roundaboutOverlayColor: "Kolor markera ronda",
-					roundaboutOverlayDisplay: "Pokazuj marker ronda",
+					problemColor: "Kolor niedozwolonych manewrów",
+					roundaboutColor: "Kolor rond niestandardowych",
+					roundaboutOverlayColor: "Kolor znacznika rond",
+					roundaboutOverlayDisplay: "Pokazuj ronda",
 					rOverNever: "Nigdy",
 					rOverSelected: "Gdy zaznaczone",
 					rOverAlways: "Zawsze",
@@ -1963,7 +2030,8 @@ function run_ja() {
 					pointSize: "Rozmiar punktów pomiaru"
 				});
 				break;
-
+			default:
+				ja_log("No translations for: " + I18n.locale, 2);
 		}
 	}
 
@@ -1991,25 +2059,16 @@ function run_ja() {
 
 		try {
 			//No current logged in user
-			if (
-				typeof window.Waze.map !== 'undefined' &&
-				'undefined' !== typeof window.Waze.map.events.register &&
-				'undefined' !== typeof window.Waze.selectionManager.events.register &&
-				'undefined' !== typeof window.Waze.loginManager.events.register &&
+			if (ja_is_model_ready() &&
 				window.Waze.loginManager.user == null
 				) {
 				ja_registerLoginEvent();
 			}
 			//User already logged in and WME ready
 			else if (
-				typeof window.Waze.map !== 'undefined' &&
-				'undefined' !== typeof window.Waze.map.events.register &&
-				'undefined' !== typeof window.Waze.selectionManager.events.register &&
-				'undefined' !== typeof window.Waze.loginManager.events.register &&
+				ja_is_model_ready() &&
 				window.Waze.loginManager.user != null &&
-				null !== document.getElementById('user-info') &&
-				null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0] &&
-				null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0].getElementsByClassName('tab-content')[0]) {
+				ja_is_dom_ready()) {
 				setTimeout(function () {
 					junctionangle_init();
 				}, 500);
@@ -2025,6 +2084,25 @@ function run_ja() {
 			setTimeout(function () {
 				ja_bootstrap(++retries);
 			}, 500);
+		}
+	}
+
+	function ja_is_model_ready() {
+		if(typeof window.Waze.map === 'undefined') {
+			return false;
+		} else {
+			return 'undefined' !== typeof window.Waze.map.events.register &&
+				'undefined' !== typeof window.Waze.selectionManager.events.register &&
+				'undefined' !== typeof window.Waze.loginManager.events.register;
+		}
+	}
+
+	function ja_is_dom_ready() {
+		if(null === document.getElementById('user-info')) {
+			return false;
+		} else {
+			return null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0] &&
+				null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0].getElementsByClassName('tab-content')[0];
 		}
 	}
 
