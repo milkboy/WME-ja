@@ -2059,25 +2059,16 @@ function run_ja() {
 
 		try {
 			//No current logged in user
-			if (
-				typeof window.Waze.map !== 'undefined' &&
-				'undefined' !== typeof window.Waze.map.events.register &&
-				'undefined' !== typeof window.Waze.selectionManager.events.register &&
-				'undefined' !== typeof window.Waze.loginManager.events.register &&
+			if (ja_is_model_ready() &&
 				window.Waze.loginManager.user == null
 				) {
 				ja_registerLoginEvent();
 			}
 			//User already logged in and WME ready
 			else if (
-				typeof window.Waze.map !== 'undefined' &&
-				'undefined' !== typeof window.Waze.map.events.register &&
-				'undefined' !== typeof window.Waze.selectionManager.events.register &&
-				'undefined' !== typeof window.Waze.loginManager.events.register &&
+				ja_is_model_ready() &&
 				window.Waze.loginManager.user != null &&
-				null !== document.getElementById('user-info') &&
-				null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0] &&
-				null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0].getElementsByClassName('tab-content')[0]) {
+				ja_is_dom_ready()) {
 				setTimeout(function () {
 					junctionangle_init();
 				}, 500);
@@ -2093,6 +2084,25 @@ function run_ja() {
 			setTimeout(function () {
 				ja_bootstrap(++retries);
 			}, 500);
+		}
+	}
+
+	function ja_is_model_ready() {
+		if(typeof window.Waze.map === 'undefined') {
+			return false;
+		} else {
+			return 'undefined' !== typeof window.Waze.map.events.register &&
+				'undefined' !== typeof window.Waze.selectionManager.events.register &&
+				'undefined' !== typeof window.Waze.loginManager.events.register;
+		}
+	}
+
+	function ja_is_dom_ready() {
+		if(null === document.getElementById('user-info')) {
+			return false;
+		} else {
+			return null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0] &&
+				null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0].getElementsByClassName('tab-content')[0];
 		}
 	}
 
