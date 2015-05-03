@@ -43,7 +43,7 @@ function run_ja() {
 
 	var TURN_ANGLE = 45.04;  //Turn vs. keep angle specified in Wiki.
 	var GRAY_ZONE = 0.0;  //0 since there is no mention of a "gray zone" in Wiki. TODO: verify on map
-	var OVERLAPPING_ANGLE = 0.5;  //Experimentally measured overlapping angle.
+	var OVERLAPPING_ANGLE = 0.666;  //Experimentally measured overlapping angle.
 
 	var ja_routing_type = {
 		BC: "junction_none",
