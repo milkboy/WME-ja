@@ -568,13 +568,30 @@ function run_ja() {
 			//WIKI WAZE: When there are more than two segments less than 45.04°, only the left most segment will be
 			// KEEP LEFT, all the rest will be KEEP RIGHT
 			//FZ69617: Wiki seems to be wrong here - experiments shows that "more than two" must be read as "at least two"
-			if (angles[0][1] === s_out_id) { //s-out is left most segment
+			//FZ69617: Wiki also does not mention differences between RHT and LHT countries for this consideration,
+			// but map experiments seem to prove that we have to use reverse logic for LHT countries.
+			if (!s_in.model.isLeftHand) { //RHT
+				if (angles[0][1] === s_out_id) { //s-out is left most segment
 
-				//wlodek76: KEEP LEFT/RIGHT overlapping case
-				//WIKI WAZE: If the left most segment is overlapping another segment, it will also be KEEP RIGHT.
-				if (!ja_overlapping_angles(angles[0][0], angles[1][0])) {
-					ja_log("Left most <45 segment: keep left", 2);
-					return ja_routing_type.KEEP_LEFT;
+					//wlodek76: KEEP LEFT/RIGHT overlapping case
+					//WIKI WAZE: If the left most segment is overlapping another segment, it will also be KEEP RIGHT.
+					if (!ja_overlapping_angles(angles[0][0], angles[1][0])) {
+						ja_log("Left most <45 segment: keep left", 2);
+						return ja_routing_type.KEEP_LEFT;
+					}
+				}
+			} else { //LHT
+				//FZ69617: KEEP RIGHT/LEFT logic for right most segment
+				//MISSING IN WIKI: When there are at least two segments less than 45.04°, only the right most segment will
+				// be KEEP RIGHT, all the rest will be KEEP LEFT
+				if (angles[angles.length - 1][1] === s_out_id) { //s-out is right most segment
+
+					//FZ69617: KEEP RIGHT/LEFT overlapping case
+					//MISSING IN WIKI: If the right most segment is overlapping another segment, it will also be KEEP LEFT.
+					if (!ja_overlapping_angles(angles[angles.length - 1][0], angles[angles.length - 2][0])) {
+						ja_log("Right most <45 segment: keep right", 2);
+						return ja_routing_type.KEEP_RIGHT;
+					}
 				}
 			}
 
@@ -609,8 +626,8 @@ function run_ja() {
 				return s_in.model.isLeftHand ? ja_routing_type.EXIT_LEFT : ja_routing_type.EXIT_RIGHT;
 			}
 
-			ja_log("DEFAULT: keep right", 2);
-			return ja_routing_type.KEEP_RIGHT;
+			ja_log("DEFAULT: keep", 2);
+			return s_in.model.isLeftHand ? ja_routing_type.KEEP_LEFT : ja_routing_type.KEEP_RIGHT;
 		} else if (Math.abs(angle) < TURN_ANGLE + GRAY_ZONE) {
 			ja_log("Angle is in gray zone 44-46", 2);
 			return ja_routing_type.PROBLEM;
