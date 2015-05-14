@@ -42,6 +42,7 @@ function run_ja() {
 	var ja_last_restart = 0, ja_roundabout_points = [], ja_options = {}, ja_mapLayer;
 
 	var TURN_ANGLE = 45.04;  //Turn vs. keep angle specified in Wiki.
+	var U_TURN_ANGLE = 175.0;  //U-Turn angle. TODO: verify
 	var GRAY_ZONE = 0.0;  //0 since there is no mention of a "gray zone" in Wiki. TODO: verify on map
 	var OVERLAPPING_ANGLE = 0.666;  //Experimentally measured overlapping angle.
 
@@ -54,6 +55,7 @@ function run_ja() {
 		EXIT: "junction_exit",
 		EXIT_LEFT: "junction_exit_left",
 		EXIT_RIGHT: "junction_exit_right",
+		U_TURN: "u_turn",
 		PROBLEM: "junction_problem",
 		ERROR: "junction_error",
 		ROUNDABOUT: "junction_roundabout",
@@ -103,8 +105,9 @@ function run_ja() {
 		guess: { elementType: "checkbox", elementId: "_jaCbGuessRouting", defaultValue: true },
 		noInstructionColor: { elementType: "color", elementId: "_jaTbNoInstructionColor", defaultValue: "#ffffff", group: "guess"},
 		keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84", group: "guess"},
-		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600", group: "guess"},
 		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff", group: "guess"},
+		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600", group: "guess"},
+		uTurnInstructionColor: { elementType: "color", elementId: "_jaTbUTurnInstructionColor", defaultValue: "#feed50", group: "guess"},
 		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#a0a0a0", group: "guess"},
 		roundaboutOverlayDisplay: { elementType: "select", elementId: "_jaSelRoundaboutOverlayDisplay", defaultValue: "rOverNever", options: ["rOverNever","rOverSelected","rOverAlways"]},
 		roundaboutOverlayColor: { elementType: "color", elementId: "_jaTbRoundaboutOverlayColor", defaultValue: "#aa0000", group: "roundaboutOverlayDisplay"},
@@ -212,7 +215,7 @@ function run_ja() {
 				top: 0;
 				left: 0;
 				right: 0;
-				background: rgba(255, 255, 255, 0.5);
+				background: rgba(255, 255, 255, 0.666);
 			}
 			*/}.toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1]));
 
@@ -610,6 +613,12 @@ function run_ja() {
 			return ja_routing_type.KEEP_RIGHT;
 		} else if (Math.abs(angle) < TURN_ANGLE + GRAY_ZONE) {
 			ja_log("Angle is in gray zone 44-46", 2);
+			return ja_routing_type.PROBLEM;
+		} else if (Math.abs(angle) > U_TURN_ANGLE + GRAY_ZONE) {
+			ja_log("Angle is > 175 = U-Turn", 2);
+			return ja_routing_type.U_TURN;
+		} else if (Math.abs(angle) > U_TURN_ANGLE - GRAY_ZONE) {
+			ja_log("Angle is in gray zone 175-177", 2);
 			return ja_routing_type.PROBLEM;
 		} else {
 			ja_log("Normal turn", 2);
@@ -1862,6 +1871,7 @@ function run_ja() {
 				ja_get_style_rule(ja_routing_type.ERROR, "problemColor"),
 				ja_get_style_rule(ja_routing_type.ROUNDABOUT, "roundaboutColor"),
 				ja_get_style_rule(ja_routing_type.ROUNDABOUT_EXIT, "exitInstructionColor"),
+				ja_get_style_rule(ja_routing_type.U_TURN, "uTurnInstructionColor"),
 
 				new window.OpenLayers.Rule(
 					{
@@ -1922,6 +1932,7 @@ function run_ja() {
 			keepInstructionColor: "Color for keep prompt",
 			exitInstructionColor: "Color for exit prompt",
 			turnInstructionColor: "Color for turn prompt",
+			uTurnInstructionColor: "Color for U-turn prompt",
 			problemColor: "Color for disallowed turns",
 			roundaboutColor: "Color for non-normal roundabouts",
 			roundaboutOverlayColor: "Color for roundabout overlay",
@@ -1958,6 +1969,7 @@ function run_ja() {
 					keepInstructionColor: "Färg för \"håll höger/vänster\"-instruktion",
 					exitInstructionColor: "Färg för \"ta av\"-instruktion",
 					turnInstructionColor: "Färg för \"sväng\"-instruktion",
+					uTurnInstructionColor: "Färg för \"U-sväng\"-instruktion",
 					problemColor: "Färg förbjuden sväng",
 					roundaboutColor: "Färg för rondell (med icke-räta vinklar)",
 					roundaboutOverlayColor: "Färg för rondellcirkel",
@@ -1989,6 +2001,7 @@ function run_ja() {
 					keepInstructionColor: "\"Pysy vasemmalla/oikealla\"-ohjeen väri",
 					exitInstructionColor: "\"Poistu\"-ohjeen väri",
 					turnInstructionColor: "\"Käänny\"-ohjeen väri",
+					uTurnInstructionColor: "\"Kääntyä ympäri\"-ohjeen väri",
 					problemColor: "Kielletyn käännöksen väri",
 					roundaboutColor: "Liikenneympyrän (jolla ei-suoria kulmia) ohjeen väri",
 					roundaboutOverlayColor: "Liikenneympyrän korostusväri",
@@ -2019,6 +2032,7 @@ function run_ja() {
 					keepInstructionColor: "Kolor dla \"kieruj się\"",
 					exitInstructionColor: "Kolor dla \"zjedź\"",
 					turnInstructionColor: "Kolor dla \"skręć\"",
+					uTurnInstructionColor: "Kolor dla \"zawróć\"",
 					problemColor: "Kolor niedozwolonych manewrów",
 					roundaboutColor: "Kolor rond niestandardowych",
 					roundaboutOverlayColor: "Kolor znacznika rond",
