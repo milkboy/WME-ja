@@ -42,7 +42,7 @@ function run_ja() {
 	var ja_last_restart = 0, ja_roundabout_points = [], ja_options = {}, ja_mapLayer;
 
 	var TURN_ANGLE = 45.04;  //Turn vs. keep angle specified in Wiki.
-	var U_TURN_ANGLE = 175.0;  //U-Turn angle. TODO: verify
+	var U_TURN_ANGLE = 169.0;  //U-Turn angle. TODO: verify
 	var GRAY_ZONE = 0.0;  //0 since there is no mention of a "gray zone" in Wiki. TODO: verify on map
 	var OVERLAPPING_ANGLE = 0.666;  //Experimentally measured overlapping angle.
 
@@ -615,10 +615,10 @@ function run_ja() {
 			ja_log("Angle is in gray zone 44-46", 2);
 			return ja_routing_type.PROBLEM;
 		} else if (Math.abs(angle) > U_TURN_ANGLE + GRAY_ZONE) {
-			ja_log("Angle is > 175 = U-Turn", 2);
+			ja_log("Angle is >= 170 = U-Turn", 2);
 			return ja_routing_type.U_TURN;
 		} else if (Math.abs(angle) > U_TURN_ANGLE - GRAY_ZONE) {
-			ja_log("Angle is in gray zone 175-177", 2);
+			ja_log("Angle is in gray zone 169-171", 2);
 			return ja_routing_type.PROBLEM;
 		} else {
 			ja_log("Normal turn", 2);
