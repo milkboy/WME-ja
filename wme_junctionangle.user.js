@@ -2007,7 +2007,7 @@ function run_ja() {
 					keepInstructionColor: "\"Pysy vasemmalla/oikealla\"-ohjeen väri",
 					exitInstructionColor: "\"Poistu\"-ohjeen väri",
 					turnInstructionColor: "\"Käänny\"-ohjeen väri",
-					uTurnInstructionColor: "\"Kääntyä ympäri\"-ohjeen väri",
+					uTurnInstructionColor: "\"Käänny ympäri\"-ohjeen väri",
 					noTurnColor: "Kielletyn käännöksen väri",
 					problemColor: "Vältettävien kulmien väri",
 					roundaboutColor: "Liikenneympyrän (jolla ei-suoria kulmia) ohjeen väri",
