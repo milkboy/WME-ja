@@ -51,11 +51,11 @@ function run_ja() {
 		KEEP: "junction_keep",
 		KEEP_LEFT: "junction_keep_left",
 		KEEP_RIGHT: "junction_keep_right",
-		TURN: "junction",
+		TURN: "junction_turn",
 		EXIT: "junction_exit",
 		EXIT_LEFT: "junction_exit_left",
 		EXIT_RIGHT: "junction_exit_right",
-		U_TURN: "u_turn",
+		U_TURN: "junction_u_turn",
 		PROBLEM: "junction_problem",
 		NO_TURN: "junction_no_turn",
 		ROUNDABOUT: "junction_roundabout",
@@ -107,7 +107,7 @@ function run_ja() {
 		keepInstructionColor: { elementType: "color", elementId: "_jaTbKeepInstructionColor", defaultValue: "#cbff84", group: "guess"},
 		exitInstructionColor: { elementType: "color", elementId: "_jaTbExitInstructionColor", defaultValue: "#6cb5ff", group: "guess"},
 		turnInstructionColor: { elementType: "color", elementId: "_jaTbTurnInstructionColor", defaultValue: "#4cc600", group: "guess"},
-		uTurnInstructionColor: { elementType: "color", elementId: "_jaTbUTurnInstructionColor", defaultValue: "#8040ff", group: "guess"},
+		uTurnInstructionColor: { elementType: "color", elementId: "_jaTbUTurnInstructionColor", defaultValue: "#b66cff", group: "guess"},
 		noTurnColor: { elementType: "color", elementId: "_jaTbNoTurnColor", defaultValue: "#a0a0a0", group: "guess"},
 		problemColor: { elementType: "color", elementId: "_jaTbProblemColor", defaultValue: "#feed40", group: "guess"},
 		roundaboutOverlayDisplay: { elementType: "select", elementId: "_jaSelRoundaboutOverlayDisplay", defaultValue: "rOverNever", options: ["rOverNever","rOverSelected","rOverAlways"]},
@@ -196,7 +196,7 @@ function run_ja() {
 			}
 			#jaOptions input[type="color"] {
 				width: 15%;
-				height: 24px;
+				height: 2em;
 				padding: 4px;
 			}
 			@supports (-webkit-appearance:none) {
