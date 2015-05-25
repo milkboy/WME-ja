@@ -531,17 +531,15 @@ function run_ja() {
 				var tmp_street_out = {};
 				tmp_street_out[a[1]] = street_n[a[1]];
 
-				if(ja_primary_name_match(street_in, tmp_street_out) && ja_segment_type_match(s_in, tmp_s_out)) {
-					ja_log("BC primary name and type match", 2);
+				var name_match = ja_primary_name_match(street_in, tmp_street_out) ||
+						ja_alt_name_match(street_in, tmp_street_out) ||
+						ja_cross_name_match(street_in, tmp_street_out);
+
+				if(name_match && ja_segment_type_match(s_in, tmp_s_out)) {
+					ja_log("BC name and type match", 2);
 					bc_collect(a, 3);
-				} else if(ja_alt_name_match(street_in, tmp_street_out) && ja_segment_type_match(s_in, tmp_s_out)) {
-					ja_log("BC alt name and type match", 2);
-					bc_collect(a, 3);
-				} else if(ja_primary_name_match(street_in, tmp_street_out) || ja_cross_name_match(street_in, tmp_street_out)) {
-					ja_log("BC primary name or cross name match", 2);
-					bc_collect(a, 2);
-				} else if(ja_alt_name_match(street_in, tmp_street_out)) {
-					ja_log("BC alt name match", 2);
+				} else if(name_match) {
+					ja_log("BC name match", 2);
 					bc_collect(a, 2);
 				} else if(ja_segment_type_match(s_in, tmp_s_out)) {
 					ja_log("BC type match", 2);
@@ -1298,7 +1296,8 @@ function run_ja() {
 
 				//wlodek76: CROSS-MATCH works when two compared segments contain at least one ALT NAME
 				//when alt name is empty cross-match does not work
-				if (street_n_element.secondary.length === 0) { return false; }
+				//FZ69617: This no longer seems to be needed
+				//if (street_n_element.secondary.length === 0) { return false; }
 
 				return street_n_element.primary.name === street_in_secondary.name;
 			}) || street_n_element.secondary.some(function (street_n_secondary) {
@@ -1306,7 +1305,8 @@ function run_ja() {
 
 				//wlodek76: CROSS-MATCH works when two compared segments contain at least one ALT NAME
 				//when alt name is empty cross-match does not work
-				if (street_in.secondary.length === 0) { return false; }
+				//FZ69617: This no longer seems to be needed
+				//if (street_in.secondary.length === 0) { return false; }
 
 				//wlodek76: missing return from checking primary name with alternate names
 				return street_in.primary.name === street_n_secondary.name;
