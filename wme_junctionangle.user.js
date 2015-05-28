@@ -42,8 +42,8 @@ function run_ja() {
 	var ja_last_restart = 0, ja_roundabout_points = [], ja_options = {}, ja_mapLayer;
 
 	var TURN_ANGLE = 45.04;  //Turn vs. keep angle specified in Wiki.
-	var U_TURN_ANGLE = 168.24;  //U-Turn angle.
-	var GRAY_ZONE = 0.2;  //Gray zone angle based on irregularities observed on map.
+	var U_TURN_ANGLE = 168.24;  //U-Turn angle based on map experiments.
+	var GRAY_ZONE = 0.5;  //Gray zone angle intended to prevent from irregularities observed on map.
 	var OVERLAPPING_ANGLE = 0.666;  //Experimentally measured overlapping angle.
 
 	var ja_routing_type = {
