@@ -447,9 +447,18 @@ function run_ja() {
 			return ja_routing_type.BC;
 		}
 
+		//Check for U-turn, which is emitted even if there is only one s-out
+		if (Math.abs(angle) > U_TURN_ANGLE + GRAY_ZONE) {
+			ja_log("Angle is >= 170 - U-Turn", 2);
+			return ja_routing_type.U_TURN;
+		} else if (Math.abs(angle) > U_TURN_ANGLE - GRAY_ZONE) {
+			ja_log("Angle is in gray zone 169-171", 2);
+			return ja_routing_type.PROBLEM;
+		}
+
 		//No other possible turns
 		if(node.attributes.segIDs.length <= 2) {
-			ja_log("Only one possible turn", 2);
+			ja_log("Only one possible turn - no instruction", 2);
 			return ja_routing_type.BC;
 		} //No instruction
 
@@ -629,12 +638,6 @@ function run_ja() {
 			return s_in.model.isLeftHand ? ja_routing_type.KEEP_LEFT : ja_routing_type.KEEP_RIGHT;
 		} else if (Math.abs(angle) < TURN_ANGLE + GRAY_ZONE) {
 			ja_log("Angle is in gray zone 44-46", 2);
-			return ja_routing_type.PROBLEM;
-		} else if (Math.abs(angle) > U_TURN_ANGLE + GRAY_ZONE) {
-			ja_log("Angle is >= 170 = U-Turn", 2);
-			return ja_routing_type.U_TURN;
-		} else if (Math.abs(angle) > U_TURN_ANGLE - GRAY_ZONE) {
-			ja_log("Angle is in gray zone 169-171", 2);
 			return ja_routing_type.PROBLEM;
 		} else {
 			ja_log("Normal turn", 2);
