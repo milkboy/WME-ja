@@ -482,7 +482,7 @@ function run_ja() {
 				if(s_out_id === a[1] ||
 					(typeof s_n[a[1]] !== 'undefined' &&
 						ja_is_turn_allowed(s_in, node, s_n[a[1]]) &&
-						Math.abs(ja_angle_diff(s_in_a, a[0], false)) < TURN_ANGLE //Any angle above 45 is not eligible
+						Math.abs(ja_angle_diff(s_in_a, a[0], false)) < TURN_ANGLE //Any angle above 45.04 is not eligible
 						)) {
 					ja_log(true, 4);
 					return true;
@@ -663,7 +663,7 @@ function run_ja() {
 		}
 
 		//try to show all angles for all selected segments
-		if (window.Waze.selectionManager.selectedItems.length === 0) { return 1; }
+		if (window.Waze.selectionManager.selectedItems.length === 0) { return; }
 		ja_log("Checking junctions for " + window.Waze.selectionManager.selectedItems.length + " segments", 2);
 
 		window.Waze.selectionManager.selectedItems.forEach(function(element) {
@@ -1942,7 +1942,6 @@ function run_ja() {
 		set_trans('en', {
 			name: "Junction Angle Info",
 			settingsTitle: "Junction Angle Info settings",
-			apply: "Apply",
 			resetToDefault: "Reset to default",
 			aAbsolute: "Absolute",
 			aDeparture: "Departure",
@@ -1980,7 +1979,6 @@ function run_ja() {
 				set_trans('sv', {
 					name: "Korsningsvinklar",
 					settingsTitle: "Inställningar för korsningsvinklar",
-					apply: "Godkänn",
 					resetToDefault: "Återställ",
 					aAbsolute: "Absolut",
 					aDeparture: "Sväng",
@@ -2013,7 +2011,6 @@ function run_ja() {
 				set_trans('fi', {
 					name: "Risteyskulmat",
 					settingsTitle: "Rysteyskulmien asetukset",
-					apply: "Aseta",
 					resetToDefault: "Palauta",
 					aAbsolute: "Absoluuttinen",
 					aDeparture: "Käännös",
@@ -2045,7 +2042,6 @@ function run_ja() {
 			case 'pl':
 				set_trans('pl', {
 					settingsTitle: "Ustawienia",
-					apply: "Zastosuj",
 					resetToDefault: "Przywróć domyślne",
 					aAbsolute: "Absolutne",
 					aDeparture: "Rozjazdy",
