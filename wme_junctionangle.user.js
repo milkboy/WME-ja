@@ -56,9 +56,9 @@ function run_ja() {
 		EXIT_LEFT: "junction_exit_left",
 		EXIT_RIGHT: "junction_exit_right",
 		U_TURN: "junction_u_turn",
-		U_TURN_PROBLEM: "junction_u_turn_problem",
 		PROBLEM: "junction_problem",
 		NO_TURN: "junction_no_turn",
+		NO_U_TURN: "junction_no_u_turn",
 		ROUNDABOUT: "junction_roundabout",
 		ROUNDABOUT_EXIT: "junction_roundabout_exit"
 	};
@@ -819,14 +819,16 @@ function run_ja() {
 		/**
 		 * Collect double-turn (inc. U-turn) segments info
 		 */
-		var doubleTurns = { //Structure: map<s_id, map<s_out_id, list<{s_in_id, angle, turn_type}>>>
+		var doubleTurns = {
+
+			data: {}, //Structure: map<s_id, map<s_out_id, list<{s_in_id, angle, turn_type}>>>
 
 			collect: function (s_id, s_in_id, s_out_id, angle, turn_type) {
 				ja_log("Collecting double-turn path from " + s_in_id + " to " + s_out_id
 						+ " via " + s_id + " with angle " + angle + " type: " + turn_type, 2);
-				var info = this[s_id];
+				var info = this.data[s_id];
 				if (info === undefined) {
-					info = this[s_id] = {};
+					info = this.data[s_id] = {};
 				}
 				var list = info[s_out_id];
 				if (list === undefined) {
@@ -836,7 +838,7 @@ function run_ja() {
 			},
 
 			forEachItem: function (s_id, s_out_id, fn) {
-				var info = this[s_id];
+				var info = this.data[s_id];
 				if (info !== undefined) {
 					var list = info[s_out_id];
 					if (list !== undefined) {
@@ -885,7 +887,7 @@ function run_ja() {
 							//Determine whether a turn is disallowed
 							if (angle >= 175 - GRAY_ZONE && angle <= 185 + GRAY_ZONE) {
 								var turn_type = (angle >= 175 + GRAY_ZONE && angle <= 185 - GRAY_ZONE) ?
-										ja_routing_type.U_TURN_PROBLEM : ja_routing_type.PROBLEM;
+										ja_routing_type.NO_U_TURN : ja_routing_type.PROBLEM;
 
 								if (ja_is_turn_allowed(fromSegment, fromNode, segment) &&
 										ja_is_turn_allowed(segment, toNode, toSegment)) {
@@ -903,7 +905,7 @@ function run_ja() {
 		}
 
 		ja_log("Collected double-turn segments:", 2);
-		ja_log(doubleTurns, 2);
+		ja_log(doubleTurns.data, 2);
 
 
 		//Start looping through selected nodes
@@ -1161,9 +1163,6 @@ function run_ja() {
 				case ja_routing_type.KEEP_RIGHT:
 					angleString += ja_arrow.right_up();
 					break;
-				case ja_routing_type.U_TURN_PROBLEM:
-					ja_junction_type = ja_routing_type.PROBLEM;
-					break;
 				default:
 					ja_log("No extra format for junction type: " + ja_junction_type, 2);
 			}
@@ -1186,9 +1185,6 @@ function run_ja() {
 					break;
 				case ja_routing_type.PROBLEM:
 					angleString = "?\n" + angleString;
-					break;
-				case ja_routing_type.U_TURN_PROBLEM:
-					ja_junction_type = ja_routing_type.PROBLEM;
 					break;
 				default:
 					ja_log("No extra format for junction type: " + ja_junction_type, 2);
@@ -2031,6 +2027,7 @@ function run_ja() {
 				ja_get_style_rule(ja_routing_type.ROUNDABOUT, "roundaboutColor"),
 				ja_get_style_rule(ja_routing_type.ROUNDABOUT_EXIT, "exitInstructionColor"),
 				ja_get_style_rule(ja_routing_type.U_TURN, "uTurnInstructionColor"),
+				ja_get_style_rule(ja_routing_type.NO_U_TURN, "problemColor"),
 
 				new window.OpenLayers.Rule(
 					{
