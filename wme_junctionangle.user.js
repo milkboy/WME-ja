@@ -58,6 +58,7 @@ function run_ja() {
 		U_TURN: "junction_u_turn",
 		PROBLEM: "junction_problem",
 		NO_TURN: "junction_no_turn",
+		NO_U_TURN: "junction_no_u_turn",
 		ROUNDABOUT: "junction_roundabout",
 		ROUNDABOUT_EXIT: "junction_roundabout_exit"
 	};
@@ -770,6 +771,143 @@ function run_ja() {
 			}
 		}
 
+
+		var ja_label_distance;
+		/*
+		 * Define a base distance to markers, depending on the zoom level
+		 */
+		switch (window.Waze.map.zoom) {
+			case 10:
+				ja_label_distance = 2.8;
+				break;
+			case 9:
+				ja_label_distance = 4;
+				break;
+			case 8:
+				ja_label_distance = 8;
+				break;
+			case 7:
+				ja_label_distance = 15;
+				break;
+			case 6:
+				ja_label_distance = 25;
+				break;
+			case 5:
+				ja_label_distance = 40;
+				break;
+			case 4:
+				ja_label_distance = 80;
+				break;
+			case 3:
+				ja_label_distance = 150;
+				break;
+			case 2:
+				ja_label_distance = 300;
+				break;
+			case 1:
+				ja_label_distance = 400;
+				break;
+			default:
+				ja_log("Unsupported zoom level: " + window.Waze.map.zoom + "!", 2);
+		}
+
+		ja_label_distance *= (1 + (0.2 * parseInt(ja_getOption("decimals"))));
+
+		ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
+
+
+		/**
+		 * Collect double-turn (inc. U-turn) segments info
+		 */
+		var doubleTurns = {
+
+			data: {}, //Structure: map<s_id, map<s_out_id, list<{s_in_id, angle, turn_type}>>>
+
+			collect: function (s_id, s_in_id, s_out_id, angle, turn_type) {
+				ja_log("Collecting double-turn path from " + s_in_id + " to " + s_out_id
+						+ " via " + s_id + " with angle " + angle + " type: " + turn_type, 2);
+				var info = this.data[s_id];
+				if (info === undefined) {
+					info = this.data[s_id] = {};
+				}
+				var list = info[s_out_id];
+				if (list === undefined) {
+					list = info[s_out_id] = [];
+				}
+				list.push({ s_in_id: s_in_id, angle: angle, turn_type: turn_type });
+			},
+
+			forEachItem: function (s_id, s_out_id, fn) {
+				var info = this.data[s_id];
+				if (info !== undefined) {
+					var list = info[s_out_id];
+					if (list !== undefined) {
+						list.forEach(function(item, i) {
+							fn(item, i);
+						});
+					}
+				}
+			}
+		};
+
+		//Loop through all 15m or less long segments and collect double-turn disallowed ones
+		if (ja_getOption("angleMode") === "aDeparture" && ja_nodes.length > 1) {
+			window.Waze.selectionManager.selectedItems.forEach(function (selectedSegment) {
+				var segmentId = selectedSegment.model.attributes.id;
+				var segment = window.Waze.model.segments.objects[segmentId];
+				ja_log("Checking " + segmentId + " for double turns ...", 2);
+
+				var len = ja_segment_length(segment);
+				ja_log("Segment " + segmentId + " length: " + len, 2);
+
+				if (Math.round(len) <= 15) {
+
+					var fromNode = window.Waze.model.nodes.get(segment.attributes.fromNodeID);
+					var toNode = window.Waze.model.nodes.get(segment.attributes.toNodeID);
+					var a_from = ja_getAngle(segment.attributes.fromNodeID, segment);
+					var a_to = ja_getAngle(segment.attributes.toNodeID, segment);
+
+					fromNode.attributes.segIDs.forEach(function (fromSegmentId) {
+						if (fromSegmentId === segmentId) return;
+						var fromSegment = window.Waze.model.segments.objects[fromSegmentId];
+						var from_a = ja_getAngle(segment.attributes.fromNodeID, fromSegment);
+						var from_angle = ja_angle_diff(from_a, a_from, false);
+						ja_log("Segment from " + fromSegmentId + " angle: " + from_a + ", turn angle: " + from_angle, 2);
+
+						toNode.attributes.segIDs.forEach(function (toSegmentId) {
+							if (toSegmentId === segmentId) return;
+							var toSegment = window.Waze.model.segments.objects[toSegmentId];
+							var to_a = ja_getAngle(segment.attributes.toNodeID, toSegment);
+							var to_angle = ja_angle_diff(to_a, a_to, false);
+							ja_log("Segment to " + toSegmentId + " angle: " + to_a + ", turn angle: " + to_angle, 2);
+
+							var angle = Math.abs(to_angle - from_angle);
+							ja_log("Angle from " + fromSegmentId + " to " + toSegmentId + " is: " + angle, 2);
+
+							//Determine whether a turn is disallowed
+							if (angle >= 175 - GRAY_ZONE && angle <= 185 + GRAY_ZONE) {
+								var turn_type = (angle >= 175 + GRAY_ZONE && angle <= 185 - GRAY_ZONE) ?
+										ja_routing_type.NO_U_TURN : ja_routing_type.PROBLEM;
+
+								if (ja_is_turn_allowed(fromSegment, fromNode, segment) &&
+										ja_is_turn_allowed(segment, toNode, toSegment)) {
+									doubleTurns.collect(segmentId, fromSegmentId, toSegmentId, angle, turn_type);
+								}
+								if (ja_is_turn_allowed(toSegment, toNode, segment) &&
+										ja_is_turn_allowed(segment, fromNode, fromSegment)) {
+									doubleTurns.collect(segmentId, toSegmentId, fromSegmentId, angle, turn_type);
+								}
+							}
+						});
+					});
+				}
+			});
+		}
+
+		ja_log("Collected double-turn segments:", 2);
+		ja_log(doubleTurns.data, 2);
+
+
 		//Start looping through selected nodes
 		for (var i = 0; i < ja_nodes.length; i++) {
 			var node = window.Waze.model.nodes.get(ja_nodes[i]);
@@ -842,51 +980,7 @@ function run_ja() {
 				}
 			});
 
-
 			ja_log(angles, 3);
-
-			var ja_label_distance;
-			/*
-			 * Define a base distance to markers, depending on the zoom level
-			 */
-			switch (window.Waze.map.zoom) {
-				case 10:
-					ja_label_distance = 2.8;
-					break;
-				case 9:
-					ja_label_distance = 4;
-					break;
-				case 8:
-					ja_label_distance = 8;
-					break;
-				case 7:
-					ja_label_distance = 15;
-					break;
-				case 6:
-					ja_label_distance = 25;
-					break;
-				case 5:
-					ja_label_distance = 40;
-					break;
-				case 4:
-					ja_label_distance = 80;
-					break;
-				case 3:
-					ja_label_distance = 150;
-					break;
-				case 2:
-					ja_label_distance = 300;
-					break;
-				case 1:
-					ja_label_distance = 400;
-					break;
-				default:
-					ja_log("Unsupported zoom level: " + window.Waze.map.zoom + "!", 2);
-			}
-
-			ja_label_distance *= (1 + (0.2 * parseInt(ja_getOption("decimals"))));
-
-			ja_log("zoom: " + window.Waze.map.zoom + " -> distance: " + ja_label_distance, 2);
 
 			var ha, point;
 			//if we have two connected segments selected, do some magic to get the turn angle only =)
@@ -930,6 +1024,11 @@ function run_ja() {
 						node.geometry.y + (ja_extra_space_multiplier * ja_label_distance * Math.sin((ha * Math.PI) / 180))
 				);
 				ja_draw_marker(point, node, ja_label_distance, a, ha, true, ja_junction_type);
+
+				//draw double turn markers
+				doubleTurns.forEachItem(ja_selected_angles[0][1], ja_selected_angles[1][1], function(item) {
+					ja_draw_marker(point, node, ja_label_distance, item.angle, ha, true, item.turn_type);
+				});
 			}
 			else {
 				//sort angle data (ascending)
@@ -976,12 +1075,18 @@ function run_ja() {
 						ja_draw_marker(point, node, ja_label_distance, a, ha, true,
 							ja_getOption("guess") ?
 								ja_guess_routing_instruction(node, a_in[1], angle[1], angles) : ja_routing_type.TURN);
+
+						//draw double turn markers
+						doubleTurns.forEachItem(a_in[1], angle[1], function(item) {
+							ja_draw_marker(point, node, ja_label_distance, item.angle, ha, true, item.turn_type);
+						});
+
 					} else {
 						ja_log("Angle between " + angle[1] + " and " + angles[(j + 1) % angles.length][1] + " is " +
 							a + " and position for label should be at " + ha, 3);
 						point = new window.OpenLayers.Geometry.Point(
-								node.geometry.x + (ja_label_distance * Math.cos((ha * Math.PI) / 180)),
-								node.geometry.y + (ja_label_distance * Math.sin((ha * Math.PI) / 180))
+								node.geometry.x + (ja_label_distance * 1.25 * Math.cos((ha * Math.PI) / 180)),
+								node.geometry.y + (ja_label_distance * 1.25 * Math.sin((ha * Math.PI) / 180))
 						);
 						ja_draw_marker(point, node, ja_label_distance, a, ha);
 					}
@@ -1012,7 +1117,10 @@ function run_ja() {
 
 		//Try to estimate of the point is "too close" to another point
 		//(or maybe something else in the future; like turn restriction arrows or something)
-		var ja_tmp_distance = ja_label_distance;
+		//FZ69617: Exctract initial label distance from point
+		var ja_tmp_distance = Math.abs(ha) % 180 < 45 || Math.abs(ha) % 180 > 135 ?
+				(point.x - node.geometry.x) / (Math.cos((ha * Math.PI) / 180)) :
+				(point.y - node.geometry.y) / (Math.sin((ha * Math.PI) / 180));
 		ja_log("Starting distance estimation", 3);
 		while(ja_mapLayer.features.some(function(feature){
 			if(typeof feature.attributes.ja_type !== 'undefined' && feature.attributes.ja_type !== 'roundaboutOverlay') {
@@ -1056,7 +1164,7 @@ function run_ja() {
 					angleString += ja_arrow.right_up();
 					break;
 				default:
-					ja_log("Unknown junction type: " + ja_junction_type, 2);
+					ja_log("No extra format for junction type: " + ja_junction_type, 2);
 			}
 		} else {
 			switch(ja_junction_type) {
@@ -1079,7 +1187,7 @@ function run_ja() {
 					angleString = "?\n" + angleString;
 					break;
 				default:
-					ja_log("Unknown junction type: " + ja_junction_type, 2);
+					ja_log("No extra format for junction type: " + ja_junction_type, 2);
 			}
 		}
 		var anglePoint = withRouting ?
@@ -1363,6 +1471,19 @@ function run_ja() {
 	}
 
 	/**
+	 * Computes segment's length in meters
+	 * @param segment Segment to compute the length of
+	 * @returns {number}
+	 */
+	function ja_segment_length(segment) {
+		var len = segment.geometry.getGeodesicLength(window.Waze.map.projection);
+		ja_log("segment: " + segment.attributes.id
+				+ " computed len: " + len + " attrs len: " + segment.attributes.length, 3);
+		return len;
+	}
+
+
+	/**
 	 * Checks whether the two segments (connected at the same node) overlap each other.
 	 * @param a1 Angle of the 1st segment
 	 * @param a2 Angle of the 2nd segment
@@ -1416,7 +1537,7 @@ function run_ja() {
 	}
 
 	function ja_angle_dist(a, s_in_angle) {
-		ja_log("Computing out-angle distance " + a + " to in-angle " + s_in_angle, 4);
+		ja_log("Computing out-angle " + a + " distance to in-angle " + s_in_angle, 4);
 		var diff = ja_angle_diff(a, s_in_angle, true);
 		ja_log("Diff is " + diff + ", returning: " + (diff < 0 ? diff + 360 : diff), 4);
 		return diff < 0 ? diff + 360 : diff;
@@ -1847,6 +1968,15 @@ function run_ja() {
 		ja_calculation_timer.start();
 	}
 
+	function ja_get_contrast_color(hex_color) {
+		ja_log("Parsing YIQ-based contrast color for: " + hex_color + " ...", 2);
+		var r = parseInt(hex_color.substr(1, 2), 16);
+		var g = parseInt(hex_color.substr(3, 2), 16);
+		var b = parseInt(hex_color.substr(5, 2), 16);
+		var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+		return (yiq >= 128) ? 'black' : 'white';
+	}
+
 	function ja_get_style_rule(routingType, fillColorOption) {
 		return new window.OpenLayers.Rule(
 			{
@@ -1860,7 +1990,8 @@ function run_ja() {
 						(parseInt(ja_getOption("decimals")) > 0 ? 4 * parseInt(ja_getOption("decimals")) : 0),
 					fontSize: (parseInt(ja_getOption("pointSize")) - 1) + "px",
 					fillColor: ja_getOption(fillColorOption),
-					strokeColor: "#183800"
+					strokeColor: "#183800",
+					fontColor: ja_get_contrast_color(ja_getOption(fillColorOption))
 				}
 			});
 	}
@@ -1896,6 +2027,7 @@ function run_ja() {
 				ja_get_style_rule(ja_routing_type.ROUNDABOUT, "roundaboutColor"),
 				ja_get_style_rule(ja_routing_type.ROUNDABOUT_EXIT, "exitInstructionColor"),
 				ja_get_style_rule(ja_routing_type.U_TURN, "uTurnInstructionColor"),
+				ja_get_style_rule(ja_routing_type.NO_U_TURN, "problemColor"),
 
 				new window.OpenLayers.Rule(
 					{
