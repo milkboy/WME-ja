@@ -25,6 +25,10 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 ![Screenshot](https://github.com/milkboy/WME-ja/raw/master/screenshot3.png)
 
 ###Changelog
+####1.11.0
+- Bootstrap fixes
+- U-turn feature polishing
+
 ####1.10.0
 - Several updates for changed Waze routing logic (better name matching, angle changes)
 - U-turn support
