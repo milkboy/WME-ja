@@ -4,7 +4,7 @@
 // @description			Show the angle between two selected (and connected) segments
 // @include				/^https:\/\/(www|editor-beta)\.waze\.com\/(.{2,6}\/)?editor\/.*$/
 // @updateURL			https://github.com/milkboy/WME-ja/raw/master/wme_junctionangle.user.js
-// @version				1.11
+// @version				1.12
 // @grant				none
 // @copyright			2015 Michael Wikberg <waze@wikberg.fi>
 // @license				CC-BY-NC-SA
@@ -35,7 +35,7 @@ function run_ja() {
 	/*
 	 * First some variable and enumeration definitions
 	 */
-	var junctionangle_version = "1.11-devel";
+	var junctionangle_version = "1.12-devel";
 
 	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: verbose debug, 4: insane debug
 
@@ -2210,14 +2210,6 @@ function run_ja() {
 	 * Bootstrapping and logging
 	 */
 
-	function ja_registerLoginEvent() {
-		ja_log("Registering onLogin event listener", 1);
-		ja_log(window.Waze.loginManager.events, 3);
-		//HTML changes after login, even though the page is not reloaded. Need to defer init until then.
-		window.Waze.loginManager.events.register("login", null, junctionangle_init);
-		ja_log("Registered onLogin event listener", 1);
-	}
-
 	function ja_bootstrap(retries) {
 		retries = retries || 0;
 		//If Waze has not been defined in ~15 seconds, it probably won't work anyway. Might need tuning
@@ -2228,17 +2220,11 @@ function run_ja() {
 		}
 
 		try {
-			//No current logged in user
-			if (ja_is_model_ready() &&
-				window.Waze.loginManager.user == null
-				) {
-				ja_registerLoginEvent();
-			}
-			//User already logged in and WME ready
-			else if (
+			//User logged in and WME ready
+			if (
 				ja_is_model_ready() &&
-				window.Waze.loginManager.user != null &&
-				ja_is_dom_ready()) {
+				ja_is_dom_ready() &&
+				window.Waze.loginManager.isLoggedIn()) {
 				setTimeout(function () {
 					junctionangle_init();
 				}, 500);
@@ -2271,8 +2257,8 @@ function run_ja() {
 		if(null === document.getElementById('user-info')) {
 			return false;
 		} else {
-			return null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0] &&
-				null !== document.getElementById('user-info').getElementsByClassName('nav-tabs')[0].getElementsByClassName('tab-content')[0];
+			return document.getElementById('user-info').getElementsByClassName('nav-tabs').length > 0 &&
+				document.getElementById('user-info').getElementsByClassName('tab-content').length > 0;
 		}
 	}
 
