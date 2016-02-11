@@ -150,14 +150,29 @@ function run_ja() {
 		//Listen for selected nodes change event
 		window.Waze.selectionManager.events.register("selectionchanged", null, ja_calculate);
 
-		window.Waze.model.segments.events.on({
-			"objectschanged": ja_calculate,
-			"objectsremoved": ja_calculate
-		});
-		window.Waze.model.nodes.events.on({
-			"objectschanged": ja_calculate,
-			"objectsremoved": ja_calculate
-		});
+		//Temporary workaround. Beta editor changed the event listener logic, but live is still using the old version
+		//if-else should be removed once not needed anymore
+		if("events" in window.Waze.model.segments) {
+			//Live
+			window.Waze.model.segments.events.on({
+				"objectschanged": ja_calculate,
+				"objectsremoved": ja_calculate
+			});
+			window.Waze.model.nodes.events.on({
+				"objectschanged": ja_calculate,
+				"objectsremoved": ja_calculate
+			});
+		} else if("_events" in window.Waze.model.segments) {
+			//Beta editor
+			window.Waze.model.segments.on({
+				"objectschanged": ja_calculate,
+				"objectsremoved": ja_calculate
+			});
+			window.Waze.model.nodes.on({
+				"objectschanged": ja_calculate,
+				"objectsremoved": ja_calculate
+			});
+		}
 
 		//Recalculate on zoom end also
 		window.Waze.map.events.register("zoomend", null, ja_calculate);
