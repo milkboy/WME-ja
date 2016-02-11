@@ -12,9 +12,9 @@
   "main": "firefox_bootstrap.js",
   "name": "wme-ja",
   "permissions": {
-    "private-browsing": "true",
-    "multiprocess": "true"
+    "private-browsing": true,
+    "multiprocess": true
   },
   "title": "Waze Map Editor - Junction Angle Info addon",
-  "version": "1.11.0"
+  "version": "1.11.1"
 }
