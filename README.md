@@ -25,4 +25,4 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 ![Screenshot](https://github.com/milkboy/WME-ja/raw/master/screenshot3.png)
 
 ###Changelog
-####1.11 development version (unreleased)
+####1.12 development version (unreleased)

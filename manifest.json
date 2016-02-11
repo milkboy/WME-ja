@@ -1,7 +1,7 @@
 {
   "name": "__MSG_extName__",
   "short_name": "WME-JA",
-  "version": "1.11.0",
+  "version": "1.11.999",
   "manifest_version": 2,
   "default_locale": "en",
 
