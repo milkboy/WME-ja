@@ -7,6 +7,7 @@
 
   "description": "__MSG_extDesc__",
   "icons": { "16": "ja16.png",
+             "32": "ja32.png",
              "48": "ja48.png",
              "128": "ja128.png"
            },
