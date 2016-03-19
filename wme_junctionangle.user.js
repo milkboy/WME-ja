@@ -2216,7 +2216,43 @@ function run_ja() {
 					pointSize: "Rozmiar punktów pomiaru"
 				});
 				break;
-			default:
+
+			//Russian (русский)
+			case 'ru':
+				set_trans('ru', {
+					name: "JAI Углы поворотов",
+					settingsTitle: "Настройки Junction Angle Info",
+					resetToDefault: "Сбросить настройки",
+					aAbsolute: "Абсолютные",
+					aDeparture: "Повороты",
+					angleMode: "- режим углов",
+					angleDisplay: "- стиль отображения",
+					angleDisplayArrows: "- стрелки направлений",
+					displayFancy: "Модный",
+					displaySimple: "Простой",
+					guess: "Ожидаемые подсказки",
+					noInstructionColor: "- нет подсказки",
+					keepInstructionColor: "- держитесь",
+					exitInstructionColor: "- съезд",
+					turnInstructionColor: "- поверните",
+					uTurnInstructionColor: "- развернитесь",
+					noTurnColor: "- запрещённый манёвр",
+					problemColor: "- угол следует избегать",
+					roundaboutColor: "- некорректное кольцо",
+					roundaboutOverlayColor: "- цвет кольца",
+					roundaboutOverlayDisplay: "- показ колец",
+					rOverNever: "Никогда",
+					rOverSelected: "Если выбрано",
+					rOverAlways: "Всегда",
+					decimals: "- знаков после зяпятой",
+					pointSize: "- размер кружка",
+
+					roundaboutnav: "Вики: круговые перекрестки",
+					ghissues: "Сообщить об ошибке"
+				});
+				break;
+
+		default:
 				ja_log("No translations for: " + I18n.locale, 2);
 		}
 	}
