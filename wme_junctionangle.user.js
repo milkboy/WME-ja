@@ -22,6 +22,7 @@
  *	2014 "berestovskyy" <?>
  *	2015 "FZ69617" <?>
  *	2015 "wlodek76" <?>
+ *	2016 Sergey Kuznetsov "WazeRus" <sergey@izhevsk.pro> (Russian translation)
  */
 
 /*jshint eqnull:true, nonew:true, nomen:true, curly:true, latedef:true, unused:strict, noarg:true, loopfunc:true */
