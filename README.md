@@ -25,6 +25,10 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 ![Screenshot](https://github.com/milkboy/WME-ja/raw/master/screenshot3.png)
 
 ###Changelog
+####1.12.0
+- Don't run on user pages
+- Add option for showing/hiding the JAI layer on page load
+
 ####1.11.0
 - Bootstrap fixes
 - U-turn feature polishing

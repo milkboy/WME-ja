@@ -6,7 +6,7 @@
     "fennec": ">=38.0a1"
   },
   "homepage": "https://github.com/milkboy/WME-ja",
-  "icon": "ja48.png",
+  "icon": "resource://jid1-0stiHRA1MiZopA-at-jetpack/data/ja48.png",
   "id": "jid1-0stiHRA1MiZopA@jetpack",
   "license": "Creative Commons by-nc-sa 3.0",
   "main": "firefox_bootstrap.js",
@@ -16,5 +16,5 @@
     "multiprocess": true
   },
   "title": "Waze Map Editor - Junction Angle Info addon",
-  "version": "1.11.1"
+  "version": "1.12.0"
 }
