@@ -102,6 +102,7 @@ function run_ja() {
 	};
 
 	var ja_settings = {
+        defaultOn: { elementType: "checkbox", elementId: "_jaCbShowLayer", defaultValue: true },
 		angleMode: { elementType: "select", elementId: "_jaSelAngleMode", defaultValue: "aDeparture", options: ["aAbsolute", "aDeparture"]},
 		angleDisplay: { elementType: "select", elementId: "_jaSelAngleDisplay", defaultValue: "displayFancy", options: ["displayFancy", "displaySimple"]},
 		angleDisplayArrows: { elementType: "select", elementId: "_jaSelAngleDisplayArrows", defaultValue: "<>", options: ["<>", "⇦⇨", "⇐⇒", "←→", "⇐⇒⇖⇗", "←→↖↗"]},
@@ -360,6 +361,9 @@ function run_ja() {
 				className: "junction-angles",
 				styleMap: new window.OpenLayers.StyleMap(ja_style())
 			});
+
+            //Set visibility according to user preference
+            ja_mapLayer.setVisibility(ja_getOption("defaultOn"));
 
 			window.Waze.map.addLayer(ja_mapLayer);
 			ja_log("version " + junctionangle_version + " loaded.", 0);
@@ -2092,6 +2096,7 @@ function run_ja() {
 			name: "Junction Angle Info",
 			settingsTitle: "Junction Angle Info settings",
 			resetToDefault: "Reset to default",
+            defaultOn: "Show layer by default",
 			aAbsolute: "Absolute",
 			aDeparture: "Departure",
 			angleMode: "Angle mode",
@@ -2129,6 +2134,7 @@ function run_ja() {
 					name: "Korsningsvinklar",
 					settingsTitle: "Inställningar för korsningsvinklar",
 					resetToDefault: "Återställ",
+                    defaultOn: "Visa skiktet som standard",
 					aAbsolute: "Absolut",
 					aDeparture: "Sväng",
 					angleMode: "Vinkelvisning",
@@ -2161,6 +2167,7 @@ function run_ja() {
 					name: "Risteyskulmat",
 					settingsTitle: "Rysteyskulmien asetukset",
 					resetToDefault: "Palauta",
+                    defaultOn: "Näytä taso oletuksena",
 					aAbsolute: "Absoluuttinen",
 					aDeparture: "Käännös",
 					angleMode: "Kulmien näyttö",
@@ -2192,6 +2199,7 @@ function run_ja() {
 				set_trans('pl', {
 					settingsTitle: "Ustawienia",
 					resetToDefault: "Przywróć domyślne",
+                    defaultOn: "Pokazać warstwę domyślnie",
 					aAbsolute: "Absolutne",
 					aDeparture: "Rozjazdy",
 					angleMode: "Tryb wyświetlania kątów",
