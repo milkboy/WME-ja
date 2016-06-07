@@ -2297,7 +2297,7 @@ function run_ja() {
 	}
 
 	function ja_is_model_ready() {
-		if(typeof window.Waze.map === 'undefined') {
+		if(typeof window.Waze === 'undefined' || typeof window.Waze.map === 'undefined') {
 			return false;
 		} else {
 			return 'undefined' !== typeof window.Waze.map.events.register &&
