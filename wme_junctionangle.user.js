@@ -2229,9 +2229,10 @@ function run_ja() {
 			//Russian (русский)
 			case 'ru':
 				set_trans('ru', {
-					name: "JAI Углы поворотов",
+					name: "Углы поворотов",
 					settingsTitle: "Настройки Junction Angle Info",
 					resetToDefault: "Сбросить настройки",
+					defaultOn: "По умолчанию показывать",
 					aAbsolute: "Абсолютные",
 					aDeparture: "Повороты",
 					angleMode: "- режим углов",
