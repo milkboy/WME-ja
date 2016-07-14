@@ -3,7 +3,7 @@
 // @namespace			https://github.com/milkboy/WME-ja
 // @description			Show the angle between two selected (and connected) segments
 // @include				/^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/.*$/
-// @updateURL			https://github.com/milkboy/WME-ja/raw/master/wme_junctionangle.user.js
+// @updateURL			https://github.com/milkboy/WME-ja/raw/development/wme_junctionangle.user.js
 // @version				1.13
 // @grant				none
 // @copyright			2016 Michael Wikberg <waze@wikberg.fi>
