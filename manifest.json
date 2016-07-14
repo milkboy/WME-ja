@@ -18,10 +18,13 @@
     {
       "matches": [
         "https://www.waze.com/*",
-        "https://editor-beta.waze.com/*"
+        "https://beta.waze.com/*"
       ],
       "include_globs": [
         "*/editor/*"
+      ],
+      "exclude_globs": [
+        "*/user/*"
       ],
       "js": ["crx_bootstrap.user.js"]
     }
