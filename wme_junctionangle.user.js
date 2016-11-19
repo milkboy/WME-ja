@@ -2128,7 +2128,7 @@ function run_ja() {
 				});
 				break;
 
-				//Czech (čeština)
+			//Czech (čeština)
 			case 'cs':
 				set_trans({
 					name: "Junction Angle Info",
@@ -2163,7 +2163,8 @@ function run_ja() {
 					ghissues: "Hlášení problémů JAI"
 				});
 				break;
-				//Finnish (Suomen kieli)
+
+			//Finnish (Suomen kieli)
 			case 'fi':
 				set_trans({
 					name: "Risteyskulmat",
