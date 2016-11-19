@@ -2083,87 +2083,54 @@ function run_ja() {
 	}
 
 	function ja_loadTranslations() {
-		var set_trans = function(loc, def) {
+		var set_trans = function(def) {
 			/*jshint -W093*/
-			return I18n.translations[loc].ja = def;
+			return I18n.translations[I18n.locale].ja = def;
 		};
 
 		ja_log("Loading translations",2);
 
-		//Default language (English)
-		set_trans(window.I18n.defaultLocale,
-		set_trans('en', {
-			name: "Junction Angle Info",
-			settingsTitle: "Junction Angle Info settings",
-			resetToDefault: "Reset to default",
-			defaultOn: "Show layer by default",
-			aAbsolute: "Absolute",
-			aDeparture: "Departure",
-			angleMode: "Angle mode",
-			angleDisplay: "Angle display style",
-			angleDisplayArrows: "Direction arrows",
-			displayFancy: "Fancy",
-			displaySimple: "Simple",
-			guess: "Estimate routing instructions",
-			noInstructionColor: "Color for best continuation",
-			keepInstructionColor: "Color for keep prompt",
-			exitInstructionColor: "Color for exit prompt",
-			turnInstructionColor: "Color for turn prompt",
-			uTurnInstructionColor: "Color for U-turn prompt",
-			noTurnColor: "Color for disallowed turns",
-			problemColor: "Color for angles to avoid",
-			roundaboutColor: "Color for non-normal roundabouts",
-			roundaboutOverlayColor: "Color for roundabout overlay",
-			roundaboutOverlayDisplay: "Show roundabout",
-			rOverNever: "Never",
-			rOverSelected: "When selected",
-			rOverAlways: "Always",
-			decimals: "Number of decimals",
-			pointSize: "Base point size",
-
-			roundaboutnav: "WIKI: Roundabouts",
-			ghissues: "JAI issue tracker"
-		}));
-
 		//Apply
 		switch (I18n.locale) {
+			default:
+				//Default language (English)
+				set_trans({
+					name: "Junction Angle Info",
+					settingsTitle: "Junction Angle Info settings",
+					resetToDefault: "Reset to default",
+					defaultOn: "Show layer by default",
+					aAbsolute: "Absolute",
+					aDeparture: "Departure",
+					angleMode: "Angle mode",
+					angleDisplay: "Angle display style",
+					angleDisplayArrows: "Direction arrows",
+					displayFancy: "Fancy",
+					displaySimple: "Simple",
+					guess: "Estimate routing instructions",
+					noInstructionColor: "Color for best continuation",
+					keepInstructionColor: "Color for keep prompt",
+					exitInstructionColor: "Color for exit prompt",
+					turnInstructionColor: "Color for turn prompt",
+					uTurnInstructionColor: "Color for U-turn prompt",
+					noTurnColor: "Color for disallowed turns",
+					problemColor: "Color for angles to avoid",
+					roundaboutColor: "Color for non-normal roundabouts",
+					roundaboutOverlayColor: "Color for roundabout overlay",
+					roundaboutOverlayDisplay: "Show roundabout",
+					rOverNever: "Never",
+					rOverSelected: "When selected",
+					rOverAlways: "Always",
+					decimals: "Number of decimals",
+					pointSize: "Base point size",
 
-			//Swedish (svenska)
-			case 'sv':
-				set_trans('sv', {
-					name: "Korsningsvinklar",
-					settingsTitle: "Inställningar för korsningsvinklar",
-					resetToDefault: "Återställ",
-					defaultOn: "Visa skiktet som standard",
-					aAbsolute: "Absolut",
-					aDeparture: "Sväng",
-					angleMode: "Vinkelvisning",
-					angleDisplay: "Vinkelstil",
-					angleDisplayArrows: "Riktningspilar",
-					displayFancy: "Grafisk",
-					displaySimple: "Simpel",
-					guess: "Gissa navigeringsinstruktioner",
-					noInstructionColor: "Färg för \"ingen instruktion\"",
-					keepInstructionColor: "Färg för \"håll höger/vänster\"-instruktion",
-					exitInstructionColor: "Färg för \"ta av\"-instruktion",
-					turnInstructionColor: "Färg för \"sväng\"-instruktion",
-					uTurnInstructionColor: "Färg för \"U-sväng\"-instruktion",
-					noTurnColor: "Färg förbjuden sväng",
-					problemColor: "Färg för vinklar att undvika",
-					roundaboutColor: "Färg för rondell (med icke-räta vinklar)",
-					roundaboutOverlayColor: "Färg för rondellcirkel",
-					roundaboutOverlayDisplay: "Visa cirkel på rondell",
-					rOverNever: "Aldrig",
-					rOverSelected: "När vald",
-					rOverAlways: "Alltid",
-					decimals: "Decimaler",
-					pointSize: "Cirkelns basstorlek"
+					roundaboutnav: "WIKI: Roundabouts",
+					ghissues: "JAI issue tracker"
 				});
 				break;
 
 			//Finnish (Suomen kieli)
 			case 'fi':
-				set_trans('fi', {
+				set_trans({
 					name: "Risteyskulmat",
 					settingsTitle: "Rysteyskulmien asetukset",
 					resetToDefault: "Palauta",
@@ -2196,7 +2163,7 @@ function run_ja() {
 
 			//Polish (język polski)
 			case 'pl':
-				set_trans('pl', {
+				set_trans({
 					settingsTitle: "Ustawienia",
 					resetToDefault: "Przywróć domyślne",
 					defaultOn: "Pokazać warstwę domyślnie",
@@ -2228,7 +2195,7 @@ function run_ja() {
 
 			//Russian (русский)
 			case 'ru':
-				set_trans('ru', {
+				set_trans({
 					name: "Углы поворотов",
 					settingsTitle: "Настройки Junction Angle Info",
 					resetToDefault: "Сбросить настройки",
@@ -2262,8 +2229,38 @@ function run_ja() {
 				});
 				break;
 
-		default:
-				ja_log("No translations for: " + I18n.locale, 2);
+			//Swedish (svenska)
+			case 'sv':
+				set_trans({
+					name: "Korsningsvinklar",
+					settingsTitle: "Inställningar för korsningsvinklar",
+					resetToDefault: "Återställ",
+					defaultOn: "Visa skiktet som standard",
+					aAbsolute: "Absolut",
+					aDeparture: "Sväng",
+					angleMode: "Vinkelvisning",
+					angleDisplay: "Vinkelstil",
+					angleDisplayArrows: "Riktningspilar",
+					displayFancy: "Grafisk",
+					displaySimple: "Simpel",
+					guess: "Gissa navigeringsinstruktioner",
+					noInstructionColor: "Färg för \"ingen instruktion\"",
+					keepInstructionColor: "Färg för \"håll höger/vänster\"-instruktion",
+					exitInstructionColor: "Färg för \"ta av\"-instruktion",
+					turnInstructionColor: "Färg för \"sväng\"-instruktion",
+					uTurnInstructionColor: "Färg för \"U-sväng\"-instruktion",
+					noTurnColor: "Färg förbjuden sväng",
+					problemColor: "Färg för vinklar att undvika",
+					roundaboutColor: "Färg för rondell (med icke-räta vinklar)",
+					roundaboutOverlayColor: "Färg för rondellcirkel",
+					roundaboutOverlayDisplay: "Visa cirkel på rondell",
+					rOverNever: "Aldrig",
+					rOverSelected: "När vald",
+					rOverAlways: "Alltid",
+					decimals: "Decimaler",
+					pointSize: "Cirkelns basstorlek"
+				});
+				break;
 		}
 	}
 
