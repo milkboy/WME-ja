@@ -2128,7 +2128,42 @@ function run_ja() {
 				});
 				break;
 
-			//Finnish (Suomen kieli)
+				//Czech (čeština)
+			case 'cs':
+				set_trans({
+					name: "Junction Angle Info",
+					settingsTitle: "Nastavení JAI",
+					resetToDefault: "Výchozí nastavení",
+					defaultOn: "Vždy aktivní",
+					aAbsolute: "Absolutní",
+					aDeparture: "Odjezdový",
+					angleMode: "Styl zobrazení úhlů",
+					angleDisplay: "Styl výpisu úhlů",
+					angleDisplayArrows: "Směrové šipky",
+					displayFancy: "Zdobný",
+					displaySimple: "Jednoduchý",
+					guess: "Odhadovat navigační hlášky",
+					noInstructionColor: "Bez hlášení",
+					keepInstructionColor: "\"Držte se/Zůstaňte\"",
+					exitInstructionColor: "\"Sjeďte\"",
+					turnInstructionColor: "\"Odbočte\"",
+					uTurnInstructionColor: "\"Otočte se\"",
+					noTurnColor: "Nepovolené směry",
+					problemColor: "Nejasné úhly",
+					roundaboutColor: "Rozbité kruháče",
+					roundaboutOverlayColor: "Kruháče",
+					roundaboutOverlayDisplay: "ukazovat kruháče",
+					rOverNever: "Ne-",
+					rOverSelected: "Při výběru",
+					rOverAlways: "Vždy",
+					decimals: "Počet des. míst",
+					pointSize: "Velikost písma",
+
+					roundaboutnav: "US WIKI: Kruhové objezdy",
+					ghissues: "Hlášení problémů JAI"
+				});
+				break;
+				//Finnish (Suomen kieli)
 			case 'fi':
 				set_trans({
 					name: "Risteyskulmat",
