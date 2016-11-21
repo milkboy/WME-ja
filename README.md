@@ -26,6 +26,10 @@ Source code and issue tracker at https://github.com/milkboy/WME-ja
 
 ### Changelog
 
+#### 1.13.0
+- Update for new WME
+- Added Czech translation (thanks to MajkiiTelini)
+
 #### 1.12.0
 - Don't run on user pages
 - Add option for showing/hiding the JAI layer on page load

@@ -2,9 +2,9 @@
 // @name				WME Junction Angle Info
 // @namespace			https://github.com/milkboy/WME-ja
 // @description			Show the angle between two selected (and connected) segments
-// @include				/^https:\/\/((www|editor-beta)\.)?waze\.com\/(?!user\/)(.{2,6}\/)?editor\/.*$/
+// @include				/^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/.*$/
 // @updateURL			https://github.com/milkboy/WME-ja/raw/master/wme_junctionangle.user.js
-// @version				1.12
+// @version				1.13
 // @grant				none
 // @copyright			2016 Michael Wikberg <waze@wikberg.fi>
 // @license				CC-BY-NC-SA
@@ -23,6 +23,7 @@
  *	2015 "FZ69617" <?>
  *	2015 "wlodek76" <?>
  *	2016 Sergey Kuznetsov "WazeRus" <sergey@izhevsk.pro> (Russian translation)
+ *  2016 "MajkiiTelini" <?> Czech translation
  */
 
 /*jshint eqnull:true, nonew:true, nomen:true, curly:true, latedef:true, unused:strict, noarg:true, loopfunc:true */
@@ -37,7 +38,7 @@ function run_ja() {
 	/*
 	 * First some variable and enumeration definitions
 	 */
-	var junctionangle_version = "1.12.0";
+	var junctionangle_version = "1.13.0";
 
 	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: verbose debug, 4: insane debug
 
@@ -1358,6 +1359,7 @@ function run_ja() {
 		return !restrictions.some(function(element) {
 			/*jshint bitwise: false*/
 			ja_log("Checking restriction " + element, 3);
+			//noinspection JSBitwiseOperatorUsage
 			var ret = element.allDay &&				//All day restriction
 				element.days === 127 &&				//Every week day
 				( element.vehicleTypes === -1 ||	//All vehicle types
@@ -2083,87 +2085,90 @@ function run_ja() {
 	}
 
 	function ja_loadTranslations() {
-		var set_trans = function(loc, def) {
+		var set_trans = function(def) {
 			/*jshint -W093*/
-			return I18n.translations[loc].ja = def;
+			return I18n.translations[I18n.locale].ja = def;
 		};
 
 		ja_log("Loading translations",2);
 
-		//Default language (English)
-		set_trans(window.I18n.defaultLocale,
-		set_trans('en', {
-			name: "Junction Angle Info",
-			settingsTitle: "Junction Angle Info settings",
-			resetToDefault: "Reset to default",
-			defaultOn: "Show layer by default",
-			aAbsolute: "Absolute",
-			aDeparture: "Departure",
-			angleMode: "Angle mode",
-			angleDisplay: "Angle display style",
-			angleDisplayArrows: "Direction arrows",
-			displayFancy: "Fancy",
-			displaySimple: "Simple",
-			guess: "Estimate routing instructions",
-			noInstructionColor: "Color for best continuation",
-			keepInstructionColor: "Color for keep prompt",
-			exitInstructionColor: "Color for exit prompt",
-			turnInstructionColor: "Color for turn prompt",
-			uTurnInstructionColor: "Color for U-turn prompt",
-			noTurnColor: "Color for disallowed turns",
-			problemColor: "Color for angles to avoid",
-			roundaboutColor: "Color for non-normal roundabouts",
-			roundaboutOverlayColor: "Color for roundabout overlay",
-			roundaboutOverlayDisplay: "Show roundabout",
-			rOverNever: "Never",
-			rOverSelected: "When selected",
-			rOverAlways: "Always",
-			decimals: "Number of decimals",
-			pointSize: "Base point size",
-
-			roundaboutnav: "WIKI: Roundabouts",
-			ghissues: "JAI issue tracker"
-		}));
-
 		//Apply
 		switch (I18n.locale) {
+			default:
+				//Default language (English)
+				set_trans({
+					name: "Junction Angle Info",
+					settingsTitle: "Junction Angle Info settings",
+					resetToDefault: "Reset to default",
+					defaultOn: "Show layer by default",
+					aAbsolute: "Absolute",
+					aDeparture: "Departure",
+					angleMode: "Angle mode",
+					angleDisplay: "Angle display style",
+					angleDisplayArrows: "Direction arrows",
+					displayFancy: "Fancy",
+					displaySimple: "Simple",
+					guess: "Estimate routing instructions",
+					noInstructionColor: "Color for best continuation",
+					keepInstructionColor: "Color for keep prompt",
+					exitInstructionColor: "Color for exit prompt",
+					turnInstructionColor: "Color for turn prompt",
+					uTurnInstructionColor: "Color for U-turn prompt",
+					noTurnColor: "Color for disallowed turns",
+					problemColor: "Color for angles to avoid",
+					roundaboutColor: "Color for non-normal roundabouts",
+					roundaboutOverlayColor: "Color for roundabout overlay",
+					roundaboutOverlayDisplay: "Show roundabout",
+					rOverNever: "Never",
+					rOverSelected: "When selected",
+					rOverAlways: "Always",
+					decimals: "Number of decimals",
+					pointSize: "Base point size",
 
-			//Swedish (svenska)
-			case 'sv':
-				set_trans('sv', {
-					name: "Korsningsvinklar",
-					settingsTitle: "Inställningar för korsningsvinklar",
-					resetToDefault: "Återställ",
-					defaultOn: "Visa skiktet som standard",
-					aAbsolute: "Absolut",
-					aDeparture: "Sväng",
-					angleMode: "Vinkelvisning",
-					angleDisplay: "Vinkelstil",
-					angleDisplayArrows: "Riktningspilar",
-					displayFancy: "Grafisk",
-					displaySimple: "Simpel",
-					guess: "Gissa navigeringsinstruktioner",
-					noInstructionColor: "Färg för \"ingen instruktion\"",
-					keepInstructionColor: "Färg för \"håll höger/vänster\"-instruktion",
-					exitInstructionColor: "Färg för \"ta av\"-instruktion",
-					turnInstructionColor: "Färg för \"sväng\"-instruktion",
-					uTurnInstructionColor: "Färg för \"U-sväng\"-instruktion",
-					noTurnColor: "Färg förbjuden sväng",
-					problemColor: "Färg för vinklar att undvika",
-					roundaboutColor: "Färg för rondell (med icke-räta vinklar)",
-					roundaboutOverlayColor: "Färg för rondellcirkel",
-					roundaboutOverlayDisplay: "Visa cirkel på rondell",
-					rOverNever: "Aldrig",
-					rOverSelected: "När vald",
-					rOverAlways: "Alltid",
-					decimals: "Decimaler",
-					pointSize: "Cirkelns basstorlek"
+					roundaboutnav: "WIKI: Roundabouts",
+					ghissues: "JAI issue tracker"
+				});
+				break;
+
+			//Czech (čeština)
+			case 'cs':
+				set_trans({
+					name: "Junction Angle Info",
+					settingsTitle: "Nastavení JAI",
+					resetToDefault: "Výchozí nastavení",
+					defaultOn: "Vždy aktivní",
+					aAbsolute: "Absolutní",
+					aDeparture: "Odjezdový",
+					angleMode: "Styl zobrazení úhlů",
+					angleDisplay: "Styl výpisu úhlů",
+					angleDisplayArrows: "Směrové šipky",
+					displayFancy: "Zdobný",
+					displaySimple: "Jednoduchý",
+					guess: "Odhadovat navigační hlášky",
+					noInstructionColor: "Bez hlášení",
+					keepInstructionColor: "\"Držte se/Zůstaňte\"",
+					exitInstructionColor: "\"Sjeďte\"",
+					turnInstructionColor: "\"Odbočte\"",
+					uTurnInstructionColor: "\"Otočte se\"",
+					noTurnColor: "Nepovolené směry",
+					problemColor: "Nejasné úhly",
+					roundaboutColor: "Rozbité kruháče",
+					roundaboutOverlayColor: "Kruháče",
+					roundaboutOverlayDisplay: "ukazovat kruháče",
+					rOverNever: "Ne-",
+					rOverSelected: "Při výběru",
+					rOverAlways: "Vždy",
+					decimals: "Počet des. míst",
+					pointSize: "Velikost písma",
+
+					roundaboutnav: "US WIKI: Kruhové objezdy",
+					ghissues: "Hlášení problémů JAI"
 				});
 				break;
 
 			//Finnish (Suomen kieli)
 			case 'fi':
-				set_trans('fi', {
+				set_trans({
 					name: "Risteyskulmat",
 					settingsTitle: "Rysteyskulmien asetukset",
 					resetToDefault: "Palauta",
@@ -2196,7 +2201,7 @@ function run_ja() {
 
 			//Polish (język polski)
 			case 'pl':
-				set_trans('pl', {
+				set_trans({
 					settingsTitle: "Ustawienia",
 					resetToDefault: "Przywróć domyślne",
 					defaultOn: "Pokazać warstwę domyślnie",
@@ -2228,10 +2233,11 @@ function run_ja() {
 
 			//Russian (русский)
 			case 'ru':
-				set_trans('ru', {
-					name: "JAI Углы поворотов",
+				set_trans({
+					name: "Углы поворотов",
 					settingsTitle: "Настройки Junction Angle Info",
 					resetToDefault: "Сбросить настройки",
+					defaultOn: "По умолчанию показывать",
 					aAbsolute: "Абсолютные",
 					aDeparture: "Повороты",
 					angleMode: "- режим углов",
@@ -2261,8 +2267,38 @@ function run_ja() {
 				});
 				break;
 
-		default:
-				ja_log("No translations for: " + I18n.locale, 2);
+			//Swedish (svenska)
+			case 'sv':
+				set_trans({
+					name: "Korsningsvinklar",
+					settingsTitle: "Inställningar för korsningsvinklar",
+					resetToDefault: "Återställ",
+					defaultOn: "Visa skiktet som standard",
+					aAbsolute: "Absolut",
+					aDeparture: "Sväng",
+					angleMode: "Vinkelvisning",
+					angleDisplay: "Vinkelstil",
+					angleDisplayArrows: "Riktningspilar",
+					displayFancy: "Grafisk",
+					displaySimple: "Simpel",
+					guess: "Gissa navigeringsinstruktioner",
+					noInstructionColor: "Färg för \"ingen instruktion\"",
+					keepInstructionColor: "Färg för \"håll höger/vänster\"-instruktion",
+					exitInstructionColor: "Färg för \"ta av\"-instruktion",
+					turnInstructionColor: "Färg för \"sväng\"-instruktion",
+					uTurnInstructionColor: "Färg för \"U-sväng\"-instruktion",
+					noTurnColor: "Färg förbjuden sväng",
+					problemColor: "Färg för vinklar att undvika",
+					roundaboutColor: "Färg för rondell (med icke-räta vinklar)",
+					roundaboutOverlayColor: "Färg för rondellcirkel",
+					roundaboutOverlayDisplay: "Visa cirkel på rondell",
+					rOverNever: "Aldrig",
+					rOverSelected: "När vald",
+					rOverAlways: "Alltid",
+					decimals: "Decimaler",
+					pointSize: "Cirkelns basstorlek"
+				});
+				break;
 		}
 	}
 
