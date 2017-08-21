@@ -1,7 +1,7 @@
 {
   "name": "__MSG_extName__",
   "short_name": "WME-JA",
-  "version": "1.13.0",
+  "version": "${project.version}",
   "manifest_version": 2,
   "default_locale": "en",
 
@@ -21,7 +21,7 @@
         "https://beta.waze.com/*"
       ],
       "include_globs": [
-        "*/editor/*"
+        "*/editor*"
       ],
       "exclude_globs": [
         "*/user/*"

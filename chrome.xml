@@ -1,0 +1,27 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+    <id>chrome-extension</id>
+    <baseDirectory>/</baseDirectory>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <fileSets>
+        <fileSet>
+            <directory>${dir}</directory>
+            <includes>
+                <include>crx_bootstrap.user.js</include>
+                <include>wme_junctionangle.user.js</include>
+                <include>manifest.json</include>
+                <include>ja*.png</include>
+            </includes>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${dir}/_locales</directory>
+            <includes>
+                <include>**</include>
+            </includes>
+            <outputDirectory>_locales</outputDirectory>
+        </fileSet>
+    </fileSets>
+</assembly>

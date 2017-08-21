@@ -5,3 +5,4 @@ WME-ja.iws
 data/*.user.js
 
 wme-ja.xpi
+target/
