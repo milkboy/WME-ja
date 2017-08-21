@@ -2179,7 +2179,7 @@ function run_ja() {
 					displayFancy: "Nätti",
 					displaySimple: "Yksinkertainen",
 					guess: "Arvioi reititysohjeet",
-					noInstructionColor: "ohjeeton \"Suora\"-väri",
+					noInstructionColor: "Ohjeeton \"Suora\"-väri",
 					keepInstructionColor: "\"Pysy vasemmalla/oikealla\"-ohjeen väri",
 					exitInstructionColor: "\"Poistu\"-ohjeen väri",
 					turnInstructionColor: "\"Käänny\"-ohjeen väri",
