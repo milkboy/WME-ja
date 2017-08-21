@@ -88,7 +88,7 @@
                     <workingDirectory>${dir}</workingDirectory>
                     <arguments>
                         <argument>-i</argument>
-                        <argument>'/##NO_FF_START##/,/##NO_FF_END##/d'</argument>
+                        <argument>'/##NO_EXT_START##/,/##NO_EXT_END##/d'</argument>
                         <argument>${script}</argument>
                     </arguments>
                 </configuration>

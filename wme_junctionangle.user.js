@@ -2363,9 +2363,9 @@ function run_ja() {
 	 * @param ja_log_level
 	 */
 	function ja_log(ja_log_msg, ja_log_level) {
-		//##NO_FF_START##
-		//Firefox addons should not use console.(log|error|debug), so these lines
-		//are removed by the FF addon packaging script.
+        // Browser extensions/addons should not use console.(log|error|debug), so the actual implementation
+        // is removed by the packaging script.
+		// ##NO_EXT_START##
 		if(typeof ja_log_level === 'undefined') { ja_log_level = 1; }
 		if (ja_log_level <= junctionangle_debug) {
 			if (typeof ja_log_msg === "object") {
@@ -2375,7 +2375,7 @@ function run_ja() {
 				console.debug("WME Junction Angle: " + ja_log_msg);
 			}
 		}
-		//##NO_FF_END##
+		// ##NO_EXT_END##
 	}
 
 	ja_bootstrap();
