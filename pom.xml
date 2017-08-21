@@ -1,0 +1,71 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>fi.wikberg.waze</groupId>
+    <artifactId>wme-ja</artifactId>
+    <version>1.13.1</version>
+    <packaging>jar</packaging>
+
+    <name>wme-ja</name>
+    <url>http://maven.apache.org</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <dir>${project.basedir}/target</dir>
+    </properties>
+
+    <build>
+        <directory>target</directory>
+        <resources>
+            <resource>
+                <directory>chrome-ext-locales</directory>
+                <filtering>false</filtering>
+                <targetPath>${dir}/_locales</targetPath>
+            </resource>
+            <resource>
+                <directory>.</directory>
+                <includes>
+                    <include>*.js</include>
+                    <include>*.json</include>
+                </includes>
+                <filtering>true</filtering>
+                <targetPath>${dir}</targetPath>
+            </resource>
+            <resource>
+                <directory>.</directory>
+                <includes>
+                    <include>ja*.png</include>
+                </includes>
+                <filtering>false</filtering>
+                <targetPath>${dir}</targetPath>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.0.2</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>chrome.xml</descriptor>
+                    </descriptors>
+
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-chrome</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
