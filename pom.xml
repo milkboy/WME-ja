@@ -13,6 +13,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <dir>${project.basedir}/target</dir>
+        <script>wme_junctionangle.user.js</script>
     </properties>
 
     <build>
@@ -43,10 +44,12 @@
         </resources>
 
         <plugins>
+
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>3.0.2</version>
             </plugin>
+
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.1.0</version>
@@ -65,6 +68,30 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <executable>sed</executable>
+                    <!-- optional -->
+                    <workingDirectory>${dir}</workingDirectory>
+                    <arguments>
+                        <argument>-i</argument>
+                        <argument>'/##NO_FF_START##/,/##NO_FF_END##/d'</argument>
+                        <argument>${script}</argument>
+                    </arguments>
+                </configuration>
             </plugin>
         </plugins>
     </build>
