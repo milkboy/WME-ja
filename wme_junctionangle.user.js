@@ -2257,7 +2257,7 @@ function run_ja() {
 					rOverNever: "Никогда",
 					rOverSelected: "Если выбрано",
 					rOverAlways: "Всегда",
-					decimals: "- знаков после зяпятой",
+					decimals: "- знаков после запятой",
 					pointSize: "- размер кружка",
 
 					roundaboutnav: "Вики: круговые перекрестки",
