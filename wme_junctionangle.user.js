@@ -2257,7 +2257,7 @@ function run_ja() {
 					rOverNever: "Никогда",
 					rOverSelected: "Если выбрано",
 					rOverAlways: "Всегда",
-					decimals: "- знаков после зяпятой",
+					decimals: "- знаков после запятой",
 					pointSize: "- размер кружка",
 
 					roundaboutnav: "Вики: круговые перекрестки",
@@ -2295,6 +2295,45 @@ function run_ja() {
 					rOverAlways: "Alltid",
 					decimals: "Decimaler",
 					pointSize: "Cirkelns basstorlek"
+				});
+				break;
+
+			//Ukrainian (український)
+		 	case 'uk':
+		    		set_trans({
+			    		name: "Junction Angle Info",
+			       		settingsTitle: "Налаштування Junction Angle Info",
+					resetToDefault: "Скинути налаштування",
+					defaultOn: "За замовчуванням показувати",
+					aAbsolute: "Абсолютні",
+					aDeparture: "Повороти",
+					angleMode: "- режим кутів",
+					angleDisplay: "- стиль відображення",
+					angleDisplayArrows: "- стрілки напрямків",
+					displayFancy: "Модний",
+					displaySimple: "Простий",
+					override: "Візуалізувати \"змінені підказки\"",
+					overrideAngles: "Показувати кути для \"змінених підказок\"",
+					guess: "Очікувані підказки:",
+					noInstructionColor: "- немає підказки",
+					continueInstructionColor: "- продовжуйте рух прямо",
+					keepInstructionColor: "- тримайтеся",
+					exitInstructionColor: "- з'їзд",
+					turnInstructionColor: "- поверніть",
+					uTurnInstructionColor: "- розверніться",
+					noTurnColor: "- заборонений маневр",
+					problemColor: "- кут слід уникати",
+					roundaboutColor: "- некоректне кільце",
+					roundaboutOverlayColor: "- колір кільця",
+					roundaboutOverlayDisplay: "- показ кілець",
+					rOverNever: "Ніколи",
+					rOverSelected: "Якщо вибрано",
+					rOverAlways: "Завжди",
+					decimals: "- знаків після коми",
+					pointSize: "- розмір шрифту",
+
+					roundaboutnav: "WIKI: кругові перехрестя(en)",
+					ghissues: "JAI - Повідомити про помилку"
 				});
 				break;
 		}
