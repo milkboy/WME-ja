@@ -16,5 +16,9 @@
     "multiprocess": true
   },
   "title": "Waze Map Editor - Junction Angle Info addon",
-  "version": "${project.version}"
+  "version": "${project.version}",
+  "repository": "git@github.com:milkboy/WME-ja.git",
+  "devDependencies": {
+    "jshint": "^2.10.1"
+  }
 }

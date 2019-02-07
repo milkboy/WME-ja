@@ -4,7 +4,7 @@
 // @description			Show the angle between two selected (and connected) segments
 // @include				/^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor.*$/
 // @updateURL			https://github.com/milkboy/WME-ja/raw/development/wme_junctionangle.user.js
-// @version				1.15-dev
+// @version				1.15.0
 // @grant				none
 // @copyright			2019 Michael Wikberg <waze@wikberg.fi>
 // @license				CC-BY-NC-SA
@@ -26,7 +26,7 @@
  *  2016 "MajkiiTelini" <?> Czech translation
  */
 
-/*jshint eqnull:true, nonew:true, nomen:true, curly:true, latedef:true, unused:strict, noarg:true, loopfunc:true */
+/*jshint eqnull:true, nonew:true, nomen:true, curly:true, latedef:false, unused:strict, noarg:true, loopfunc:true */
 /*jshint trailing:true, forin:true, noempty:true, maxparams:7, maxerr:100, eqeqeq:true, strict:true, undef:true */
 /*jshint bitwise:true, newcap:true, immed:true, onevar:true, browser:true, nonbsp:true, freeze:true */
 /*global I18n, console, $*/
@@ -38,7 +38,7 @@ function run_ja() {
 	/*
 	 * First some variable and enumeration definitions
 	 */
-	var ja_version = "1.15-devel";
+	var ja_version = "1.15.0";
 
 	var ja_debug = 1;	//0: no output, 1: basic info, 2: debug 3: verbose debug, 4: insane debug
 
@@ -132,6 +132,13 @@ function run_ja() {
 		left_up: function() { return this.get(2); },
 		right_up: function() { return this.get(3); }
 	};
+
+	function getWaze() {
+		if(window.wrappedJSObject) {
+			return window.wrappedJSOnject.W;
+		}
+		return window.W;
+	}
 
 	/*
 	 * Main logic functions
@@ -383,12 +390,6 @@ function run_ja() {
 		ja_calculate();
 	}
 
-	function getWaze() {
-		if(window.wrappedJSObject) {
-			return window.wrappedJSOnject.W;
-		}
-		return window.W;
-	}
 	/**
 	 *
 	 * @param node Junction node
@@ -852,8 +853,8 @@ function run_ja() {
 			data: {}, //Structure: map<s_id, map<s_out_id, list<{s_in_id, angle, turn_type}>>>
 
 			collect: function (s_id, s_in_id, s_out_id, angle, turn_type) {
-				ja_log("Collecting double-turn path from " + s_in_id + " to " + s_out_id
-						+ " via " + s_id + " with angle " + angle + " type: " + turn_type, 2);
+				ja_log("Collecting double-turn path from " + s_in_id + " to " + s_out_id	 +
+					" via " + s_id + " with angle " + angle + " type: " + turn_type, 2);
 				var info = this.data[s_id];
 				if (info === undefined) {
 					info = this.data[s_id] = {};
@@ -896,14 +897,14 @@ function run_ja() {
 					var a_to = ja_getAngle(segment.attributes.toNodeID, segment);
 
 					fromNode.attributes.segIDs.forEach(function (fromSegmentId) {
-						if (fromSegmentId === segmentId) return;
+						if (fromSegmentId === segmentId) { return; }
 						var fromSegment = getWaze().model.segments.objects[fromSegmentId];
 						var from_a = ja_getAngle(segment.attributes.fromNodeID, fromSegment);
 						var from_angle = ja_angle_diff(from_a, a_from, false);
 						ja_log("Segment from " + fromSegmentId + " angle: " + from_a + ", turn angle: " + from_angle, 2);
 
 						toNode.attributes.segIDs.forEach(function (toSegmentId) {
-							if (toSegmentId === segmentId) return;
+							if (toSegmentId === segmentId) {return; }
 							var toSegment = getWaze().model.segments.objects[toSegmentId];
 							var to_a = ja_getAngle(segment.attributes.toNodeID, toSegment);
 							var to_angle = ja_angle_diff(to_a, a_to, false);
@@ -1506,8 +1507,8 @@ function run_ja() {
 	 */
 	function ja_segment_length(segment) {
 		var len = segment.geometry.getGeodesicLength(getWaze().map.projection);
-		ja_log("segment: " + segment.attributes.id
-				+ " computed len: " + len + " attrs len: " + segment.attributes.length, 3);
+		ja_log("segment: " + segment.attributes.id +
+      " computed len: " + len + " attrs len: " + segment.attributes.length, 3);
 		return len;
 	}
 
