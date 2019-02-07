@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: null
     docker:
-    - image: circleci:node
+    - image: circleci/node:latest
     steps:
     - checkout
     - run:
