@@ -1,21 +1,14 @@
 version: 2
 jobs:
   build:
-    working_directory: ~
+    working_directory: null
     docker:
-      - image: debian:stretch
-
+    - image: circleci/node:latest
     steps:
-      - checkout
-
-      - run:
-          name: Greeting
-          command: echo Hello, world.
-
-      - run:
-          name: Print the Current Time
-          command: date
-
-      - run:
-          name: Check for jslint
-          command: jslint
+    - checkout
+    - run:
+        name: yarn install
+        command: yarn install
+    - run:
+        name: Check for jslint
+        command: node_modules/.bin/jshint wme_junctionangle.user.js
