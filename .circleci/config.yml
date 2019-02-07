@@ -8,7 +8,7 @@ jobs:
     - checkout
     - run:
         name: Greeting
-        command: echo Hello, world.
+        command: apt install jslint
     - run:
         name: Print the Current Time
         command: date
