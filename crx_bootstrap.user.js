@@ -6,7 +6,7 @@
 // @updateURL           https://github.com/milkboy/WME-ja/raw/master/wme_junctionangle.user.js
 // @version             ${project.version}
 // @grant               GM_getResourceURL
-// @copyright           2016 Michael Wikberg <michael@wikberg.fi>
+// @copyright           2017 Michael Wikberg <michael@wikberg.fi>
 // @run_at              document_start
 // ==/UserScript==
 
