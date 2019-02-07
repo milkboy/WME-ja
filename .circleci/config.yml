@@ -3,15 +3,12 @@ jobs:
   build:
     working_directory: null
     docker:
-    - image: debian:stretch
+    - image: circleci:node
     steps:
     - checkout
     - run:
-        name: Greeting
-        command: apt install jslint
-    - run:
-        name: Print the Current Time
-        command: date
+        name: yarn install
+        command: yarn install
     - run:
         name: Check for jslint
-        command: jslint
+        command: jshint wme_junctionangle.user.js
