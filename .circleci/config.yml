@@ -8,7 +8,7 @@ jobs:
     - checkout
     - run:
         name: yarn install
-        command: yarn install
+        command: yarn install --dev
     - run:
         name: Check for jslint
         command: jshint wme_junctionangle.user.js
