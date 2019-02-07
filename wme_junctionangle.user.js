@@ -4,7 +4,7 @@
 // @description			Show the angle between two selected (and connected) segments
 // @include				/^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor.*$/
 // @updateURL			https://github.com/milkboy/WME-ja/raw/development/wme_junctionangle.user.js
-// @version				1.14
+// @version				1.15
 // @grant				none
 // @copyright			2016 Michael Wikberg <waze@wikberg.fi>
 // @license				CC-BY-NC-SA
@@ -12,7 +12,7 @@
 // ==/UserScript==
 
 /**
- * Copyright 2016 Michael Wikberg <waze@wikberg.fi>
+ * Copyright 2019 Michael Wikberg <waze@wikberg.fi>
  * WME Junction Angle Info extension is licensed under a Creative Commons
  * Attribution-NonCommercial-ShareAlike 3.0 Unported License.
  *
@@ -39,14 +39,14 @@ function run_ja() {
 	 */
 	var junctionangle_version = "1.14-devel";
 
-	var junctionangle_debug = 1;	//0: no output, 1: basic info, 2: debug 3: verbose debug, 4: insane debug
+	var ja_debug = 1;	//0: no output, 1: basic info, 2: debug 3: verbose debug, 4: insane debug
 
 	var ja_last_restart = 0, ja_roundabout_points = [], ja_options = {}, ja_mapLayer;
 
-	var TURN_ANGLE = 45.04;			//Turn vs. keep angle specified in Wiki.
-	var U_TURN_ANGLE = 168.24;		//U-Turn angle based on map experiments.
-	var GRAY_ZONE = 0.5;			//Gray zone angle intended to prevent from irregularities observed on map.
-	var OVERLAPPING_ANGLE = 0.666;	//Experimentally measured overlapping angle.
+	var ja_TURN_ANGLE = 45.04;			//Turn vs. keep angle specified in Wiki.
+	var ja_U_TURN_ANGLE = 168.24;		//U-Turn angle based on map experiments.
+	var ja_GRAY_ZONE = 0.5;			//Gray zone angle intended to prevent from irregularities observed on map.
+	var ja_OVERLAPPING_ANGLE = 0.666;	//Experimentally measured overlapping angle.
 
 	var ja_routing_type = {
 		BC: "junction_none",
@@ -151,7 +151,7 @@ function run_ja() {
 		var jatab = document.createElement('li');
 
 		//Listen for selected nodes change event
-		window.Waze.selectionManager.events.register("selectionchanged", null, ja_calculate);
+		getWaze().selectionManager.events.register("selectionchanged", null, ja_calculate);
 
 		//Temporary workaround. Beta editor changed the event listener logic, but live is still using the old version
 		//if-else should be removed once not needed anymore
@@ -326,7 +326,7 @@ function run_ja() {
 		ja_info.className = "list-unstyled -side-panel-section";
 		ja_info.style.fontSize = "11px";
 
-		ja_version_elem.appendChild(document.createTextNode(ja_getMessage("name") + ": v" + junctionangle_version));
+		ja_version_elem.appendChild(document.createTextNode(ja_getMessage("name") + ": v" + ja_version));
 		ja_info.appendChild(ja_version_elem);
 
 		//Add some useful links
@@ -366,7 +366,7 @@ function run_ja() {
 			ja_mapLayer.setVisibility(ja_getOption("defaultOn"));
 
 			window.Waze.map.addLayer(ja_mapLayer);
-			ja_log("version " + junctionangle_version + " loaded.", 0);
+			ja_log("version " + ja_version + " loaded.", 0);
 
 			ja_log(window.Waze.map, 3);
 			ja_log(window.Waze.model, 3);
@@ -382,6 +382,12 @@ function run_ja() {
 		ja_calculate();
 	}
 
+	function getWaze() {
+		if(window.wrappedJSObject) {
+			return window.wrappedJSOnject.Waze;
+		}
+		return window.Waze;
+	}
 	/**
 	 *
 	 * @param node Junction node
@@ -470,10 +476,10 @@ function run_ja() {
 		}
 
 		//Check for U-turn, which is emitted even if there is only one s-out
-		if (Math.abs(angle) > U_TURN_ANGLE + GRAY_ZONE) {
+		if (Math.abs(angle) > ja_U_TURN_ANGLE + ja_GRAY_ZONE) {
 			ja_log("Angle is >= 170 - U-Turn", 2);
 			return ja_routing_type.U_TURN;
-		} else if (Math.abs(angle) > U_TURN_ANGLE - GRAY_ZONE) {
+		} else if (Math.abs(angle) > ja_U_TURN_ANGLE - ja_GRAY_ZONE) {
 			ja_log("Angle is in gray zone 169-171", 2);
 			return ja_routing_type.PROBLEM;
 		}
@@ -489,7 +495,7 @@ function run_ja() {
 		 * Here be dragons!
 		 *
 		 */
-		if(Math.abs(angle) < TURN_ANGLE - GRAY_ZONE) {
+		if(Math.abs(angle) < ja_TURN_ANGLE - ja_GRAY_ZONE) {
 			ja_log("Turn is <= 44", 2);
 
 			/*
@@ -504,7 +510,7 @@ function run_ja() {
 				if(s_out_id === a[1] ||
 					(typeof s_n[a[1]] !== 'undefined' &&
 						ja_is_turn_allowed(s_in, node, s_n[a[1]]) &&
-						Math.abs(ja_angle_diff(s_in_a, a[0], false)) < TURN_ANGLE //Any angle above 45.04 is not eligible
+						Math.abs(ja_angle_diff(s_in_a, a[0], false)) < ja_TURN_ANGLE //Any angle above 45.04 is not eligible
 						)) {
 					ja_log(true, 4);
 					return true;
@@ -658,7 +664,7 @@ function run_ja() {
 
 			ja_log("DEFAULT: keep", 2);
 			return s_in.model.isLeftHand ? ja_routing_type.KEEP_LEFT : ja_routing_type.KEEP_RIGHT;
-		} else if (Math.abs(angle) < TURN_ANGLE + GRAY_ZONE) {
+		} else if (Math.abs(angle) < ja_TURN_ANGLE + ja_GRAY_ZONE) {
 			ja_log("Angle is in gray zone 44-46", 2);
 			return ja_routing_type.PROBLEM;
 		} else {
@@ -906,8 +912,8 @@ function run_ja() {
 							ja_log("Angle from " + fromSegmentId + " to " + toSegmentId + " is: " + angle, 2);
 
 							//Determine whether a turn is disallowed
-							if (angle >= 175 - GRAY_ZONE && angle <= 185 + GRAY_ZONE) {
-								var turn_type = (angle >= 175 + GRAY_ZONE && angle <= 185 - GRAY_ZONE) ?
+							if (angle >= 175 - ja_GRAY_ZONE && angle <= 185 + ja_GRAY_ZONE) {
+								var turn_type = (angle >= 175 + ja_GRAY_ZONE && angle <= 185 - ja_GRAY_ZONE) ?
 										ja_routing_type.NO_U_TURN : ja_routing_type.PROBLEM;
 
 								if (ja_is_turn_allowed(fromSegment, fromNode, segment) &&
@@ -1358,6 +1364,7 @@ function run_ja() {
 		return !restrictions.some(function(element) {
 			/*jshint bitwise: false*/
 			ja_log("Checking restriction " + element, 3);
+			//noinspection JSBitwiseOperatorUsage
 			var ret = element.allDay &&				//All day restriction
 				element.days === 127 &&				//Every week day
 				( element.vehicleTypes === -1 ||	//All vehicle types
@@ -1514,7 +1521,7 @@ function run_ja() {
 		// Method of recognizing overlapped segment by server is unknown for me yet, I took this from WME Validator
 		// information about this.
 		// TODO: verify overlapping check on the side of routing server.
-		return Math.abs(ja_angle_diff(a1, a2, true)) < OVERLAPPING_ANGLE;
+		return Math.abs(ja_angle_diff(a1, a2, true)) < ja_OVERLAPPING_ANGLE;
 	}
 
 
@@ -2363,11 +2370,11 @@ function run_ja() {
 	 * @param ja_log_level
 	 */
 	function ja_log(ja_log_msg, ja_log_level) {
-        // Browser extensions/addons should not use console.(log|error|debug), so the actual implementation
-        // is removed by the packaging script.
-		// ##NO_EXT_START##
+		//##NO_FF_START##
+		//Firefox addons should not use console.(log|error|debug), so these lines
+		//are removed by the FF addon packaging script.
 		if(typeof ja_log_level === 'undefined') { ja_log_level = 1; }
-		if (ja_log_level <= junctionangle_debug) {
+		if (ja_log_level <= ja_debug) {
 			if (typeof ja_log_msg === "object") {
 				console.debug(ja_log_msg);
 			}
@@ -2375,7 +2382,7 @@ function run_ja() {
 				console.debug("WME Junction Angle: " + ja_log_msg);
 			}
 		}
-		// ##NO_EXT_END##
+		//##NO_FF_END##
 	}
 
 	ja_bootstrap();
