@@ -1,3 +1,8 @@
+Code archived
+======
+
+Since nobody wanted to actually get their changes merged, but decided to publish their own versions instead, I'm archiving this repository as obsolete. If you want a working version, get it from some other source.
+
 WME-ja
 ======
 
